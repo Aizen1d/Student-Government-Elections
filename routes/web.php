@@ -30,25 +30,32 @@ Route::get('/get/token', function () {
 
 // Public routes
 Route::group(['middleware' => 'public.routes'], function () {
-    Route::get('/', [AuthController::class, 'view_login'])
+    Route::get('/', [AuthController::class, 'viewLogin'])
         ->name('root');
 
-    Route::get('/login', [AuthController::class, 'view_login'])
+    Route::get('/login', [AuthController::class, 'viewLogin'])
         ->name('view.login');
 
-    Route::post('/register/comelec', [AuthController::class, 'register_comelec'])
-        ->name('register.comelec');
+    Route::post('/login/auth', [AuthController::class, 'authLogin'])
+        ->name('auth.login')
+        ->middleware('throttle:5,3'); // 5 attempts in 3 minutes
 
-    Route::post('/login/auth', [AuthController::class, 'auth_login'])
-        ->name('auth.login');
-        //->middleware('throttle:5,3'); // 5 attempts in 3 minutes
+    Route::post('/register/comelec', [AuthController::class, 'registerComelec'])
+        ->name('register.comelec');
+});
+
+// Routes that needs to revalidate back history / or no back history
+Route::group(['middleware' => 'revalidate'], function () {
+    Route::post('/logout', [AuthController::class, 'logout'])
+    ->name('post.logout');
 });
 
 // Routes that are protected by JWT auth
 Route::group(['middleware' => 'check.jwt.token'], function () {
     Route::get('/comelec/elections', [ComelecController::class, 'elections'])
         ->name('comelec.elections');
-    Route::get('/comelec/insert-data', [ComelecController::class, 'insert_data'])
+
+    Route::get('/comelec/insert-data', [ComelecController::class, 'insertData'])
         ->name('comelec.insert.data');
 });
 

@@ -4,8 +4,8 @@
 
     <div class="container">
         <h1>Elections</h1>
-        <p>Student Number: {{ student_number }}</p>
-        <p>Position: {{ position }}</p>
+        <p>Student Number: {{ FullName }}</p>
+        <p>Position: {{ Position }}</p>
     </div>
 </template>
 
@@ -17,9 +17,8 @@
     export default {
         components: { Link, Navbar, Sidebar },
         props: {
-            student_number: String,
-            full_name: String,
-            position: String,
+            FullName: String,
+            Position: String,
         },
     }
 </script>

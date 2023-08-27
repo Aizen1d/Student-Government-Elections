@@ -43,8 +43,8 @@
             }
         },
         methods: {
-            async submitForm() {
-                await axios.post('/login/auth', this.form)
+             submitForm() {
+                 axios.post('/login/auth', this.form)
                     .then(response => {
                         if (response.data.redirect) {
                             window.location.href = response.data.redirect;

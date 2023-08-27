@@ -10,12 +10,12 @@ use Exception;
 
 class AuthController extends Controller
 {    
-    public function view_login()
+    public function viewLogin()
     {
         return inertia('Login');
     }
 
-    public function auth_login(Request $request)
+    public function authLogin(Request $request)
     {   
         $user = (auth('comelec')->attempt
                         ([
@@ -25,7 +25,7 @@ class AuthController extends Controller
 
         if ($user) {
             $token = $user;
-            $cookie_minutes_lifetime = 3;
+            $cookie_minutes_lifetime = 1;
             //$cookie = cookie('jwt_token', $token, $cookie_minutes_lifetime);
             $cookie = cookie('jwt_token', $token, $cookie_minutes_lifetime, null, null, true, true, false, 'strict');
     
@@ -37,11 +37,26 @@ class AuthController extends Controller
             return response()->json(['invalid' => 'Invalid student number or password.',]);
         }
     }
+
+    public function logout(Request $request) {
+        try { 
+            // Instruct client side to delete the cookie with withCookie() and redirect to login page
+            $cookie = cookie()->forget('jwt_token');
+            $logout_pass_cookie = cookie('logout_pass', 'valid', 1);
+
+            return response()->json([
+                'logout' => 'true',
+            ])->withCookie($logout_pass_cookie)->withCookie($cookie);
+            
+        }
+        catch(Exception $e) {
+            return back()->withError($e->getMessage());
+        }
+    }
+    
       
-
-    public function register_comelec(Request $request)
+    public function registerComelec(Request $request)
     {   
-
         try {
             Comelec::create([
                 'StudentNumber' => $request->input('StudentNumber'),

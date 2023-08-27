@@ -68,5 +68,6 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'check.jwt.token' => \App\Http\Middleware\CheckJWTToken::class,
         'public.routes' => \App\Http\Middleware\PublicRoutes::class,
+        'revalidate' => \App\Http\Middleware\RevalidateBackHistory::class,
     ];
 }

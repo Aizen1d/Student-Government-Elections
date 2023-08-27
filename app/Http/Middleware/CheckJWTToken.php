@@ -22,6 +22,12 @@ class CheckJWTToken
     public function handle(Request $request, Closure $next): Response
     {
         $token = $request->cookie('jwt_token');
+        $logout_pass = $request->cookie('logout_pass');
+
+        if ($logout_pass) {
+            $logout_pass_cookie = cookie()->forget('logout_pass');
+            return redirect()->route('view.login')->withCookie($logout_pass_cookie);
+        }
 
         try {
             if (JWTAuth::setToken($token)->check()) {
@@ -38,6 +44,8 @@ class CheckJWTToken
         catch (JWTException $e) {
             return redirect()->route('view.login');
         }
+
+        return $next($request);
 
     }
 }

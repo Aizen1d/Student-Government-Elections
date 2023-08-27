@@ -80,7 +80,7 @@ export default {
     </nav>
 </template>
 
-<style>
+<style scoped>
 @import url(../../css/standard.css);
 
 .sidebar-header-title{

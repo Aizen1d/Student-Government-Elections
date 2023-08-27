@@ -5,11 +5,10 @@
             </div>
             <li class="nav-item dropdown">
                 <button class="btn btn-link nav-link dropdown-toggle mx-4 user" href="#" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    John Doe
+                    User
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item" href="{{ route('faculty-profile') }}">Profile</a></li>
-                    <li><a class="dropdown-item" href="{{ route('logout-faculty') }}">Logout</a></li>
+                    <li><a class="dropdown-item" href="#" @click="logout">Logout</a></li>
                 </ul>
             </li>
         </div>
@@ -17,14 +16,26 @@
 </template>
 
 <script>
+    import axios from 'axios';
     import { Link } from '@inertiajs/vue3'
 
     export default {
-        components: { Link }, 
+        methods: {
+            logout(){
+                axios.post('/logout')
+                    .then(response => {
+                        location.reload(); // trick the system to logout and prevent backing 
+                                         // (Reloading to check for cookie token and throw back to login page)
+                    })
+                    .catch(error => {
+                        console.log(error);
+                    });
+            }
+        },
     };
 </script>
 
-<style>
+<style scoped>
 @import url(../../css/standard.css);
     .nav{
         background-color: white;

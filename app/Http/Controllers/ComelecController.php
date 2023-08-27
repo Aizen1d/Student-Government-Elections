@@ -19,7 +19,7 @@ class ComelecController extends Controller
 
         // Comelec columns
         $comelec_id = $comelec->ComelecId;
-        $student_number = $comelec->student_number;
+        $student_number = $comelec->StudentNumber;
         $position = $comelec->Position;
 
         // Student columns
@@ -29,22 +29,22 @@ class ComelecController extends Controller
         $full_name = $first_name . ' ' . ($middle_name ? $middle_name . ' ' : '') . $last_name;
         $email_address = $student->EmailAddress;
 
-        return response()->json([
+        /*return response()->json([
             'comelec_id' => $comelec_id,
             'student_number' => $student_number,
             'position' => $position,
             'full_name' => $full_name,
             'email_address' => $email_address,
-        ]); 
+        ]); */
 
-        /*return Inertia::render('Comelec/Elections', [
-            //'full_name' => $full_name,
-            'position' => $position,
-        ]);*/
+        return Inertia::render('Comelec/Elections', [
+            'FullName' => $full_name,
+            'Position' => $position,
+        ]);
                
     }
 
-    public function insert_data() 
+    public function insertData() 
     { 
         return inertia('Comelec/InsertData');
     }
