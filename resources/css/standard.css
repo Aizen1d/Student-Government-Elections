@@ -1,0 +1,19 @@
+:root {
+    --light_blue: #3F518B; /* BG COLOR: for sidebar, etc. */  
+    --dark_blue: #042552;
+
+    --light_white: #d3d3d3;
+    --side_bar_font: 'Just Sans', sans-serif;
+
+    --muted_maroon: #A63737; /* BG COLOR: for buttons like login, register */
+    --muted_maroon_hover: #8f2121; /* HOVER COLOR: for buttons like login, register */
+    
+    --dark_grey: rgba(12, 11, 11, 0.25); /* BG COLOR: usually for return button */
+    --dark_grey_hover: #6b6b6b99; /* HOVER COLOR: usually for return button */
+
+    --light_yellow: #EABF0D; /* BG COLOR: currently in admin button */
+    --light_yellow_hover: #d0a90b; /* BG COLOR: currently in admin button */
+
+    --info_text_label: #7d7b7be1; /* infos like username, email, pass, forgot pass */
+    --white_text_label: #F7F7F8; /* in some buttons, this was used */
+}
