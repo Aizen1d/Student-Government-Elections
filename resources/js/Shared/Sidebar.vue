@@ -2,6 +2,9 @@
 import { Link } from '@inertiajs/vue3'
 
 export default {
+    props: {
+        user_role: String,
+    },
     components: {
         Link,
     },
@@ -29,52 +32,62 @@ export default {
                 <img class="side-icon" src="../../images/icons/elections.svg" alt="Icon" height="35" width="35">
                 <span>Elections</span>
             </Link>
-            <Link href="/comelec/insert-data" class="main list-group-item list-group-item-action py-2 ripple bg 
-                    {{ ? 'active' : '' }}"  aria-expanded="true">
-                <img class="side-icon" src="../../images/icons/insert_data.svg" alt="Icon" height="35" width="35">
-                <span>Insert Data</span>
-            </Link>
-            <a href="" class="main list-group-item list-group-item-action py-2 ripple bg 
-                    {{ ? 'active' : '' }}"  aria-expanded="true">
-                <img class="side-icon" src="../../images/icons/approval.svg" alt="Icon" height="35" width="35">
-                <span>Approvals</span>
-            </a>
-            <a href="" class="main list-group-item list-group-item-action py-2 ripple bg 
-                    {{ ? 'active' : '' }}"  aria-expanded="true">
-                <img class="side-icon" src="../../images/icons/announcements.svg" alt="Icon" height="35" width="35">
-                <span>Announcements</span>
-            </a>
-            <a href="" class="main list-group-item list-group-item-action py-2 ripple bg 
-                    {{ ? 'active' : '' }}"  aria-expanded="true">
-                <img class="side-icon" src="../../images/icons/rules.svg" alt="Icon" height="35" width="35">
-                <span>Rules & Guidelines</span>
-            </a>
-            <a href="" class="main list-group-item list-group-item-action py-2 ripple bg 
-                    {{ ? 'active' : '' }}"  aria-expanded="true">
-                <img class="side-icon" src="../../images/icons/debates.svg" alt="Icon" height="35" width="35">
-                <span>Debates & Open Forum</span>
-            </a>
-            <a href="" class="main list-group-item list-group-item-action py-2 ripple bg 
-                    {{ ? 'active' : '' }}"  aria-expanded="true">
-                <img class="side-icon" src="../../images/icons/directory.svg" alt="Icon" height="35" width="35">
-                <span>Directory</span>
-            </a>
-            <a href="" class="main list-group-item list-group-item-action py-2 ripple bg 
-                    {{ ? 'active' : '' }}"  aria-expanded="true">
-                <img class="side-icon" src="../../images/icons/appeal.svg" alt="Icon" height="35" width="35">
-                <span>Appeal Review</span>
-            </a>
-            <a href="" class="main list-group-item list-group-item-action py-2 ripple bg 
-                    {{ ? 'active' : '' }}"  aria-expanded="true">
-                <img class="side-icon" src="../../images/icons/reports.svg" alt="Icon" height="35" width="35">
-                <span>Reports</span>
-            </a>
-            <a href="" class="main list-group-item list-group-item-action py-2 ripple bg 
-                    {{ ? 'active' : '' }}"  aria-expanded="true">
-                <img class="side-icon" src="" alt="?" height="35" width="35">
-                <span>Appointments</span>
-            </a>
-            
+
+            <template v-if="user_role === 'comelec'">
+                <Link href="/comelec/insert-data" class="main list-group-item list-group-item-action py-2 ripple bg 
+                        {{ ? 'active' : '' }}"  aria-expanded="true">
+                    <img class="side-icon" src="../../images/icons/insert_data.svg" alt="Icon" height="35" width="35">
+                    <span>Insert Data</span>
+                </Link>
+
+                <a href="" class="main list-group-item list-group-item-action py-2 ripple bg 
+                        {{ ? 'active' : '' }}"  aria-expanded="true">
+                    <img class="side-icon" src="../../images/icons/approval.svg" alt="Icon" height="35" width="35">
+                    <span>Approvals</span>
+                </a>
+
+                <a href="" class="main list-group-item list-group-item-action py-2 ripple bg 
+                        {{ ? 'active' : '' }}"  aria-expanded="true">
+                    <img class="side-icon" src="../../images/icons/announcements.svg" alt="Icon" height="35" width="35">
+                    <span>Announcements</span>
+                </a>
+
+                <a href="" class="main list-group-item list-group-item-action py-2 ripple bg 
+                        {{ ? 'active' : '' }}"  aria-expanded="true">
+                    <img class="side-icon" src="../../images/icons/rules.svg" alt="Icon" height="35" width="35">
+                    <span>Rules & Guidelines</span>
+                </a>
+
+                <a href="" class="main list-group-item list-group-item-action py-2 ripple bg 
+                        {{ ? 'active' : '' }}"  aria-expanded="true">
+                    <img class="side-icon" src="../../images/icons/debates.svg" alt="Icon" height="35" width="35">
+                    <span>Debates & Open Forum</span>
+                </a>
+
+                <a href="" class="main list-group-item list-group-item-action py-2 ripple bg 
+                        {{ ? 'active' : '' }}"  aria-expanded="true">
+                    <img class="side-icon" src="../../images/icons/directory.svg" alt="Icon" height="35" width="35">
+                    <span>Directory</span>
+                </a>
+
+                <a href="" class="main list-group-item list-group-item-action py-2 ripple bg 
+                        {{ ? 'active' : '' }}"  aria-expanded="true">
+                    <img class="side-icon" src="../../images/icons/appeal.svg" alt="Icon" height="35" width="35">
+                    <span>Appeal Review</span>
+                </a>
+
+                <a href="" class="main list-group-item list-group-item-action py-2 ripple bg 
+                        {{ ? 'active' : '' }}"  aria-expanded="true">
+                    <img class="side-icon" src="../../images/icons/reports.svg" alt="Icon" height="35" width="35">
+                    <span>Reports</span>
+                </a>
+                
+                <a href="" class="main list-group-item list-group-item-action py-2 ripple bg 
+                        {{ ? 'active' : '' }}"  aria-expanded="true">
+                    <img class="side-icon" src="" alt="?" height="35" width="35">
+                    <span>Appointments</span>
+                </a>
+            </template>
             </div>
         </div>
     </nav>

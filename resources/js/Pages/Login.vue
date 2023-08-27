@@ -35,6 +35,8 @@
                     Password: ''
                 },
                 invalid: '',
+                countdown: 0,
+                intervalId: null,
             }
         },
         mounted() {
@@ -44,6 +46,9 @@
         },
         methods: {
              submitForm() {
+                if (this.countdown > 0) {
+                    return;
+                }
                  axios.post('/login/auth', this.form)
                     .then(response => {
                         if (response.data.redirect) {
@@ -55,16 +60,31 @@
                     })
                     .catch(error => {
                         if (error.response && error.response.status === 429) {
-                            this.invalid = 'Too many login attempts, please wait after 3 minutes.'
+                            const retryAfter = error.response.headers['retry-after'];
+                            this.startCountdown(retryAfter);
                         } else {
                             // handle other errors
                         }
                     });
-            }
+            },
+            startCountdown(seconds) {
+                this.countdown = seconds;
+                this.intervalId = setInterval(() => {
+                    this.countdown--;
+                    if (this.countdown === 0) {
+                        clearInterval(this.intervalId);
+                        this.invalid = '';
+                    } else {
+                        this.invalid = `Too many login attempts. Please wait ${this.countdown} seconds before trying again.`;
+                    }
+                }, 1000);
+            },
         }
     };
 
 </script>
+
+
 
 <style>
     .container {

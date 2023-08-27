@@ -29,17 +29,10 @@ class ComelecController extends Controller
         $full_name = $first_name . ' ' . ($middle_name ? $middle_name . ' ' : '') . $last_name;
         $email_address = $student->EmailAddress;
 
-        /*return response()->json([
-            'comelec_id' => $comelec_id,
-            'student_number' => $student_number,
-            'position' => $position,
-            'full_name' => $full_name,
-            'email_address' => $email_address,
-        ]); */
-
         return Inertia::render('Comelec/Elections', [
-            'FullName' => $full_name,
-            'Position' => $position,
+            'full_name' => $full_name,
+            'position' => $position,
+            'user_role' => 'comelec',
         ]);
                
     }

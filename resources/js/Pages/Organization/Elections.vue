@@ -5,20 +5,19 @@
     <div class="container">
         <h1>Elections</h1>
         <p>Full name: {{ full_name }}</p>
-        <p>Position: {{ position }}</p>
+        <p>Organization name: {{ organization_name }}</p>
     </div>
 </template>
 
 <script>
-    import { Link } from '@inertiajs/vue3'
     import Navbar from '../../Shared/Navbar.vue';
     import Sidebar from '../../Shared/Sidebar.vue';
 
     export default {
-        components: { Link, Navbar, Sidebar },
+        components: { Navbar, Sidebar },
         props: {
             full_name: String,
-            position: String,
+            organization_name: String,
         },
     }
 </script>

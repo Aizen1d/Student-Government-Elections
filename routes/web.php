@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ComelecController;
+use App\Http\Controllers\OrganizationController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 
@@ -37,11 +38,16 @@ Route::group(['middleware' => 'public.routes'], function () {
         ->name('view.login');
 
     Route::post('/login/auth', [AuthController::class, 'authLogin'])
-        ->name('auth.login')
-        ->middleware('throttle:5,3'); // 5 attempts in 3 minutes
+        ->name('auth.login');
+        //->middleware('throttle:5,3'); // 5 attempts within 3 minutes only
 
+
+    // Exclusives only / dummy data insertion purposes
     Route::post('/register/comelec', [AuthController::class, 'registerComelec'])
         ->name('register.comelec');
+
+    Route::post('/register/organization', [AuthController::class, 'registerOrganization'])
+        ->name('register.organization');
 });
 
 // Routes that needs to revalidate back history / or no back history
@@ -52,10 +58,15 @@ Route::group(['middleware' => 'revalidate'], function () {
 
 // Routes that are protected by JWT auth
 Route::group(['middleware' => 'check.jwt.token'], function () {
+    // Comelec routes
     Route::get('/comelec/elections', [ComelecController::class, 'elections'])
         ->name('comelec.elections');
 
     Route::get('/comelec/insert-data', [ComelecController::class, 'insertData'])
         ->name('comelec.insert.data');
+
+    // Organization routes
+    Route::get('/organization/elections', [OrganizationController::class, 'elections'])
+        ->name('organization.elections');
 });
 

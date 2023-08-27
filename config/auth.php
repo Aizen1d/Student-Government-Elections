@@ -46,6 +46,11 @@ return [
             'provider' => 'comelec',
         ],
 
+        'organization' => [
+            'driver' => 'jwt',
+            'provider' => 'organization',
+        ],
+
         'student' => [
             'driver' => 'jwt',
             'provider' => 'student',
@@ -83,6 +88,11 @@ return [
         'comelec' => [
             'driver' => 'eloquent',
             'model' => App\Models\Comelec::class,
+        ],
+
+        'organization' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Organization::class,
         ],
 
         'student' => [
