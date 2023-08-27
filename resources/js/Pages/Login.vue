@@ -8,10 +8,10 @@
 
             <form class="login-form" @submit.prevent="submitForm">
                 <label for="student_number">Student Number</label>
-                <input type="text" id="student_number" placeholder="Enter your student number" v-model="form.student_number">
+                <input type="text" id="student_number" placeholder="Enter your student number" v-model="form.StudentNumber">
 
                 <label for="password">Password</label>
-                <input type="password" id="password" placeholder="Enter your password" v-model="form.password">
+                <input type="password" id="password" placeholder="Enter your password" v-model="form.Password">
 
                 <button class="login-button" type="submit">Login</button>
             </form>
@@ -31,8 +31,8 @@
         data() {
             return {
                 form: {
-                    student_number: '',
-                    password: ''
+                    StudentNumber: '',
+                    Password: ''
                 },
                 invalid: '',
             }
@@ -43,8 +43,8 @@
             }
         },
         methods: {
-            submitForm() {
-                axios.post('/login/auth', this.form)
+            async submitForm() {
+                await axios.post('/login/auth', this.form)
                     .then(response => {
                         if (response.data.redirect) {
                             window.location.href = response.data.redirect;

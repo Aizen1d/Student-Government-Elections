@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('Comelec', function (Blueprint $table) {
             $table->id('ComelecId');
-            $table->string('student_number')->unique();
-            $table->foreign('student_number')->references('student_number')->on('Student');
-            $table->string('password');
+            $table->string('StudentNumber', 15)->unique();
+            $table->foreign('StudentNumber')->references('StudentNumber')->on('Student');
+            $table->string('Password');
             $table->string('Position');
             $table->timestamps();
         });

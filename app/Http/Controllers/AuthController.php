@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Models\Comelec;
+use Exception;
 
 class AuthController extends Controller
 {    
@@ -18,11 +19,11 @@ class AuthController extends Controller
     {   
         $user = (auth('comelec')->attempt
                         ([
-                            'student_number' => $request->student_number, 
-                            'password' => $request->password
+                            'StudentNumber' => $request->StudentNumber, 
+                            'password' => $request->Password // use small p in password because it's required by the attempt method
                         ]));
 
-        if ($user){
+        if ($user) {
             $token = $user;
             $cookie_minutes_lifetime = 3;
             //$cookie = cookie('jwt_token', $token, $cookie_minutes_lifetime);
@@ -31,20 +32,27 @@ class AuthController extends Controller
             return response()->json([
                 'redirect' => '/comelec/elections',
             ])->withCookie($cookie); 
+        } 
+        else {
+            return response()->json(['invalid' => 'Invalid student number or password.',]);
         }
-
-        return response()->json(['message' => 'Invalid credentials.']);
     }
       
 
     public function register_comelec(Request $request)
     {   
-        Comelec::create([
-            'student_number' => $request->input('student_number'),
-            'password' => Hash::make($request->input('password')),
-            'Position' => $request->input('position'),
-        ]);
 
-        return response()->json(['message' => 'Comelec successfully inserted.']);
+        try {
+            Comelec::create([
+                'StudentNumber' => $request->input('StudentNumber'),
+                'Password' => Hash::make($request->input('Password')),
+                'Position' => $request->input('Position'),
+            ]);
+
+            return response()->json(['message' => 'Comelec successfully inserted.']);
+        }
+        catch(Exception $e) {
+            return response()->json(['Something went wrong:' => $e->getMessage()]);
+        }
     }
 }

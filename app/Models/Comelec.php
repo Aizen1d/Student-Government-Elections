@@ -14,11 +14,16 @@ class Comelec extends Model implements JWTSubject, AuthenticatableContract
 
     protected $table = "Comelec";
     protected $primaryKey = 'ComelecId';
-    protected $fillable = ['student_number', 'password', 'Position'];
+    protected $fillable = ['StudentNumber', 'Password', 'Position'];
+
+    public function getAuthPassword()
+    {
+        return $this->Password;
+    }
 
     public function getStudentByStudentNumber()
     {
-        return $this->belongsTo(Student::class, 'student_number', 'student_number');
+        return $this->belongsTo(Student::class, 'StudentNumber', 'StudentNumber');
     }
 
     /**
