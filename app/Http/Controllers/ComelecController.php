@@ -11,10 +11,10 @@ class ComelecController extends Controller
 {
     public function elections(Request $request) 
     {
-        $token = $request->cookie('jwt_token');
+        $comelec = Comelec::where('StudentNumber', $request->cookie('student_number'))
+            ->with('getStudentByStudentNumber')
+            ->first();
 
-        // Get the comelec and student by using student_number foreign key
-        $comelec = JWTAuth::toUser($token)->with('getStudentByStudentNumber')->first();
         $student = $comelec->getStudentByStudentNumber;
 
         // Comelec columns

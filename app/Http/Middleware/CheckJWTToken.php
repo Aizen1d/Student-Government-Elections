@@ -25,8 +25,9 @@ class CheckJWTToken
         $logout_pass = $request->cookie('logout_pass');
 
         if ($logout_pass) {
+            $student_number_cookie = cookie()->forget('student_number');
             $logout_pass_cookie = cookie()->forget('logout_pass');
-            return redirect()->route('view.login')->withCookie($logout_pass_cookie);
+            return redirect()->route('view.login')->withCookie($logout_pass_cookie)->withCookie($student_number_cookie);
         }
 
         try {

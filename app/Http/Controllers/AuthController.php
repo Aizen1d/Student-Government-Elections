@@ -19,7 +19,7 @@ class AuthController extends Controller
 
     public function authLogin(Request $request)
     {
-        $cookie_minutes_lifetime = 1;
+        $cookie_minutes_lifetime = 3; // Expiry of the cookie that contains the jwt token
         $guards = [
             'comelec' => '/comelec/elections',
             'organization' => '/organization/elections'
@@ -27,29 +27,11 @@ class AuthController extends Controller
 
         // Attempt to login whether comelec or organization user
         foreach ($guards as $guard => $redirect) {
-            if (auth($guard)->attempt([
-                'StudentNumber' => $request->StudentNumber,
-                'password' => $request->Password
-            ])) {
-                // Add custom claim with StudentNumber
-                $customClaims = ['StudentNumber' => $request->StudentNumber];
-                $token = JWTAuth::fromUser(auth($guard)->user(), $customClaims);
-
-                if ($guard === 'comelec') {
-                    $comelec = Comelec::where('StudentNumber', $request->StudentNumber)->first();
-                    $loggeduser = auth()->login($comelec);
-                }
-                else {
-                    $organization = Organization::where('StudentNumber', $request->StudentNumber)->first();
-                    $loggeduser = auth()->login($organization);
-                } 
-
-                $studnum = auth()->user()->OrganizationName;
-                return response()->json(['loggeduser' => $studnum]);
-
+            if ($token = auth($guard)->attempt(['StudentNumber' => $request->StudentNumber, 'password' => $request->Password])) {
+                $studentNumberCookie = cookie('student_number', $request->StudentNumber, $cookie_minutes_lifetime, null, null, true, true, false, 'strict');
                 $cookie = cookie('jwt_token', $token, $cookie_minutes_lifetime, null, null, true, true, false, 'strict');
 
-                return response()->json(['redirect' => $redirect])->withCookie($cookie);
+                return response()->json(['redirect' => $redirect])->withCookie($cookie)->withCookie($studentNumberCookie);
             }
         }
 
