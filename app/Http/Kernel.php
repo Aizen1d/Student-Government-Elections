@@ -69,5 +69,7 @@ class Kernel extends HttpKernel
         'check.jwt.token' => \App\Http\Middleware\CheckJWTToken::class,
         'public.routes' => \App\Http\Middleware\PublicRoutes::class,
         'revalidate' => \App\Http\Middleware\RevalidateBackHistory::class,
+        'check.auth.comelec' => \App\Http\Middleware\CheckAuthComelec::class,
+        'check.auth.organization' => \App\Http\Middleware\CheckAuthOrganization::class,
     ];
 }

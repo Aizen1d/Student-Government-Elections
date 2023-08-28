@@ -31,6 +31,7 @@ Route::get('/get/token', function () {
 
 // Public routes
 Route::group(['middleware' => 'public.routes'], function () {
+
     Route::get('/', [AuthController::class, 'viewLogin'])
         ->name('root');
 
@@ -38,9 +39,8 @@ Route::group(['middleware' => 'public.routes'], function () {
         ->name('view.login');
 
     Route::post('/login/auth', [AuthController::class, 'authLogin'])
-        ->name('auth.login');
-        //->middleware('throttle:5,3'); // 5 attempts within 3 minutes only
-
+        ->name('auth.login')
+        ->middleware('throttle:5,3'); // 5 attempts within 3 minutes only
 
     // Exclusives only / dummy data insertion purposes
     Route::post('/register/comelec', [AuthController::class, 'registerComelec'])
@@ -52,21 +52,24 @@ Route::group(['middleware' => 'public.routes'], function () {
 
 // Routes that needs to revalidate back history / or no back history
 Route::group(['middleware' => 'revalidate'], function () {
+
     Route::post('/logout', [AuthController::class, 'logout'])
     ->name('post.logout');
 });
 
-// Routes that are protected by JWT auth
-Route::group(['middleware' => 'check.jwt.token'], function () {
-    // Comelec routes
+// Routes that are protected by JWT token and must be authenticated as comelec user
+Route::group(['middleware' => 'check.auth.comelec'], function () {
+
     Route::get('/comelec/elections', [ComelecController::class, 'elections'])
         ->name('comelec.elections');
 
     Route::get('/comelec/insert-data', [ComelecController::class, 'insertData'])
         ->name('comelec.insert.data');
-
-    // Organization routes
-    Route::get('/organization/elections', [OrganizationController::class, 'elections'])
-        ->name('organization.elections');
 });
 
+// Routes that are protected by JWT token and must be authenticated as organization user
+Route::group(['middleware' => 'check.auth.organization'], function () {
+
+    Route::get('/organization/elections', [OrganizationController::class, 'elections'])
+    ->name('organization.elections');
+});

@@ -1,13 +1,24 @@
 <script>
 import { Link } from '@inertiajs/vue3'
+import { computed } from 'vue'
 import { useUserStore } from '../Stores/UserStore.js'
 
 export default {
     setup() {
         const userStore = useUserStore();
 
+        const linkHref = computed(() => {
+            if (userStore.user_role === 'comelec') {
+                return '/comelec/elections';
+            } 
+            else if (userStore.user_role === 'organization') {
+                return '/organization/elections';
+            }
+        });
+
         return {
             user_role: userStore.user_role,
+            linkHref,
         };
     },
     components: {
@@ -33,7 +44,7 @@ export default {
         </div>
         <div class="position-sticky">
             <div class="list-group list-group-flush mx-3">
-            <Link href="/comelec/elections" class="main list-group-item list-group-item-action py-2 ripple bg 
+            <Link :href="linkHref" class="main list-group-item list-group-item-action py-2 ripple bg 
                     {{ ? 'active' : '' }}"  aria-expanded="true">
                 <img class="side-icon" src="../../images/icons/elections.svg" alt="Icon" height="35" width="35">
                 <span>Elections</span>

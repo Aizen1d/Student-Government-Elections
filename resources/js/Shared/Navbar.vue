@@ -5,7 +5,7 @@
             </div>
             <li class="nav-item dropdown">
                 <button class="btn btn-link nav-link dropdown-toggle mx-4 user" href="#" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    User
+                    {{ full_name }}
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
                     <li><a class="dropdown-item" href="#" @click="logout">Logout</a></li>
@@ -17,7 +17,6 @@
 
 <script>
     import axios from 'axios';
-    import { Link } from '@inertiajs/vue3'
     import { useUserStore } from '../Stores/UserStore.js'
 
     export default {
@@ -26,7 +25,6 @@
 
             return {
                 full_name: userStore.full_name,
-                user_role: userStore.user_role,
             };
         },
         methods: {
@@ -93,4 +91,5 @@
     .logout{
         justify-content: right;
     }
+
 </style>

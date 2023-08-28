@@ -12,7 +12,9 @@ class OrganizationController extends Controller
 {
     public function elections(Request $request) 
     {
-        $organization = Organization::where('StudentNumber', $request->cookie('student_number'))
+        $get_user_info = json_decode($request->cookie('user_info'), true);
+
+        $organization = Organization::where('StudentNumber', $get_user_info['student_number'])
             ->with('getStudentByStudentNumber')
             ->first();
 

@@ -11,7 +11,9 @@ class ComelecController extends Controller
 {
     public function elections(Request $request) 
     {
-        $comelec = Comelec::where('StudentNumber', $request->cookie('student_number'))
+        $get_user_info = json_decode($request->cookie('user_info'), true);
+
+        $comelec = Comelec::where('StudentNumber', $get_user_info['student_number'])
             ->with('getStudentByStudentNumber')
             ->first();
 
