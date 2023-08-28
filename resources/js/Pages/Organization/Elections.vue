@@ -12,12 +12,21 @@
 <script>
     import Navbar from '../../Shared/Navbar.vue';
     import Sidebar from '../../Shared/Sidebar.vue';
+    import { useUserStore } from '../../Stores/UserStore';
 
     export default {
+        setup(props) {
+            const userStore = useUserStore();
+            userStore.user_role = props.user_role;
+            userStore.full_name = props.full_name;
+
+            return {}
+        },
         components: { Navbar, Sidebar },
         props: {
             full_name: String,
             organization_name: String,
+            user_role: String,
         },
     }
 </script>

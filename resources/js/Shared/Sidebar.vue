@@ -1,9 +1,14 @@
 <script>
 import { Link } from '@inertiajs/vue3'
+import { useUserStore } from '../Stores/UserStore.js'
 
 export default {
-    props: {
-        user_role: String,
+    setup() {
+        const userStore = useUserStore();
+
+        return {
+            user_role: userStore.user_role,
+        };
     },
     components: {
         Link,
@@ -18,6 +23,7 @@ export default {
         },
     },
 }
+
 </script>
 
 <template>

@@ -34,6 +34,7 @@ class OrganizationController extends Controller
         return Inertia::render('Organization/Elections', [
             'full_name' => $full_name,
             'organization_name' => $organization_name,
+            'user_role' => 'organization',
         ]);
                
     }

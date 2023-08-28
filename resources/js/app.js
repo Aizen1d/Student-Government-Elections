@@ -2,7 +2,7 @@ import { createApp, h } from 'vue'
 import { createInertiaApp } from '@inertiajs/vue3'
 import NProgress from 'nprogress'
 import { router } from '@inertiajs/vue3'
-import axios from 'axios';
+import { createPinia } from 'pinia';
 
 router.on('start', () => NProgress.start())
 router.on('finish', () => NProgress.done())
@@ -13,21 +13,16 @@ createInertiaApp({
     return pages[`./Pages/${name}.vue`]
   },
   setup({ el, App, props, plugin }) {
-    createApp({ render: () => h(App, props) })
-      .use(plugin)
-      .mount(el)
+    const app = createApp({ render: () => h(App, props) });
+    const pinia = createPinia();
+    app.use(pinia);
+    app.use(plugin);
+    app.mount(el);
   },
   progress: {
-    // The delay after which the progress bar will appear, in milliseconds...
     delay: 250,
-
-    // The color of the progress bar...
     color: '#29d',
-
-    // Whether to include the default NProgress styles...
     includeCSS: true,
-
-    // Whether the NProgress spinner will be shown...
     showSpinner: false,
   },
 })

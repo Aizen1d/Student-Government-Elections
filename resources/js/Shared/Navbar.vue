@@ -18,8 +18,17 @@
 <script>
     import axios from 'axios';
     import { Link } from '@inertiajs/vue3'
+    import { useUserStore } from '../Stores/UserStore.js'
 
     export default {
+        setup() {
+            const userStore = useUserStore();
+
+            return {
+                full_name: userStore.full_name,
+                user_role: userStore.user_role,
+            };
+        },
         methods: {
             logout(){
                 axios.post('/logout')
