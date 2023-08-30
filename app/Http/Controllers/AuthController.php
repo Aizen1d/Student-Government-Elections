@@ -19,7 +19,7 @@ class AuthController extends Controller
 
     public function authLogin(Request $request)
     {
-        $cookie_minutes_lifetime = 3; // Expiry of the cookie that contains the jwt token
+        $cookie_minutes_lifetime = 1; // Expiry of the cookie that contains the jwt token
         $guards = [
             'comelec' => '/comelec/elections',
             'organization' => '/organization/elections'
@@ -28,7 +28,7 @@ class AuthController extends Controller
         // Attempt to login whether comelec or organization user
         foreach ($guards as $guard => $redirect) {
             if ($token = auth($guard)->attempt(['StudentNumber' => $request->StudentNumber, 'password' => $request->Password])) {
-                // Store auth user's info to an encrypted cookie
+                // Store auth user's info to a cookie (laravel encrypt's cookies by default)
                 $cookie_data = [
                     'student_number' => $request->StudentNumber,
                     'user_role' => $guard,

@@ -1,27 +1,23 @@
 <template>
     <Sidebar></Sidebar>
     <Navbar></Navbar>
-
-    <div class="container">
-        <h1>Insert Data</h1>
-        <p>Student Number: {{ FullName }}</p>
-        <p>Position: {{ Position }}</p>
-    </div>
 </template>
 
-<script setup>
-    import { Link } from '@inertiajs/vue3'
+<script >
     import Navbar from '../../Shared/Navbar.vue';
     import Sidebar from '../../Shared/Sidebar.vue';
-    import { defineComponent } from 'vue';
+    import { useUserStore } from '../../Stores/UserStore';
 
-    const comp = defineComponent({
-        components: { Link, Navbar, Sidebar }, 
-        props: {
-            FullName: String,
-            Position: String,
+    export default {
+        setup() {
+            const userStore = useUserStore();   
+            const user_role = userStore.user_role;
+
+            return {user_role}
         },
-    });
+        components: { Navbar, Sidebar },
+        
+    }
 </script>
 
 <style>

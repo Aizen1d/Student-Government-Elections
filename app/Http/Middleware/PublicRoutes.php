@@ -8,6 +8,8 @@ use Symfony\Component\HttpFoundation\Response;
 
 use Tymon\JWTAuth\Facades\JWTAuth;
 
+use function Termwind\render;
+
 class PublicRoutes
 {
     /**
@@ -18,7 +20,12 @@ class PublicRoutes
     public function handle(Request $request, Closure $next): Response
     {
         // Get the JWT token from the cookie
-        $token = $request->cookie('jwt_token');
+        try {
+            $token = $request->cookie('jwt_token');
+        }
+        catch (\Exception $e) {
+            return render('view.login');
+        }
 
         // Check if the token is valid
         if ($token && JWTAuth::setToken($token)->check()) {

@@ -59,12 +59,20 @@
                         }
                     })
                     .catch(error => {
-                        if (error.response && error.response.status === 429) {
-                            const retryAfter = error.response.headers['retry-after'];
-                            this.startCountdown(retryAfter);
-                        } else {
-                            // handle other errors
+                        // Too many requests, via throttle middleware of Laravel
+                        if (error.response) {
+                            if (error.response.status === 429) { 
+                                const retryAfter = error.response.headers['retry-after'];
+                                this.startCountdown(retryAfter);
+                            }
+                            else if (error.response.status === 419) {
+                                this.invalid = 'Please refresh your page and try again.';
+                            }
+                            else {
+                                // handle other errors
+                            }
                         }
+                        
                     });
             },
             startCountdown(seconds) {
