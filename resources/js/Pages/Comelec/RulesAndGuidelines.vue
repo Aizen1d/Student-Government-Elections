@@ -1,0 +1,299 @@
+<template>
+    <Sidebar></Sidebar>
+    <Navbar></Navbar>
+
+    <div class="components">
+        <div class="row">
+            <div class="col-6">
+                <h2>Rules & Guidelines</h2>
+            </div>
+            <div class="col-6 new">
+                <button :disabled="new_button_disabled" class="new-btn">New</button>
+            </div>      
+        </div>   
+        
+        <div class="mainbox">
+            <form @submit.prevent="save">
+                <div class="form-group row">
+                    <div class="col-2">
+                        <label class="form-label" for="selected">Type</label>
+                        <input class="input-outline" type="hidden" name="colors-product">
+                        <select class="form-select" aria-label="Default select example" v-model="type_select">
+                            <option value="" disabled hidden selected>Select Type</option>
+                            <option value="rule">Rule</option>
+                            <option value="guideline">Guideline</option>
+                        </select>
+                    </div>
+                    <div class="col-8">
+                        <label class="form-label" for="title">Title</label>
+                        <input class="form-control" type="title" name="title" v-model="title_input">
+                    </div>
+                    <div class="col-2">
+                        <label class="form-label" for="id">ID</label>
+                        <input class="form-control" type="id" name="id" v-model="id_input" readonly>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="form-group">
+                        <label for="body" class="form-label">Body</label>
+                        <textarea class="form-control body" type="text" name="selected-body" v-model="body_input"></textarea>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-6">
+                        <button class="delete-btn">Delete</button>
+                    </div>
+                    <div class="col-6 save">
+                        <button @submit.prevent="save" class="save-btn">Save</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <div class="list">
+            <table class="my-table table-responsive">
+                <thead class="my-thead head">
+                    <tr>
+                        <th class="my-cell">ID</th>
+                        <th class="my-cell th-sm">Type</th>
+                        <th class="my-cell th-sm">Title</th>
+                    </tr>
+                </thead>
+                <tbody class="my-tbody">
+                    <tr v-for="(item, index) in items" :key="index">
+                        <td class="my-cell">{{ item.id }}</td>
+                        <td class="my-cell">{{ item.type }}</td>
+                        <td class="my-cell">{{ item.title }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</template>
+
+<script>
+    import { Link } from '@inertiajs/vue3'
+    import Navbar from '../../Shared/Navbar.vue';
+    import Sidebar from '../../Shared/Sidebar.vue';
+
+    import axios from 'axios';
+    import { ref, watch, watchEffect } from 'vue';
+
+    export default {
+        setup() {
+            const type_select = ref('');
+            const title_input = ref('');
+            const id_input = ref('');
+            const body_input = ref('');
+            const new_button_disabled = ref(true);
+
+            // Data for the table
+            const items = ref([]);
+
+            watch(type_select, (newValue) => {
+                if (newValue === 'rule') {
+                    const rule_prefix = 'Rule #';
+                    axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/rule/id/latest`)
+                        .then(response => {
+                            console.log(response.duration); // Log the response time
+                            const data = response.data;
+
+                            if (data.id === 0) {
+                                id_input.value = rule_prefix + 1;
+                            }
+                            else {
+                                id_input.value = rule_prefix + (data.id);
+                            }
+                        })
+                        .catch(error => {
+                            console.log(error);
+                        });
+                }
+                else if (newValue === 'guideline') {
+                    const guideline_prefix = 'Guideline #';
+                    axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/guideline/id/latest`)
+                        .then(response => {
+                            console.log(response.duration); // Log the response time
+                            const data = response.data;
+
+                            if (data.id === 0) {
+                                id_input.value = guideline_prefix + 1;
+                            }
+                            else {
+                                id_input.value = guideline_prefix + (data.id);
+                            }
+                        })
+                        .catch(error => {
+                            console.log(error);
+                        });
+                }
+            });
+            
+            return {
+                type_select, 
+                title_input,
+                id_input,
+                body_input,
+                new_button_disabled,
+                items,
+            }
+        },
+        components: { Link, Navbar, Sidebar },
+        methods: {
+            save(){
+                if (this.type_select.trim().length < 1) {
+                    return alert('Please select a type');
+                }
+                else if (this.title_input.trim().length < 1) {
+                    return alert('Please input a title');
+                }
+                else if (this.title_input.trim().length > 255) {
+                    return alert('Title is too long, 255 charactres only');
+                }
+                else if (this.body_input.trim().length < 1) {
+                    return alert('Please input a body');
+                }
+            },
+        },
+    }
+</script>
+
+<style scoped>
+    .components{
+        margin-left: 18%;
+        margin-top: 2%;
+        font-family: 'Source Sans', sans-serif;
+        margin-right: 3.2%;
+    }
+
+    .form-control, .form-select, .body {
+        border: 1px solid rgba(40, 40, 40, 0.25);
+    }
+
+    .components h2{
+        font-weight: 800;
+        font-size: 28px;
+    }
+
+    .new{
+        margin-top: -1%;
+        text-align: end;
+    }
+
+    .new-btn{
+        margin-top: 16px;
+        margin-right: 2px;
+        padding-top: 20px;
+        padding-bottom: 20px;
+        padding: 10px 60px 10px 60px;
+        border: transparent;
+        border-radius: 10px;
+        background-color: #B90321;
+        color: white;
+    }
+
+    .new-btn:disabled{
+        background-color: #cccccc;
+    }
+
+    
+    .save-btn{
+        margin-top: 6px;
+        padding-top: 20px;
+        padding-bottom: 20px;
+        padding: 10px 60px 10px 60px;
+        border: transparent;
+        border-radius: 10px;
+        background-color: #B90321;
+        color: white;
+    }
+
+    .mainbox, .list{
+        margin-top: 1.5%;
+        background-color: white;
+        margin: 1.5% -1% 0% -1%;
+        padding: 30px 30px 20px 30px;
+        border-radius: 7px;
+    }
+
+    .body{
+        resize: none;
+        overflow-y: auto;
+        height: 200px;
+    }
+
+    .form-group{
+        padding-bottom: 15px;
+    }
+
+    .save{
+        text-align: right;
+    }
+
+    .delete-btn{
+        padding-top: 20px;
+        padding-bottom: 20px;
+        padding: 15px 20px 15px 20px;
+        border: transparent;
+        border-radius: 10px;
+        background-color: transparent;
+        color: #CC3300;
+    }
+
+    .head{
+        text-align: center;
+    }
+
+    .form-select:hover{
+        cursor: pointer;
+    }
+
+    .mainbox, .list {
+        box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.07), 0 6px 20px 0 rgba(0, 0, 0, 0.08);
+    }
+    .my-table {
+        font-size: 18px;
+        font-family: Arial, sans-serif;
+        border-collapse: collapse;
+    }
+
+    .my-cell {
+        border: none;
+        text-align: center;
+        padding: 10px;
+    }
+
+    .my-tbody th,
+    .my-tbody td {
+        font-weight: normal;
+    }
+
+    .my-tbody tr:hover {
+        cursor: pointer;
+        background-color: #d9ecf3 !important;
+    }
+
+    .my-tbody {
+        display: block;
+        max-height: 180px;
+        overflow-y: auto;
+    }
+    
+    .my-thead,
+    .my-tbody tr {
+        display: table;
+        width: 100%;
+        table-layout: fixed;
+    }
+
+    .my-table tr:nth-child(even) {
+        background-color: #f2f2f2;
+    }
+
+    .my-table thead tr {
+        color: #ffffff;
+        background-color: #B90321 !important;
+    }
+</style>

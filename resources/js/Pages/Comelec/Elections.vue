@@ -1,12 +1,6 @@
 <template>
     <Sidebar></Sidebar>
     <Navbar></Navbar>
-
-    <div class="container">
-        <h1>Elections</h1>
-        <p>Full name: {{ full_name }}</p>
-        <p>Position: {{ position }}</p>
-    </div>
 </template>
 
 <script>
@@ -39,20 +33,10 @@
         components: { Link, Navbar, Sidebar },
         props: {
             full_name: String,
-            position: String,
             user_role: String,
         },
     }
 </script>
 
-<style>
-    @import url(../../../css/standard.css);
-
-    .container {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-    }
+<style scoped>
 </style>

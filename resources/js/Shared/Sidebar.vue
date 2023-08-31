@@ -44,63 +44,53 @@ export default {
         </div>
         <div class="position-sticky">
             <div class="list-group list-group-flush mx-3">
-            <Link :href="linkHref" class="main list-group-item list-group-item-action py-2 ripple bg 
-                    {{ ? 'active' : '' }}"  aria-expanded="true">
+            <Link :href="linkHref" class="main list-group-item py-2"  aria-expanded="true">
                 <img class="side-icon" src="../../images/icons/elections.svg" alt="Icon" height="35" width="35">
                 <span>Elections</span>
             </Link>
 
             <template v-if="user_role === 'comelec'">
-                <Link href="/comelec/insert-data" class="main list-group-item list-group-item-action py-2 ripple bg 
-                        {{ ? 'active' : '' }}"  aria-expanded="true">
+                <Link href="/comelec/insert-data" class="main list-group-item py-2"  aria-expanded="true">
                     <img class="side-icon" src="../../images/icons/insert_data.svg" alt="Icon" height="35" width="35">
                     <span>Insert Data</span>
                 </Link>
 
-                <a href="" class="main list-group-item list-group-item-action py-2 ripple bg 
-                        {{ ? 'active' : '' }}"  aria-expanded="true">
+                <a href="" class="main list-group-item py-2"  aria-expanded="true">
                     <img class="side-icon" src="../../images/icons/approval.svg" alt="Icon" height="35" width="35">
                     <span>Approvals</span>
                 </a>
 
-                <a href="" class="main list-group-item list-group-item-action py-2 ripple bg 
-                        {{ ? 'active' : '' }}"  aria-expanded="true">
+                <a href="" class="main list-group-item py-2"  aria-expanded="true">
                     <img class="side-icon" src="../../images/icons/announcements.svg" alt="Icon" height="35" width="35">
                     <span>Announcements</span>
                 </a>
 
-                <a href="" class="main list-group-item list-group-item-action py-2 ripple bg 
-                        {{ ? 'active' : '' }}"  aria-expanded="true">
+                <a href="/comelec/rules-and-guidelines" class="main list-group-item py-2"  aria-expanded="true">
                     <img class="side-icon" src="../../images/icons/rules.svg" alt="Icon" height="35" width="35">
                     <span>Rules & Guidelines</span>
                 </a>
 
-                <a href="" class="main list-group-item list-group-item-action py-2 ripple bg 
-                        {{ ? 'active' : '' }}"  aria-expanded="true">
+                <a href="" class="main list-group-item py-2"  aria-expanded="true">
                     <img class="side-icon" src="../../images/icons/debates.svg" alt="Icon" height="35" width="35">
                     <span>Debates & Open Forum</span>
                 </a>
 
-                <a href="" class="main list-group-item list-group-item-action py-2 ripple bg 
-                        {{ ? 'active' : '' }}"  aria-expanded="true">
+                <a href="" class="main list-group-item py-2"  aria-expanded="true">
                     <img class="side-icon" src="../../images/icons/directory.svg" alt="Icon" height="35" width="35">
                     <span>Directory</span>
                 </a>
 
-                <a href="" class="main list-group-item list-group-item-action py-2 ripple bg 
-                        {{ ? 'active' : '' }}"  aria-expanded="true">
+                <a href="" class="main list-group-item py-2"  aria-expanded="true">
                     <img class="side-icon" src="../../images/icons/appeal.svg" alt="Icon" height="35" width="35">
                     <span>Appeal Review</span>
                 </a>
 
-                <a href="" class="main list-group-item list-group-item-action py-2 ripple bg 
-                        {{ ? 'active' : '' }}"  aria-expanded="true">
+                <a href="" class="main list-group-item py-2"  aria-expanded="true">
                     <img class="side-icon" src="../../images/icons/reports.svg" alt="Icon" height="35" width="35">
                     <span>Reports</span>
                 </a>
                 
-                <a href="" class="main list-group-item list-group-item-action py-2 ripple bg 
-                        {{ ? 'active' : '' }}"  aria-expanded="true">
+                <a href="" class="main list-group-item py-2"  aria-expanded="true">
                     <img class="side-icon" src="" alt="?" height="35" width="35">
                     <span>Appointments</span>
                 </a>
@@ -111,18 +101,21 @@ export default {
 </template>
 
 <style scoped>
-@import url(../../css/standard.css);
+body{
+    background-color: #EDF2F4;
+}
 
 .sidebar-header-title{
-    font-family: 'Just Sans ExBold', sans-serif;
-    font-size: 120%;
+    font-family: 'Source Sans Pro Black', sans-serif;
+    font-size: 23px;
     color: white;
+    font-weight: bolder;
 }
 
 .sidebar-header{
     width: 100%;
     height: 10%;
-    background-color: var(--dark_blue) !important;
+    background-color: #B90321;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -135,13 +128,8 @@ export default {
     margin-bottom: 3%;
 }
 
-.side-icon:hover {
-    filter: invert(99%) sepia(0%) saturate(1104%) hue-rotate(181deg) brightness(84%) contrast(100%);
-
-}
-
 .sidebar {
-    position: fixed;
+    position: absolute;
     top: 0;
     bottom: 0;
     left: 0;
@@ -153,11 +141,11 @@ export default {
 }
 
 #sidebarMenu{
-    background-color: var(--light_blue);
+    background-color: #B90321;
 }
 
 .bg{
-    background-color: var(--light_blue);
+    background-color: #B90321;
 }
 
 @media (max-width: 991.98px) {
@@ -166,7 +154,7 @@ export default {
     }
 }
 
-.sidebar .active {
+.sidebar {
     border-radius: 5px;
     box-shadow: 0 2px 5px 0 rgb(0 0 0 / 16%), 0 2px 10px 0 rgb(0 0 0 / 12%);
 }
@@ -184,21 +172,20 @@ export default {
     position: relative;
     border: transparent;
     transition: margin-left .4s;
-    color: var(--light_white);
-    font-family: var(--side_bar_font);
+    color: #d3d3d3;
+    font-family: 'Just Sans', sans-serif;
     font-size: 100%;
     margin-top: 4%;
+    background-color: #B90321;
 }
 
 .list-group-item:hover{
-    background-color: var(--light_blue);
+    background-color: #B90321;
     margin-left: 15px;
     color: white;
 }
 
 .active{
-    position: relative;
-    border: transparent;
     color: white;
 }
 

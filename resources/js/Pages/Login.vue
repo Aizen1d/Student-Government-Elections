@@ -22,12 +22,11 @@
 </template>
 
 <script>
-    import Navbar from '../Shared/Navbar.vue';
-    import Sidebar from '../Shared/Sidebar.vue';
     import axios from 'axios';
+    import Body from '../Shared/Body.vue';
 
     export default {
-        components: { Navbar, Sidebar },
+        components: { Body },
         data() {
             return {
                 form: {
@@ -92,9 +91,7 @@
 
 </script>
 
-
-
-<style>
+<style scoped>
     .container {
         display: flex;
         justify-content: center;

@@ -20,9 +20,7 @@
     }
 </script>
 
-<style>
-@import url(../../../css/standard.css);
-
+<style scoped>
 .container {
     display: flex;
     flex-direction: column;

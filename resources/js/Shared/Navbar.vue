@@ -43,7 +43,6 @@
 </script>
 
 <style scoped>
-@import url(../../css/standard.css);
     .nav{
         background-color: white;
         box-shadow: rgba(0, 0, 0, 0.15) 4.8px 1px 3px;
@@ -85,7 +84,7 @@
 
     .dropdown-item:hover{
         color: white;
-        background-color: var(--light_blue);
+        background-color: #3F518B;
     }
 
     .logout{

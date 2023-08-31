@@ -43,4 +43,9 @@ class ComelecController extends Controller
     { 
         return inertia('Comelec/InsertData');
     }
+
+    public function rulesAndGuidelines() 
+    { 
+        return inertia('Comelec/RulesAndGuidelines');
+    }
 }

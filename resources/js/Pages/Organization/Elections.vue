@@ -31,7 +31,7 @@
     }
 </script>
 
-<style>
+<style scoped>
     @import url(../../../css/standard.css);
 
     .container {
