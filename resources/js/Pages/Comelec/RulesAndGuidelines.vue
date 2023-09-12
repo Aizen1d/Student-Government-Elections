@@ -8,7 +8,7 @@
                 <h2>Rules & Guidelines</h2>
             </div>
             <div class="col-6 new">
-                <button :disabled="new_button_disabled" class="new-btn">New</button>
+                <button :disabled="new_button_disabled" @click="newButtonSelected" class="new-btn">New</button>
             </div>      
         </div>   
         
@@ -18,7 +18,7 @@
                     <div class="col-2">
                         <label class="form-label" for="selected">Type</label>
                         <input class="input-outline" type="hidden" name="colors-product">
-                        <select class="form-select" aria-label="Default select example" v-model="type_select">
+                        <select class="form-select" aria-label="Default select example" v-model="type_select" :disabled="selectedItem">
                             <option value="" disabled hidden selected>Select Type</option>
                             <option value="rule">Rule</option>
                             <option value="guideline">Guideline</option>
@@ -30,7 +30,7 @@
                     </div>
                     <div class="col-2">
                         <label class="form-label" for="id">ID</label>
-                        <input class="form-control" type="id" name="id" v-model="id_input" readonly>
+                        <input class="form-control" type="id" name="id" v-model="id_input" :disabled="true">
                     </div>
                 </div>
 
@@ -46,7 +46,7 @@
                         <button class="delete-btn">Delete</button>
                     </div>
                     <div class="col-6 save">
-                        <button @submit.prevent="save" class="save-btn">Save</button>
+                        <button @submit.prevent="save" class="save-btn">{{ saveButtonText }}</button>
                     </div>
                 </div>
             </form>
@@ -91,7 +91,7 @@
 
             const can_save = ref(true);
             
-            const new_button_disabled = ref(true);
+            const new_button_disabled = ref(true); 
             const selectedItem = ref(null);
             const items = ref([]);
 
@@ -117,11 +117,14 @@
 
             // Watch type_select(rule/guideline) for changes
             watch(type_select, (newValue) => {
-                if (newValue === 'rule') {
-                    updateIdInput('Rule #', '/api/v1/rule/id/latest')();
-                }
-                else if (newValue === 'guideline') {
-                    updateIdInput('Guideline #', '/api/v1/guideline/id/latest')();
+                // Only update id_input.value if no row is selected
+                if (!selectedItem.value) {
+                    if (newValue === 'rule') {
+                        updateIdInput('Rule #', '/api/v1/rule/id/latest')();
+                    }
+                    else if (newValue === 'guideline') {
+                        updateIdInput('Guideline #', '/api/v1/guideline/id/latest')();
+                    }
                 }
             });
             
@@ -139,16 +142,39 @@
         created() {
             this.fetchTableData();
         },
+        computed: {
+            saveButtonText() {
+                return this.selectedItem ? 'Update' : 'Save';
+            }
+        },
         components: { Link, Navbar, Sidebar },
         methods: {
+            newButtonSelected() {
+                // Reset the selected row item to null
+                this.selectedItem = null;
+
+                // Reset the input fields
+                this.type_select = '';
+                this.title_input = '';
+                this.id_input = '';
+                this.body_input = '';
+
+                // Disable the new button since no row is selected
+                this.new_button_disabled = true;
+            },
             selectItem(item) {
+                // When a row is selected
                 this.selectedItem = item;
+                this.new_button_disabled = false; // Enable the new button since a row is selected
+
+                // Set the input fields to the selected row item
                 this.type_select = item.type;
                 this.title_input = item.title;
                 this.id_input = item.id;
                 this.body_input = item.body;
             },
             resetAfter() {
+                // Reset after saving
                 this.type_select = '';
                 this.id_input = '';
                 this.title_input = '';
@@ -179,7 +205,6 @@
 
                         this.items = [...rules, ...guidelines];
 
-                        console.log(response.duration);
                     })
                     .catch(error => {
                         console.log(error);
@@ -366,9 +391,9 @@
         font-weight: normal;
     }
 
-    .my-tbody tr:hover {
+    .my-table tr:hover:not(.active-row) {
         cursor: pointer;
-        background-color: #d9ecf3 !important;
+        background-color: #d9ecf3;
     }
 
     .my-tbody {
@@ -388,11 +413,15 @@
         background-color: #f2f2f2;
     }
 
+    .my-table tr:nth-child(odd) {
+        background-color: white;
+    }
+
     .my-table thead tr {
         color: #ffffff;
         background-color: #B90321 !important;
     }
     .active-row {
-        background-color: #1677d8; /* Change this to your desired color */
+        background-color: #b1dceb !important; /* Change this to your desired color */
     }
 </style>
