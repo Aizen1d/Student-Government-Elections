@@ -132,7 +132,7 @@
 
     .login-button {
         padding: 10px;
-        background-color: #3F518B;
+        background-color: #B90321;
         color: #fff;
         border: none;
         border-radius: 5px;
@@ -140,7 +140,7 @@
     }
 
     .login-button:hover{
-        background-color: #2F4080;
+        background-color: #a0031d;
     }
 
     .switch {

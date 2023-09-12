@@ -84,7 +84,7 @@
 
     .dropdown-item:hover{
         color: white;
-        background-color: #3F518B;
+        background-color: #B90321;
     }
 
     .logout{

@@ -8,7 +8,8 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Models\Comelec;
 
 class ComelecController extends Controller
-{
+{   
+    // Landing page for Comelec after logging in
     public function elections(Request $request) 
     {
         $get_user_info = json_decode($request->cookie('user_info'), true);
@@ -42,6 +43,11 @@ class ComelecController extends Controller
     public function insertData() 
     { 
         return inertia('Comelec/InsertData');
+    }
+
+    public function announcements() 
+    { 
+        return inertia('Comelec/Announcement');
     }
 
     public function rulesAndGuidelines() 

@@ -60,7 +60,7 @@ export default {
                     <span>Approvals</span>
                 </a>
 
-                <a href="" class="main list-group-item py-2"  aria-expanded="true">
+                <a href="/comelec/announcements" class="main list-group-item py-2"  aria-expanded="true">
                     <img class="side-icon" src="../../images/icons/announcements.svg" alt="Icon" height="35" width="35">
                     <span>Announcements</span>
                 </a>
@@ -68,11 +68,6 @@ export default {
                 <a href="/comelec/rules-and-guidelines" class="main list-group-item py-2"  aria-expanded="true">
                     <img class="side-icon" src="../../images/icons/rules.svg" alt="Icon" height="35" width="35">
                     <span>Rules & Guidelines</span>
-                </a>
-
-                <a href="" class="main list-group-item py-2"  aria-expanded="true">
-                    <img class="side-icon" src="../../images/icons/debates.svg" alt="Icon" height="35" width="35">
-                    <span>Debates & Open Forum</span>
                 </a>
 
                 <a href="" class="main list-group-item py-2"  aria-expanded="true">
@@ -91,7 +86,7 @@ export default {
                 </a>
                 
                 <a href="" class="main list-group-item py-2"  aria-expanded="true">
-                    <img class="side-icon" src="" alt="?" height="35" width="35">
+                    <img class="side-icon" src="../../images/icons/appointments.svg" alt="?" height="35" width="35">
                     <span>Appointments</span>
                 </a>
             </template>
@@ -108,22 +103,22 @@ body{
 .sidebar-header-title{
     font-family: 'Source Sans Pro Black', sans-serif;
     font-size: 23px;
-    color: white;
+    color: #B90321;
     font-weight: bolder;
 }
 
 .sidebar-header{
     width: 100%;
     height: 10%;
-    background-color: #B90321;
+    background-color: white;
     display: flex;
     justify-content: center;
     align-items: center;
     text-align: center;
 }
 
-.side-icon{
-    filter: invert(1);
+.side-icon {
+    filter: invert(22%) sepia(68%) saturate(6973%) hue-rotate(342deg) brightness(70%) contrast(111%);
     margin-right: 5%;
     margin-bottom: 3%;
 }
@@ -141,11 +136,11 @@ body{
 }
 
 #sidebarMenu{
-    background-color: #B90321;
+    background-color: white;
 }
 
 .bg{
-    background-color: #B90321;
+    background-color: white;
 }
 
 @media (max-width: 991.98px) {
@@ -172,21 +167,21 @@ body{
     position: relative;
     border: transparent;
     transition: margin-left .4s;
-    color: #d3d3d3;
+    color: black;
     font-family: 'Just Sans', sans-serif;
     font-size: 100%;
     margin-top: 4%;
-    background-color: #B90321;
+    background-color: white;
 }
 
 .list-group-item:hover{
-    background-color: #B90321;
+    background-color: white;
     margin-left: 15px;
-    color: white;
+    color: #B90321;
 }
 
 .active{
-    color: white;
+    color: #B90321;
 }
 
 .sub{

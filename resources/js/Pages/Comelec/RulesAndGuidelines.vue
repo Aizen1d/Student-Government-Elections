@@ -62,7 +62,8 @@
                     </tr>
                 </thead>
                 <tbody class="my-tbody">
-                    <tr v-for="(item, index) in items" :key="index">
+                    <tr v-for="(item, index) in items" :key="index" @click="selectItem(item)" 
+                        :class="{ 'active-row': selectedItem === item }">
                         <td class="my-cell">{{ item.id }}</td>
                         <td class="my-cell">{{ item.type }}</td>
                         <td class="my-cell">{{ item.title }}</td>
@@ -79,7 +80,7 @@
     import Sidebar from '../../Shared/Sidebar.vue';
 
     import axios from 'axios';
-    import { ref, watch, watchEffect } from 'vue';
+    import { ref, watch } from 'vue';
 
     export default {
         setup() {
@@ -87,47 +88,40 @@
             const title_input = ref('');
             const id_input = ref('');
             const body_input = ref('');
-            const new_button_disabled = ref(true);
 
-            // Data for the table
+            const can_save = ref(true);
+            
+            const new_button_disabled = ref(true);
+            const selectedItem = ref(null);
             const items = ref([]);
 
+            // Updates the value of the id_input element for rule/guideline creation
+            // import.meta.env.VITE_FASTAPI_BASE_URL is the dynamic base URL of the FastAPI server
+            const updateIdInput = (prefix, endpoint) => () => {
+                axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}${endpoint}`)
+                    .then(response => {
+                        console.log(response.duration); // Log the response time
+                        const data = response.data;
+
+                        if (data.id === 0) {
+                            id_input.value = prefix + 1;
+                        }
+                        else {
+                            id_input.value = prefix + (data.id + 1);
+                        }
+                    })
+                    .catch(error => {
+                        console.log(error);
+                    });
+            };
+
+            // Watch type_select(rule/guideline) for changes
             watch(type_select, (newValue) => {
                 if (newValue === 'rule') {
-                    const rule_prefix = 'Rule #';
-                    axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/rule/id/latest`)
-                        .then(response => {
-                            console.log(response.duration); // Log the response time
-                            const data = response.data;
-
-                            if (data.id === 0) {
-                                id_input.value = rule_prefix + 1;
-                            }
-                            else {
-                                id_input.value = rule_prefix + (data.id);
-                            }
-                        })
-                        .catch(error => {
-                            console.log(error);
-                        });
+                    updateIdInput('Rule #', '/api/v1/rule/id/latest')();
                 }
                 else if (newValue === 'guideline') {
-                    const guideline_prefix = 'Guideline #';
-                    axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/guideline/id/latest`)
-                        .then(response => {
-                            console.log(response.duration); // Log the response time
-                            const data = response.data;
-
-                            if (data.id === 0) {
-                                id_input.value = guideline_prefix + 1;
-                            }
-                            else {
-                                id_input.value = guideline_prefix + (data.id);
-                            }
-                        })
-                        .catch(error => {
-                            console.log(error);
-                        });
+                    updateIdInput('Guideline #', '/api/v1/guideline/id/latest')();
                 }
             });
             
@@ -137,12 +131,66 @@
                 id_input,
                 body_input,
                 new_button_disabled,
+                selectedItem,
                 items,
+                can_save,
             }
+        },
+        created() {
+            this.fetchTableData();
         },
         components: { Link, Navbar, Sidebar },
         methods: {
-            save(){
+            selectItem(item) {
+                this.selectedItem = item;
+                this.type_select = item.type;
+                this.title_input = item.title;
+                this.id_input = item.id;
+                this.body_input = item.body;
+            },
+            resetAfter() {
+                this.type_select = '';
+                this.id_input = '';
+                this.title_input = '';
+                this.body_input = '';
+
+                this.can_save = true;
+            },
+            fetchTableData() {
+                // Fetches all rules
+                axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/rule/all`)
+                .then(response => {
+                    const rules = response.data.rules.map(rule => ({
+                        id: "Rule #" + rule.RuleId,
+                        type: rule.type,
+                        title: rule.RuleTitle,
+                        body: rule.RuleBody
+                    }));
+
+                    // Fetches all guidelines
+                    axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/guideline/all`)
+                    .then(response => {
+                        const guidelines = response.data.guidelines.map(guideline => ({
+                            id: "Guideline #" + guideline.GuideId,
+                            type: guideline.type,
+                            title: guideline.GuidelineTitle,
+                            body: guideline.GuidelineBody
+                        }));
+
+                        this.items = [...rules, ...guidelines];
+
+                        console.log(response.duration);
+                    })
+                    .catch(error => {
+                        console.log(error);
+                    });
+                })
+                .catch(error => {
+                    console.log(error);
+                });
+            },
+            save() {
+                // Validations
                 if (this.type_select.trim().length < 1) {
                     return alert('Please select a type');
                 }
@@ -154,6 +202,55 @@
                 }
                 else if (this.body_input.trim().length < 1) {
                     return alert('Please input a body');
+                }
+
+                // If validation passed, check if can save
+                if (this.can_save === false) {
+                    return;
+                }
+                
+                // Saving state, set to false for a while to avoid multiple save
+                this.can_save = false;
+
+                if (this.type_select === 'rule') {
+                    axios.post(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/rule/save`, 
+                        { 
+                            title: this.title_input, 
+                            body: this.body_input 
+                        })
+                        .then(response => {
+                            console.log(response.duration);
+
+                            alert('Rule saved successfully');
+                            this.resetAfter();
+                        })
+                        .catch(error => {
+                            console.error(error);
+                            this.resetAfter();
+                        })
+                        .finally(() => {
+                            this.fetchTableData(); 
+                        });   
+                }
+                else if (this.type_select === 'guideline') {
+                    axios.post(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/guideline/save`, 
+                        { 
+                            title: this.title_input, 
+                            body: this.body_input 
+                        })
+                        .then(response => {
+                            console.log(response.duration);
+
+                            alert('Guideline saved successfully');
+                            this.resetAfter();
+                        })
+                        .catch(error => {
+                            console.error(error);
+                            this.resetAfter();
+                        })
+                        .finally(() => {
+                            this.fetchTableData(); 
+                        })
                 }
             },
         },
@@ -197,7 +294,6 @@
     .new-btn:disabled{
         background-color: #cccccc;
     }
-
     
     .save-btn{
         margin-top: 6px;
@@ -295,5 +391,8 @@
     .my-table thead tr {
         color: #ffffff;
         background-color: #B90321 !important;
+    }
+    .active-row {
+        background-color: #1677d8; /* Change this to your desired color */
     }
 </style>
