@@ -40,6 +40,32 @@ class Student(Base):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }
+    
+class Announcement(Base):
+    __tablename__ = "Announcement"
+    
+    AnnouncementId = Column(Integer, primary_key=True)
+    AnnouncementType = Column(String)
+    AnnouncementTitle = Column(String)
+    AnnouncementBody = Column(Text)
+    AttachmentType = Column(String)
+    AttachmentImage = Column(Text)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    def to_dict(self):
+        return {
+            "AnnouncementId": self.AnnouncementId,
+            "type": "Announcement",
+            "AnnouncementType": self.AnnouncementType,
+            "AnnouncementTitle": self.AnnouncementTitle,
+            "AnnouncementBody": self.AnnouncementBody,
+            "AttachmentType": self.AttachmentType,
+            "AttachmentImage": self.AttachmentImage,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None
+        }
+
 
 class Rule(Base):
     __tablename__ = "Rules"

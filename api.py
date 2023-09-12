@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from datetime import datetime
 from fastapi.responses import JSONResponse
 
-from models import Student, Rule, Guideline
+from models import Student, Announcement, Rule, Guideline
 
 #################################################################
 """ Settings """
@@ -17,6 +17,10 @@ tags_metadata = [
     {
         "name": "Student",
         "description": "Manage students.",
+    },
+    {
+        "name": "Announcement",
+        "description": "Manage announcements.",
     },
     {
         "name": "Rule",
@@ -68,6 +72,65 @@ def get_All_Students(db: Session = Depends(get_db)):
         return JSONResponse(status_code=500, content={"detail": "Error while fetching all students from the database"})
     
 #################################################################
+""" Announcement Table APIs """
+
+class AnnouncementSaveData(BaseModel):
+    type: str
+    title: str
+    body: str
+    attachment_type: str
+    attachment_image: str
+
+""" ** GET Methods: Announcement Table APIs ** """
+
+@router.get("/announcement/all", tags=["Announcement"])
+def get_All_Announcement(db: Session = Depends(get_db)):
+    try:
+        announcements = db.query(Announcement).all()
+        return {"Announcements": [announcement.to_dict() for announcement in announcements]}
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while fetching all announcements from the database"})
+    
+@router.get("/announcement/id/latest", tags=["Announcement"])
+def get_Announcement_Latest_Id(db: Session = Depends(get_db)):
+    try:
+        count = db.query(Announcement).count()
+        return {"id": count}
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while fetching latest announcement id from the table Announcement"})
+    
+
+""" ** POST Methods: Announcement Table APIs ** """
+
+@router.post("/announcement/save", tags=["Announcement"])
+def save_Announcement(announcement_data: AnnouncementSaveData, db: Session = Depends(get_db)):
+    try:
+        new_announcement = Announcement(
+                        AnnouncementType=announcement_data.type, 
+                        AnnouncementTitle=announcement_data.title, 
+                        AnnouncementBody=announcement_data.body,
+                        AttachmentType=announcement_data.attachment_type,
+                        AttachmentImage=announcement_data.attachment_type,
+                        created_at=datetime.now(), 
+                        updated_at=datetime.now()
+                        )
+        db.add(new_announcement)
+        db.commit()
+        return {"id": new_announcement.AnnouncementId,
+                "type": new_announcement.AnnouncementType,
+                "title": new_announcement.AnnouncementTitle,
+                "body": new_announcement.AnnouncementBody,
+                "attachment_type": new_announcement.AttachmentType,
+                "attachment_image": new_announcement.AttachmentImage,
+
+                "created_at": new_announcement.created_at.isoformat() if new_announcement.created_at else None,
+                "updated_at": new_announcement.updated_at.isoformat() if new_announcement.updated_at else None
+                }
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while creating new announcement in the table Announcement"})
+
+    
+#################################################################
 """ Rule Table APIs """
 
 class RuleSaveData(BaseModel):
@@ -87,11 +150,8 @@ def get_All_Rules(db: Session = Depends(get_db)):
 @router.get("/rule/id/latest", tags=["Rule"])
 def get_Rule_Latest_Id(db: Session = Depends(get_db)):
     try:
-        latest_rule = db.query(Rule).order_by(Rule.RuleId.desc()).first()
-        if latest_rule:
-            return {"id": latest_rule.RuleId}
-        else:
-            return {"id": 0}
+        count = db.query(Rule).count()
+        return {"id": count}
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while fetching latest rule id from the table Rule"})
 
@@ -137,11 +197,8 @@ def get_All_Guidelines(db: Session = Depends(get_db)):
 @router.get("/guideline/id/latest", tags=["Guideline"])
 def get_Guideline_Latest_Id(db: Session = Depends(get_db)):
     try:
-        latest_guideline = db.query(Guideline).order_by(Guideline.GuideId.desc()).first()
-        if latest_guideline:
-            return {"id": latest_guideline.GuideId}
-        else:
-            return {"id": 0}
+        count = db.query(Guideline).count()
+        return {"id": count}
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while fetching latest guideline id from the table Guideline"})
     
