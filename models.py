@@ -53,10 +53,11 @@ class Announcement(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    def to_dict(self):
+    def to_dict(self, row=None):
         return {
             "AnnouncementId": self.AnnouncementId,
-            "type": "Announcement",
+            "count": row,
+            "type": "announcement",
             "AnnouncementType": self.AnnouncementType,
             "AnnouncementTitle": self.AnnouncementTitle,
             "AnnouncementBody": self.AnnouncementBody,
@@ -76,10 +77,11 @@ class Rule(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    def to_dict(self):
+    def to_dict(self, row=None):
         return {
             "RuleId": self.RuleId,
-            "type": "Rule",
+            "count": row,
+            "type": "rule",
             "RuleTitle": self.RuleTitle,
             "RuleBody": self.RuleBody,
             "created_at": self.created_at.isoformat() if self.created_at else None,
@@ -95,10 +97,11 @@ class Guideline(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    def to_dict(self):
+    def to_dict(self, row=None):
         return {
             "GuideId": self.GuideId,
-            "type": "Guideline",
+            "count": row,
+            "type": "guideline",
             "GuidelineTitle": self.GuidelineTitle,
             "GuidelineBody": self.GuidelineBody,
             "created_at": self.created_at.isoformat() if self.created_at else None,
