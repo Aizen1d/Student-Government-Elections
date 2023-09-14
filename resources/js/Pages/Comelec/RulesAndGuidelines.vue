@@ -30,7 +30,7 @@
                     </div>
                     <div class="col-2">
                         <label class="form-label" for="id">ID</label>
-                        <input class="form-control" type="id" name="id" v-model="id_input" :disabled="true">
+                        <input class="form-control" type="id" name="id" v-model="count_input" :disabled="true">
                     </div>
                 </div>
 
@@ -43,7 +43,7 @@
 
                 <div class="row">
                     <div class="col-6">
-                        <button class="delete-btn">Delete</button>
+                        <button class="delete-btn" @click.prevent="deleteItem">Delete</button>
                     </div>
                     <div class="col-6 save">
                         <button @submit.prevent="save" class="save-btn">{{ saveButtonText }}</button>
@@ -63,9 +63,9 @@
                 </thead>
                 <tbody class="my-tbody">
                     <tr v-for="(item, index) in items" :key="index" @click="selectItem(item)" 
-                        :class="{ 'active-row': selectedItem === item }">
-                        <td class="my-cell">{{ item.id }}</td>
-                        <td class="my-cell">{{ item.type }}</td>
+                        :class="{ 'active-row': selectedItem && selectedItem.id === item.id }">
+                        <td class="my-cell">{{ item.count }}</td>
+                        <td class="my-cell">{{ item.type.charAt(0).toUpperCase() + item.type.slice(1) }}</td>
                         <td class="my-cell">{{ item.title }}</td>
                     </tr>
                 </tbody>
@@ -87,6 +87,7 @@
             const type_select = ref('');
             const title_input = ref('');
             const id_input = ref('');
+            const count_input = ref('');
             const body_input = ref('');
 
             const can_save = ref(true);
@@ -95,7 +96,7 @@
             const selectedItem = ref(null);
             const items = ref([]);
 
-            // Updates the value of the id_input element for rule/guideline creation
+            // Updates the value of the count_input element for rule/guideline creation
             // import.meta.env.VITE_FASTAPI_BASE_URL is the dynamic base URL of the FastAPI server
             const updateIdInput = (prefix, endpoint) => () => {
                 axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}${endpoint}`)
@@ -104,10 +105,10 @@
                         const data = response.data;
 
                         if (data.id === 0) {
-                            id_input.value = prefix + 1;
+                            count_input.value = prefix + 1;
                         }
                         else {
-                            id_input.value = prefix + (data.id + 1);
+                            count_input.value = prefix + (data.id + 1);
                         }
                     })
                     .catch(error => {
@@ -117,7 +118,7 @@
 
             // Watch type_select(rule/guideline) for changes
             watch(type_select, (newValue) => {
-                // Only update id_input.value if no row is selected
+                // Only update count_input.value if no row is selected
                 if (!selectedItem.value) {
                     if (newValue === 'rule') {
                         updateIdInput('Rule #', '/api/v1/rule/id/latest')();
@@ -132,6 +133,7 @@
                 type_select, 
                 title_input,
                 id_input,
+                count_input,
                 body_input,
                 new_button_disabled,
                 selectedItem,
@@ -157,6 +159,7 @@
                 this.type_select = '';
                 this.title_input = '';
                 this.id_input = '';
+                this.count_input = '';
                 this.body_input = '';
 
                 // Disable the new button since no row is selected
@@ -170,13 +173,41 @@
                 // Set the input fields to the selected row item
                 this.type_select = item.type;
                 this.title_input = item.title;
-                this.id_input = item.id;
+                this.id_input = item.id; 
+                this.count_input = item.count;
                 this.body_input = item.body;
+            },
+            deleteItem() {
+                // Delete the selected row item
+                if (this.selectedItem === null) {
+                    return alert('Please select an item to delete');
+                }
+                
+                let id = this.selectedItem.id;
+                let type = this.selectedItem.type;
+
+                axios.delete(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/${type}/delete`, {
+                    data: { id: id }
+                })
+                .then(response => {
+                    console.log(response.data);
+                    alert('Item deleted successfully');
+                })
+                .catch(error => {
+                    console.error(error);
+                })
+                .finally(() => {
+                    this.fetchTableData();
+                    this.resetAfter();
+                    this.new_button_disabled = true;
+                    this.selectedItem = null;
+                })
             },
             resetAfter() {
                 // Reset after saving
                 this.type_select = '';
                 this.id_input = '';
+                this.count_input = '';
                 this.title_input = '';
                 this.body_input = '';
 
@@ -187,7 +218,8 @@
                 axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/rule/all`)
                 .then(response => {
                     const rules = response.data.rules.map(rule => ({
-                        id: "Rule #" + rule.RuleId,
+                        id: rule.RuleId,
+                        count: "Rule #" + rule.count,
                         type: rule.type,
                         title: rule.RuleTitle,
                         body: rule.RuleBody
@@ -197,7 +229,8 @@
                     axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/guideline/all`)
                     .then(response => {
                         const guidelines = response.data.guidelines.map(guideline => ({
-                            id: "Guideline #" + guideline.GuideId,
+                            id: guideline.GuideId,
+                            count: "Guideline #" + guideline.count,
                             type: guideline.type,
                             title: guideline.GuidelineTitle,
                             body: guideline.GuidelineBody
@@ -215,6 +248,10 @@
                 });
             },
             save() {
+                if (this.selectedItem) { // If a row is selected, then update instead
+                    return this.update(this.selectedItem);
+                }
+               
                 // Validations
                 if (this.type_select.trim().length < 1) {
                     return alert('Please select a type');
@@ -274,6 +311,67 @@
                             this.resetAfter();
                         })
                         .finally(() => {
+                            this.fetchTableData(); 
+                        })
+                }
+            },
+            update(item) {
+                // Validations
+                if (this.title_input.trim().length < 1) {
+                    return alert('Please input a title');
+                }
+                else if (this.title_input.trim().length > 255) {
+                    return alert('Title is too long, 255 characters only');
+                }
+                else if (this.body_input.trim().length < 1) {
+                    return alert('Please input a body');
+                }
+
+                // If validation passed, check if can update
+                if (this.can_save === false) {
+                    return;
+                }
+                
+                // Saving state, set to false for a while to avoid multiple save
+                this.can_save = false;
+
+                if (this.type_select === 'rule') {
+                    axios.put(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/rule/update`, 
+                        { 
+                            id: this.id_input,
+                            title: this.title_input, 
+                            body: this.body_input 
+                        })
+                        .then(response => {
+                            console.log(response.duration);
+
+                            alert('Rule updated successfully');
+                        })
+                        .catch(error => {
+                            console.error(error);
+                        })
+                        .finally(() => {
+                            this.can_save = true;
+                            this.fetchTableData(); 
+                        });   
+                }
+                else if (this.type_select === 'guideline') {
+                    axios.put(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/guideline/update`, 
+                        { 
+                            id: this.id_input,
+                            title: this.title_input, 
+                            body: this.body_input 
+                        })
+                        .then(response => {
+                            console.log(response.duration);
+
+                            alert('Guideline updated successfully');
+                        })
+                        .catch(error => {
+                            console.error(error);
+                        })
+                        .finally(() => {
+                            this.can_save = true;
                             this.fetchTableData(); 
                         })
                 }
