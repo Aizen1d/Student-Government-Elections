@@ -8,11 +8,11 @@
                 <h2>Rules & Guidelines</h2>
             </div>
             <div class="col-6 new">
-                <button :disabled="new_button_disabled" @click="newButtonSelected" class="new-btn">New</button>
+                <ActionButton :disabled="new_button_disabled" @click="newButtonSelected" class="new-btn">New</ActionButton>
             </div>      
         </div>   
         
-        <div class="mainbox">
+        <BaseContainer>
             <form @submit.prevent="save">
                 <div class="form-group row">
                     <div class="col-2">
@@ -46,31 +46,23 @@
                         <button class="delete-btn" @click.prevent="deleteItem">Delete</button>
                     </div>
                     <div class="col-6 save">
-                        <button @submit.prevent="save" class="save-btn">{{ saveButtonText }}</button>
+                        <ActionButton @submit.prevent="save" class="save-btn">{{ saveButtonText }}</ActionButton>
                     </div>
                 </div>
             </form>
-        </div>
+        </BaseContainer>
         
-        <div class="list">
-            <table class="my-table table-responsive">
-                <thead class="my-thead head">
-                    <tr>
-                        <th class="my-cell">ID</th>
-                        <th class="my-cell th-sm">Type</th>
-                        <th class="my-cell th-sm">Title</th>
-                    </tr>
-                </thead>
-                <tbody class="my-tbody">
-                    <tr v-for="(item, index) in items" :key="index" @click="selectItem(item)" 
-                        :class="{ 'active-row': selectedItem && selectedItem.id === item.id }">
-                        <td class="my-cell">{{ item.count }}</td>
-                        <td class="my-cell">{{ item.type.charAt(0).toUpperCase() + item.type.slice(1) }}</td>
-                        <td class="my-cell">{{ item.title }}</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+        <BaseContainer>
+            <BaseTable :columns="['ID', 'Type', 'Title']">
+                <tr v-for="(item, index) in items" :key="index" @click="selectItem(item)" 
+                    v-bind:class="{ 'active-row': selectedItem && selectedItem.id === item.id && selectedItem.type === item.type }">
+                    <td class="my-cell">{{ item.count }}</td>
+                    <td class="my-cell">{{ item.type.charAt(0).toUpperCase() + item.type.slice(1) }}</td>
+                    <td class="my-cell">{{ item.title }}</td>
+                </tr>
+            </BaseTable>
+        </BaseContainer>
+
     </div>
 </template>
 
@@ -78,6 +70,9 @@
     import { Link } from '@inertiajs/vue3'
     import Navbar from '../../Shared/Navbar.vue';
     import Sidebar from '../../Shared/Sidebar.vue';
+    import BaseTable from '../../Shared/BaseTable.vue';
+    import BaseContainer from '../../Shared/BaseContainer.vue';
+    import ActionButton from '../../Shared/ActionButton.vue';
 
     import axios from 'axios';
     import { ref, watch } from 'vue';
@@ -149,7 +144,7 @@
                 return this.selectedItem ? 'Update' : 'Save';
             }
         },
-        components: { Link, Navbar, Sidebar },
+        components: { Link, Navbar, Sidebar, BaseTable, BaseContainer, ActionButton },
         methods: {
             newButtonSelected() {
                 // Reset the selected row item to null
@@ -249,7 +244,7 @@
             },
             save() {
                 if (this.selectedItem) { // If a row is selected, then update instead
-                    return this.update(this.selectedItem);
+                    return this.update();
                 }
                
                 // Validations
@@ -315,7 +310,7 @@
                         })
                 }
             },
-            update(item) {
+            update() {
                 // Validations
                 if (this.title_input.trim().length < 1) {
                     return alert('Please input a title');
@@ -403,33 +398,14 @@
     }
 
     .new-btn{
-        margin-top: 16px;
-        margin-right: 2px;
-        padding-top: 20px;
-        padding-bottom: 20px;
-        padding: 10px 60px 10px 60px;
-        border: transparent;
-        border-radius: 10px;
-        background-color: #B90321;
-        color: white;
+        margin-top: 1%;
     }
 
     .new-btn:disabled{
         background-color: #cccccc;
     }
-    
-    .save-btn{
-        margin-top: 6px;
-        padding-top: 20px;
-        padding-bottom: 20px;
-        padding: 10px 60px 10px 60px;
-        border: transparent;
-        border-radius: 10px;
-        background-color: #B90321;
-        color: white;
-    }
 
-    .mainbox, .list{
+    .list{
         margin-top: 1.5%;
         background-color: white;
         margin: 1.5% -1% 0% -1%;
@@ -451,6 +427,10 @@
         text-align: right;
     }
 
+    .save-btn{
+        margin-top: 1%;
+    }
+
     .delete-btn{
         padding-top: 20px;
         padding-bottom: 20px;
@@ -461,6 +441,10 @@
         color: #CC3300;
     }
 
+    .delete-btn:hover{
+        color: #B90321;
+    }
+
     .head{
         text-align: center;
     }
@@ -469,57 +453,7 @@
         cursor: pointer;
     }
 
-    .mainbox, .list {
+    .list {
         box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.07), 0 6px 20px 0 rgba(0, 0, 0, 0.08);
-    }
-    .my-table {
-        font-size: 18px;
-        font-family: Arial, sans-serif;
-        border-collapse: collapse;
-    }
-
-    .my-cell {
-        border: none;
-        text-align: center;
-        padding: 10px;
-    }
-
-    .my-tbody th,
-    .my-tbody td {
-        font-weight: normal;
-    }
-
-    .my-table tr:hover:not(.active-row) {
-        cursor: pointer;
-        background-color: #d9ecf3;
-    }
-
-    .my-tbody {
-        display: block;
-        max-height: 180px;
-        overflow-y: auto;
-    }
-    
-    .my-thead,
-    .my-tbody tr {
-        display: table;
-        width: 100%;
-        table-layout: fixed;
-    }
-
-    .my-table tr:nth-child(even) {
-        background-color: #f2f2f2;
-    }
-
-    .my-table tr:nth-child(odd) {
-        background-color: white;
-    }
-
-    .my-table thead tr {
-        color: #ffffff;
-        background-color: #B90321 !important;
-    }
-    .active-row {
-        background-color: #b1dceb !important; /* Change this to your desired color */
     }
 </style>

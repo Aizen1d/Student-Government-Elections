@@ -44,13 +44,17 @@ export default {
         </div>
         <div class="position-sticky">
             <div class="list-group list-group-flush mx-3">
-            <Link :href="linkHref" class="main list-group-item py-2"  aria-expanded="true">
+            <Link :href="linkHref" 
+                :class="{ 'active': $inertia.page.url === linkHref }" 
+                class="main list-group-item py-2">
                 <img class="side-icon" src="../../images/icons/elections.svg" alt="Icon" height="35" width="35">
                 <span>Elections</span>
             </Link>
 
             <template v-if="user_role === 'comelec'">
-                <Link href="/comelec/insert-data" class="main list-group-item py-2"  aria-expanded="true">
+                <Link href="/comelec/insert-data" 
+                    :class="{ 'active': $inertia.page.url === '/comelec/insert-data' }" 
+                    class="main list-group-item py-2">
                     <img class="side-icon" src="../../images/icons/insert_data.svg" alt="Icon" height="35" width="35">
                     <span>Insert Data</span>
                 </Link>
@@ -60,15 +64,19 @@ export default {
                     <span>Approvals</span>
                 </a>
 
-                <a href="/comelec/announcements" class="main list-group-item py-2"  aria-expanded="true">
+                <Link href="/comelec/announcements" 
+                    :class="{ 'active': $inertia.page.url === '/comelec/announcements' }" 
+                    class="main list-group-item py-2">
                     <img class="side-icon" src="../../images/icons/announcements.svg" alt="Icon" height="35" width="35">
                     <span>Announcements</span>
-                </a>
+                </Link>
 
-                <a href="/comelec/rules-and-guidelines" class="main list-group-item py-2"  aria-expanded="true">
+                <Link href="/comelec/rules-and-guidelines" 
+                    :class="{ 'active': $inertia.page.url === '/comelec/rules-and-guidelines' }" 
+                    class="main list-group-item py-2">
                     <img class="side-icon" src="../../images/icons/rules.svg" alt="Icon" height="35" width="35">
                     <span>Rules & Guidelines</span>
-                </a>
+                </Link  >
 
                 <a href="" class="main list-group-item py-2"  aria-expanded="true">
                     <img class="side-icon" src="../../images/icons/directory.svg" alt="Icon" height="35" width="35">
@@ -170,7 +178,7 @@ body{
     color: black;
     font-family: 'Just Sans', sans-serif;
     font-size: 100%;
-    margin-top: 4%;
+    margin-top: 4% !important;
     background-color: white;
 }
 

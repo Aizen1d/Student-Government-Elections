@@ -8,11 +8,11 @@
                 <h2>Announcements</h2>
             </div>
             <div class="col-6 new">
-                <button :disabled="new_button_disabled" class="new-btn">New Announcement</button>
+                <ActionButton :disabled="new_button_disabled" class="new-btn">New Announcement</ActionButton>
             </div>
         </div>
 
-        <div class="mainbox">
+        <BaseContainer>
             <form @submit.prevent="save">
                 <div class="form-group row">
                     <div class="col-2">
@@ -65,34 +65,32 @@
                         <button class="delete-btn">Delete</button>
                     </div>
                     <div class="col-6 save">
-                        <button @submit.prevent="save" class="new-btn">Save</button>
+                        <ActionButton @submit.prevent="save" class="save-btn">Save</ActionButton>
                     </div>
                 </div>
             </form>
-        </div>
+        </BaseContainer>
 
-        <div class="list">
-            <table class="table table-hover table-bordered border-dark table-responsive">
-                <thead class="head">
-                    <tr>
-                        <th>#</th>
-                        <th class="th-sm">Type</th>
-                        <th class="th-sm">Title</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                       
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+        <BaseContainer>
+            <BaseTable :columns="['ID', 'Type', 'Title']">
+                <tr v-for="(item, index) in items" :key="index" @click="selectItem(item)" 
+                    v-bind:class="{ 'active-row': selectedItem && selectedItem.id === item.id && selectedItem.type === item.type }">
+                    <td class="my-cell">{{ item.count }}</td>
+                    <td class="my-cell">{{ item.type.charAt(0).toUpperCase() + item.type.slice(1) }}</td>
+                    <td class="my-cell">{{ item.title }}</td>
+                </tr>
+            </BaseTable>
+        </BaseContainer>
+
     </div>
 </template>
 
 <script>
 import Navbar from '../../Shared/Navbar.vue';
 import Sidebar from '../../Shared/Sidebar.vue';
+import BaseTable from '../../Shared/BaseTable.vue';
+import BaseContainer from '../../Shared/BaseContainer.vue';
+import ActionButton from '../../Shared/ActionButton.vue';
 
 import axios from 'axios';
 import { ref } from 'vue';
@@ -126,7 +124,7 @@ export default {
             items,
         }
     },
-    components: { Navbar, Sidebar },
+    components: { Navbar, Sidebar, BaseTable, BaseContainer, ActionButton },
     created() {
         axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/announcement/id/latest`)
             .then(response => {
@@ -178,32 +176,13 @@ export default {
     font-size: 28px;
 }
 
+.form-control, .form-select, .body {
+    border: 1px solid rgba(40, 40, 40, 0.25);
+}
+
 .new {
     margin-top: -1%;
     text-align: end;
-}
-
-.new-btn {
-    padding-top: 20px;
-    padding-bottom: 20px;
-    padding: 15px 100px 15px 100px;
-    border: transparent;
-    border-radius: 10px;
-    background-color: #B90321;
-    color: white;
-}
-
-.new-btn:disabled {
-    background-color: #cccccc;
-}
-
-.mainbox,
-.list {
-    margin-top: 1.5%;
-    background-color: white;
-    margin: 1.5% -1% 0% -1%;
-    padding: 30px 30px 20px 30px;
-    border-radius: 7px;
 }
 
 .body {
@@ -216,8 +195,20 @@ export default {
     padding-bottom: 15px;
 }
 
+.new-btn{
+    margin-top: 1.5%;
+}
+
+.new-btn:disabled{
+    background-color: #cccccc;
+}
+
 .save {
     text-align: right;
+}
+
+.save-btn{
+    margin-top: 1.5%;
 }
 
 .delete-btn {
@@ -230,6 +221,10 @@ export default {
     color: #CC3300;
 }
 
+.delete-btn:hover{
+    color: #B90321;
+}
+
 .head {
     text-align: center;
 }
@@ -237,4 +232,5 @@ export default {
 .section-title {
     font-weight: bolder;
     margin-top: 1%;
-}</style>
+}
+</style>

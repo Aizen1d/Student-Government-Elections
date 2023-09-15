@@ -33,9 +33,15 @@ class CheckAuthOrganization
                     return back();
                 }
             }
-            // If logged out already
             else {
-                return redirect()->route('view.login');
+                // If logged out by the user by clicking the logout button
+                if ($request->cookie('logout_pass')) {
+                    $logout_cookie = cookie()->forget('logout_pass');
+                    return redirect()->route('view.login')->withCookie($logout_cookie);
+                }
+                
+                // If token was expired, not logged out
+                return redirect()->route('view.login')->with('token_invalid', 'Your token was invalid/expired. Please login again.');
             }
 
             // If jwt token is existing and valid

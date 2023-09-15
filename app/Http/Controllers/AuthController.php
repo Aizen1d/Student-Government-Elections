@@ -51,10 +51,11 @@ class AuthController extends Controller
             // Instruct client side to delete the cookies with withCookie() and redirect to login page
             $cookie = cookie()->forget('jwt_token');
             $user_info_cookie = cookie()->forget('user_info');
+            $logout_cookie = cookie('logout_pass', 'true', 1);
 
             return response()->json([
                 'logout' => 'true',
-            ])->withCookie($user_info_cookie)->withCookie($cookie);
+            ])->withCookie($user_info_cookie)->withCookie($cookie)->withCookie($logout_cookie);
             
         }
         catch(Exception $e) {
