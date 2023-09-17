@@ -20,11 +20,11 @@
                         <input type="hidden" name="announcement-type">
                         <select class="form-select" aria-label="Default select example" v-model="type_select">
                             <option value="" disabled hidden selected>Select Type</option>
-                            <option value="1">Election</option>
-                            <option value="2">Debate</option>
-                            <option value="3">Open Forum</option>
-                            <option value="4">Educational Program</option>
-                            <option value="5">Results</option>
+                            <option value="election">Election</option>
+                            <option value="debate">Debate</option>
+                            <option value="open">Open Forum</option>
+                            <option value="educational-program">Educational Program</option>
+                            <option value="results">Results</option>
                         </select>
                     </div>
                     <div class="col-8">
@@ -33,7 +33,7 @@
                     </div>
                     <div class="col-2">
                         <label class="form-label" for="id">ID</label>
-                        <input class="form-control" type="id" name="id" v-model="id_input" readonly>
+                        <input class="form-control" type="id" name="id" v-model="count_input" readonly>
                     </div>
                 </div>
 
@@ -57,7 +57,8 @@
                     </div>
                     <div class="form-group col-2" v-if="type_of_attachment !== '0'">
                         <label class="form-label" for="selected">Upload Image</label>
-                        <input type="file" name="attachment" class="form-control" ref="fileInput" @change="onFileChange">                    </div>
+                        <input type="file" name="attachment" class="form-control" ref="fileInput" @change="onFileChange">                    
+                    </div>
                 </div>
 
                 <div class="row">
@@ -101,6 +102,7 @@ export default {
         const type_select = ref('');
         const title_input = ref('');
         const id_input = ref('');
+        const count_input = ref('');
         const body_input = ref('');
         const type_of_attachment = ref('0');
         const upload_image_attachment = ref('');
@@ -115,6 +117,7 @@ export default {
             type_select,
             title_input,
             id_input,
+            count_input,
             body_input,
             type_of_attachment,
             upload_image_attachment,
@@ -128,7 +131,7 @@ export default {
     created() {
         axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/announcement/id/latest`)
             .then(response => {
-                this.id_input = "Announcement #" + (response.data.id + 1);
+                this.count_input = "Announcement #" + (response.data.id + 1);
             })
             .catch(error => {
                 console.log(error);
@@ -153,10 +156,37 @@ export default {
             }
 
             if (this.type_of_attachment !== '0') {
-                if (this.upload_image_attachment) {
-                    return alert('Please attach your image');
+                if (this.upload_image_attachment === '') {
+                    return alert('Please upload an image');
                 }
             }
+
+            // Create a FormData object
+            let formData = new FormData();
+
+            // Append the form fields to the FormData object
+            formData.append('type_select', this.type_select);
+            formData.append('title_input', this.title_input);
+            formData.append('body_input', this.body_input);
+            formData.append('type_of_attachment', this.type_of_attachment);
+
+            // If an image file is selected, append it to the FormData object
+            if (this.type_of_attachment !== '0' && this.$refs.fileInput.files[0]) {
+                formData.append('attachment_image', this.$refs.fileInput.files[0]);
+            }
+
+            axios.post(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/announcement/save`, formData, {
+                
+                }).then(response => {
+                    console.log(response.data.form_data);
+                    console.log(response.data.image_details);
+
+                    alert('Announcement saved successfully')
+
+                }).catch(error => {
+                    console.error(error);
+                });
+                
         }
     },
 }

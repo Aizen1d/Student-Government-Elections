@@ -43,7 +43,7 @@
 
                 <div class="row">
                     <div class="col-6">
-                        <button class="delete-btn" @click.prevent="deleteItem">Delete</button>
+                        <button :disabled="!selectedItem" class="delete-btn" @click.prevent="deleteItem">Delete</button>
                     </div>
                     <div class="col-6 save">
                         <ActionButton @submit.prevent="save" class="save-btn">{{ saveButtonText }}</ActionButton>
@@ -176,6 +176,11 @@
                 // Delete the selected row item
                 if (this.selectedItem === null) {
                     return alert('Please select an item to delete');
+                }
+
+                const confirmDelete = confirm('Are you sure you want to delete this item?');
+                if (!confirmDelete) {
+                    return;
                 }
                 
                 let id = this.selectedItem.id;
@@ -443,6 +448,10 @@
 
     .delete-btn:hover{
         color: #B90321;
+    }
+
+    .delete-btn:disabled{
+        color: #bbbbbb;
     }
 
     .head{
