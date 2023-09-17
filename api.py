@@ -1,12 +1,20 @@
-from fastapi import FastAPI, HTTPException, Depends, APIRouter
+from fastapi import FastAPI, HTTPException, Depends, APIRouter, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import inspect
 from sqlalchemy.orm import Session
 from database import engine, SessionLocal
 
 from pydantic import BaseModel
+from typing import Optional
 from datetime import datetime
 from fastapi.responses import JSONResponse
+
+from dotenv import load_dotenv # for .env file
+load_dotenv()
+
+import time
+import os
+import requests
 
 from models import Student, Announcement, Rule, Guideline
 
@@ -45,7 +53,7 @@ router = APIRouter(prefix="/api/v1")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=['http://127.0.0.1:8000'], # Must change to appropriate frontend URL (local or production)
+    allow_origins=['http://localhost:8000', 'http://127.0.0.1:8000'], # Must change to appropriate frontend URL (local or production)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -57,6 +65,44 @@ def get_db():
         yield db
     finally:
         db.close()
+
+CLIENT_ID = os.getenv("CLIENT_ID")
+CLIENT_SECRET = os.getenv("CLIENT_SECRET")
+REFRESH_TOKEN = os.getenv("REFRESH_TOKEN")
+
+# Store the expiration time and access token
+EXPIRES_AT = 0
+ACCESS_TOKEN = ""
+
+def get_access_token():
+    global REFRESH_TOKEN
+    global EXPIRES_AT
+    global ACCESS_TOKEN
+
+    # Check if the access token is expired or near to expire
+    if time.time() > EXPIRES_AT - 60:  # refresh 60 seconds early
+        token_url = "https://login.microsoftonline.com/consumers/oauth2/v2.0/token"
+
+        payload = {
+            "client_id": CLIENT_ID,
+            "client_secret": CLIENT_SECRET,
+            "refresh_token": REFRESH_TOKEN,
+            "grant_type": "refresh_token",
+            "scope": "files.readwrite offline_access",
+        }
+
+        response = requests.post(token_url, data=payload)
+
+        if response.status_code != 200:
+            raise HTTPException(status_code=400, detail="Failed to get access token")
+
+        # Update the stored refresh token and expiration time with the new ones
+        REFRESH_TOKEN = response.json()["refresh_token"]
+        EXPIRES_AT = time.time() + response.json()["expires_in"]
+        ACCESS_TOKEN = response.json()["access_token"]
+
+    return ACCESS_TOKEN, REFRESH_TOKEN
+
 
 #################################################################
 """ All about students APIs """
@@ -104,31 +150,37 @@ def get_Announcement_Latest_Id(db: Session = Depends(get_db)):
 """ ** POST Methods: Announcement Table APIs ** """
 
 @router.post("/announcement/save", tags=["Announcement"])
-def save_Announcement(announcement_data: AnnouncementSaveData, db: Session = Depends(get_db)):
-    try:
-        new_announcement = Announcement(
-                        AnnouncementType=announcement_data.type, 
-                        AnnouncementTitle=announcement_data.title, 
-                        AnnouncementBody=announcement_data.body,
-                        AttachmentType=announcement_data.attachment_type,
-                        AttachmentImage=announcement_data.attachment_type,
-                        created_at=datetime.now(), 
-                        updated_at=datetime.now()
-                        )
-        db.add(new_announcement)
-        db.commit()
-        return {"id": new_announcement.AnnouncementId,
-                "type": new_announcement.AnnouncementType,
-                "title": new_announcement.AnnouncementTitle,
-                "body": new_announcement.AnnouncementBody,
-                "attachment_type": new_announcement.AttachmentType,
-                "attachment_image": new_announcement.AttachmentImage,
+async def save_Announcement(type_select: str = Form(...), title_input: str = Form(...), body_input: str = Form(...), 
+                            type_of_attachment: Optional[str] = Form(None), attachment_image: Optional[UploadFile] = File(None), 
+                            db: Session = Depends(get_db)):
+    contents = await attachment_image.read()
+    filename = attachment_image.filename
+    access_token, refresh_token = get_access_token()
+    headers = {'Authorization': 'Bearer ' + access_token}
+    user_id = 'c769839c034ecd32'  # replace with actual user id or userPrincipalName
+    response = requests.put(
+        f'https://graph.microsoft.com/v1.0/users/{user_id}/drive/root:/{filename}:/content',
+        headers=headers,
+        data=contents  # This is the file contents.
+    )
+    response.raise_for_status()  # Raise an exception if the request failed
 
-                "created_at": new_announcement.created_at.isoformat() if new_announcement.created_at else None,
-                "updated_at": new_announcement.updated_at.isoformat() if new_announcement.updated_at else None
-                }
-    except:
-        return JSONResponse(status_code=500, content={"detail": "Error while creating new announcement in the table Announcement"})
+    return {
+        "form_data": {
+            "type_select": type_select,
+            "title_input": title_input,
+            "body_input": body_input,
+            "type_of_attachment": type_of_attachment,
+        },
+        "image_details": {
+            "filename": filename,
+            "size": len(contents),
+            "content_type": attachment_image.content_type,
+            "status": response.status_code,
+            "refresh_token": refresh_token,
+        },
+       
+    }
 
     
 #################################################################
