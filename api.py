@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from database import engine, SessionLocal
 
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 from fastapi.responses import JSONResponse
 
@@ -151,20 +151,91 @@ def get_Announcement_Latest_Id(db: Session = Depends(get_db)):
 
 @router.post("/announcement/save", tags=["Announcement"])
 async def save_Announcement(type_select: str = Form(...), title_input: str = Form(...), body_input: str = Form(...), 
-                            type_of_attachment: Optional[str] = Form(None), attachment_image: Optional[UploadFile] = File(None), 
+                            type_of_attachment: Optional[str] = Form(None), attachment_images: List[UploadFile] = File(None), 
                             db: Session = Depends(get_db)):
-    contents = await attachment_image.read()
-    filename = attachment_image.filename
-    access_token, refresh_token = get_access_token()
-    headers = {'Authorization': 'Bearer ' + access_token}
-    user_id = 'c769839c034ecd32'  # replace with actual user id or userPrincipalName
-    response = requests.put(
-        f'https://graph.microsoft.com/v1.0/users/{user_id}/drive/root:/{filename}:/content',
-        headers=headers,
-        data=contents  # This is the file contents.
-    )
-    response.raise_for_status()  # Raise an exception if the request failed
+    
+    folder_id = None
+    
+    if attachment_images:
+        access_token, refresh_token = get_access_token()
+        headers = {'Authorization': 'Bearer ' + access_token}
 
+        announcement_count = db.query(Announcement).count() + 1
+        
+        # Check if "Announcements" folder exists
+        response = requests.get('https://graph.microsoft.com/v1.0/me/drive/root/children', headers=headers)
+        folders = response.json().get('value', [])
+
+        if not any(folder.get('name') == 'Announcements' for folder in folders):
+            requests.post('https://graph.microsoft.com/v1.0/me/drive/root/children', headers=headers, json={
+                "name": "Announcements",
+                "folder": {},
+                "@microsoft.graph.conflictBehavior": "rename"
+            })
+
+        # Create subfolder based on announcement count if not exists
+        announcement_count_folder_name = "Announcement_" + str(announcement_count)
+
+        # Check if subfolder exists
+        response = requests.get('https://graph.microsoft.com/v1.0/me/drive/root:/Announcements:/children', headers=headers)
+        folders = response.json().get('value', [])
+
+        if not any(folder.get('name') == announcement_count_folder_name for folder in folders):
+            # Create subfolder
+            response = requests.post('https://graph.microsoft.com/v1.0/me/drive/root:/Announcements:/children', headers=headers, json={
+                "name": announcement_count_folder_name,
+                "folder": {},
+                "@microsoft.graph.conflictBehavior": "rename"
+            })
+            folder_id = response.json().get('id')  # Store folder ID
+
+        for attachment_image in attachment_images:
+            contents = await attachment_image.read()
+            filename = attachment_image.filename
+
+            # Upload file to subfolder
+            response = requests.put(
+                f'https://graph.microsoft.com/v1.0/me/drive/items/{folder_id}:/{filename}:/content',
+                headers=headers,
+                data=contents  # This is the file contents.
+            )
+            response.raise_for_status()  # Raise an exception if the request failed
+
+        # Retrieve redirect URL for the folder
+        redirect_url = f'https://graph.microsoft.com/v1.0/me/drive/items/{folder_id}'  # Store redirect URL
+
+        # Retrieve download URL for the folder
+        response = requests.get(f'https://graph.microsoft.com/v1.0/me/drive/items/{folder_id}', headers=headers)
+        download_url = response.json().get('@microsoft.graph.downloadUrl')  # Store download URL
+
+    try:
+        new_announcement = Announcement(
+            AnnouncementType=type_select, 
+            AnnouncementTitle=title_input, 
+            AnnouncementBody=body_input,
+            AttachmentType=type_of_attachment,
+            AttachmentImage=folder_id if folder_id else '',
+            created_at=datetime.now(), 
+            updated_at=datetime.now()
+        )
+
+        db.add(new_announcement)
+        db.commit()
+
+        return {
+            "id": new_announcement.AnnouncementId,
+            "type": new_announcement.AnnouncementType,
+            "title": new_announcement.AnnouncementTitle,
+            "body": new_announcement.AnnouncementBody,
+            "attachment_type": new_announcement.AttachmentType,
+            "attachment_image": new_announcement.AttachmentImage,
+            "folder_id": folder_id if folder_id else '',
+            "created_at": new_announcement.created_at.isoformat() if new_announcement.created_at else None,
+            "updated_at": new_announcement.updated_at.isoformat() if new_announcement.updated_at else None
+        }
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while creating new announcement in the table Announcement"})
+        
     return {
         "form_data": {
             "type_select": type_select,
@@ -178,9 +249,11 @@ async def save_Announcement(type_select: str = Form(...), title_input: str = For
             "content_type": attachment_image.content_type,
             "status": response.status_code,
             "refresh_token": refresh_token,
+            "file_id": file_id, 
+            "download_url": download_url
         },
-       
     }
+
 
     
 #################################################################
