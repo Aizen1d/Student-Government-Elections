@@ -44,20 +44,37 @@
                     </div>
                 </div>
 
-                <div>
+                <div class="row">
                     <h6 class="section-title">Attachments</h6>
-                    <div class="form-group col-2">
-                        <label class="form-label" for="selected">Type of Attachment</label>
-                        <input type="hidden" name="attachment-type">
-                        <select class="form-select" aria-label="Default select example" v-model="type_of_attachment">
-                            <option value="0" selected>Select</option>
-                            <option value="Banner">Banner</option>
-                            <option value="Poster">Poster</option>
-                        </select>
-                    </div>
-                    <div class="form-group col-2" v-if="type_of_attachment !== '0'">
-                        <label class="form-label" for="selected">Upload Image</label>
-                        <input type="file" name="attachment" class="form-control" ref="fileInput" @change="onFileChange">                    
+                        <div class="form-group col-2">
+                            <label class="form-label" for="selected">Type of Attachment</label>
+                            <input type="hidden" name="attachment-type">
+                            <select class="form-select" aria-label="Default select example" v-model="type_of_attachment">
+                                <option value="0" selected>Select</option>
+                                <option value="Banner">Banner</option>
+                                <option value="Poster">Poster</option>
+                            </select>
+
+                            <div v-if="type_of_attachment !== '0'">
+                                <label for="file-upload" class="custom-file-upload">
+                                    Select File
+                                </label>
+                                <input id="file-upload" type="file" style="display: none;" @change="onFileChange" multiple/>
+                            </div>
+                        </div>
+
+                    <div class="form-group col-4">
+                        <div id="dropzone" v-if="type_of_attachment !== '0'" @drop.prevent="onDrop" @dragenter.prevent @dragover.prevent>
+                            <div class="drag-drop-default-container" v-if="!upload_image_attachments.length">
+                                <img src="../../../images/icons/insert_data.svg" alt="" height="30" width="30">
+                                <span>Drag and drop your files here</span>
+                            </div>
+                            <div class="drag-drop-files-container" v-if="upload_image_attachments.length">
+                                <div v-for="(file, index) in upload_image_attachments" :key="index" class="file-list">
+                                    <span> {{ file.name }} <button type="button" class="remove-attachment" @click="removeFile(index)">X</button></span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -105,7 +122,7 @@ export default {
         const count_input = ref('');
         const body_input = ref('');
         const type_of_attachment = ref('0');
-        const upload_image_attachment = ref('');
+        const upload_image_attachments = ref([]);
         const fileInput = ref(null);
         const new_button_disabled = ref(true);
         const saving = ref(false);
@@ -120,7 +137,7 @@ export default {
             count_input,
             body_input,
             type_of_attachment,
-            upload_image_attachment,
+            upload_image_attachments,
             fileInput,
             new_button_disabled,
             saving,
@@ -138,8 +155,33 @@ export default {
             });
     },
     methods: {
+        addFiles(files) {
+            // Add the files to the list of files
+            for (let i = 0; i < files.length; i++) {
+                let file = files[i];
+
+                // Since we are only accepting images (banner or poster), check if a file is an image or not
+                if (!file.type.startsWith('image/')) {
+                    alert(file.name + ' is not an image, please upload an image file');
+                    continue;  
+                }
+
+                // Check if the file is already in the list of files
+                // If it is, then do not add it again
+                if (!this.upload_image_attachments.some(existingFile => existingFile.name === file.name)) {
+                    this.upload_image_attachments.push(file);
+                }
+            }
+        },
         onFileChange(event) {
-            this.upload_image_attachment = event.target.files[0];
+            this.addFiles(event.target.files);
+        },
+        onDrop(event) {
+            event.preventDefault();
+            this.addFiles(event.dataTransfer.files);
+        },
+        removeFile(index) {
+            this.upload_image_attachments.splice(index, 1);
         },
         save() {
             if (this.type_select.trim().length < 1) {
@@ -156,7 +198,7 @@ export default {
             }
 
             if (this.type_of_attachment !== '0') {
-                if (this.upload_image_attachment === '') {
+                if (this.upload_image_attachments.length < 1) {
                     return alert('Please upload an image');
                 }
             }
@@ -231,6 +273,77 @@ export default {
 
 .new-btn:disabled{
     background-color: #cccccc;
+}
+
+.custom-file-upload {
+    margin-top: 7%;
+    padding: 7px;
+    width: 100%;
+    font-size: 100%;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    display: inline-block;
+    cursor: pointer;
+    text-align: center;
+}
+
+.custom-file-upload:hover{
+    background-color: #f4f4f4;
+}
+
+#dropzone {
+    width: 100%;
+    height: 200px;
+    background-color: #e0e0e0;
+    border-radius: 10px;
+}
+
+.drag-drop-default-container{
+    display: flex;
+    flex-direction: column; /* Stacks items vertically */
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    height: 100%; 
+    width: 100%;
+}
+
+.drag-drop-files-container{
+    display: grid;
+    align-content: start;
+    justify-items: start;
+    
+    max-height: 200px; 
+    height: 100%;
+    width: 100%;
+
+    overflow-y: auto; 
+    overflow-x: hidden;
+}
+
+.file-list {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+
+    margin-top: 2%;
+    margin-left: 3%;
+
+}
+
+.file-list span {
+    word-wrap: break-word; 
+    width: 90%; 
+}
+
+
+.remove-attachment{
+    background-color: #B90321;
+    color: white;
+    width: 30px;
+    border-radius: 8px;
+    outline: none;
+    border: none;
 }
 
 .save {

@@ -41,7 +41,7 @@ class CheckAuthComelec
                 }
                 
                 // If token was expired, not logged out
-                return redirect()->route('view.login')->with('token_invalid', 'Your token was invalid/expired. Please login again.');
+                return redirect()->route('view.login')->with('token_invalid', 'Your authentication token has expired. Please login again.');
             }
 
             // If jwt token is existing and valid

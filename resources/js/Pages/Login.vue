@@ -13,7 +13,7 @@
                 <label for="password">Password</label>
                 <input type="password" id="password" placeholder="Enter your password" v-model="form.Password">
 
-                <button class="login-button" type="submit">Login</button>
+                <button class="login-button" type="submit" :disabled="loggingIn">{{ login_text }}</button>
             </form>
         </div>
     </div>
@@ -33,7 +33,9 @@
                     StudentNumber: '',
                     Password: ''
                 },
+                loggingIn: false,
                 invalid: '',
+                login_text: 'Login',
                 countdown: 0,
                 intervalId: null,
             }
@@ -48,13 +50,18 @@
                 if (this.countdown > 0) {
                     return;
                 }
-                 axios.post('/login/auth', this.form)
+                this.loggingIn = true;
+                this.login_text = 'Logging in...';
+                axios.post('/login/auth', this.form)
                     .then(response => {
                         if (response.data.redirect) {
                             window.location.href = response.data.redirect;
                         }
                         else if (response.data.invalid) {
                             this.invalid = response.data.invalid;
+
+                            this.loggingIn = false;
+                            this.login_text = 'Login';
                         }
                     })
                     .catch(error => {
@@ -71,7 +78,6 @@
                                 // handle other errors
                             }
                         }
-                        
                     });
             },
             startCountdown(seconds) {
@@ -137,6 +143,11 @@
         border: none;
         border-radius: 5px;
         cursor: pointer;
+    }
+
+    .login-button:disabled {
+        background-color: #ccc;
+        cursor: default;
     }
 
     .login-button:hover{
