@@ -22,7 +22,7 @@
                             <option value="" disabled hidden selected>Select Type</option>
                             <option value="election">Election</option>
                             <option value="debate">Debate</option>
-                            <option value="open">Open Forum</option>
+                            <option value="open-forum">Open Forum</option>
                             <option value="educational-program">Educational Program</option>
                             <option value="results">Results</option>
                         </select>
@@ -64,17 +64,8 @@
                         </div>
 
                     <div class="form-group col-4">
-                        <div id="dropzone" v-if="type_of_attachment !== '0'" @drop.prevent="onDrop" @dragenter.prevent @dragover.prevent>
-                            <div class="drag-drop-default-container" v-if="!upload_image_attachments.length">
-                                <img src="../../../images/icons/insert_data.svg" alt="" height="30" width="30">
-                                <span>Drag and drop your files here</span>
-                            </div>
-                            <div class="drag-drop-files-container" v-if="upload_image_attachments.length">
-                                <div v-for="(file, index) in upload_image_attachments" :key="index" class="file-list">
-                                    <span> {{ file.name }} <button type="button" class="remove-attachment" @click="removeFile(index)">X</button></span>
-                                </div>
-                            </div>
-                        </div>
+                        <DragAndDrop v-if="type_of_attachment !== '0'" v-model="upload_image_attachments" :acceptedFileTypes="'image/'">
+                        </DragAndDrop>
                     </div>
                 </div>
 
@@ -109,6 +100,7 @@ import Sidebar from '../../Shared/Sidebar.vue';
 import BaseTable from '../../Shared/BaseTable.vue';
 import BaseContainer from '../../Shared/BaseContainer.vue';
 import ActionButton from '../../Shared/ActionButton.vue';
+import DragAndDrop from '../../Shared/DragAndDrop.vue';
 
 import axios from 'axios';
 import { ref } from 'vue';
@@ -144,7 +136,7 @@ export default {
             items,
         }
     },
-    components: { Navbar, Sidebar, BaseTable, BaseContainer, ActionButton },
+    components: { Navbar, Sidebar, BaseTable, BaseContainer, ActionButton, DragAndDrop },
     created() {
         axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/announcement/id/latest`)
             .then(response => {
@@ -176,13 +168,6 @@ export default {
         onFileChange(event) {
             this.addFiles(event.target.files);
         },
-        onDrop(event) {
-            event.preventDefault();
-            this.addFiles(event.dataTransfer.files);
-        },
-        removeFile(index) {
-            this.upload_image_attachments.splice(index, 1);
-        },
         save() {
             if (this.type_select.trim().length < 1) {
                 return alert('Please select a type');
@@ -197,7 +182,10 @@ export default {
                 return alert('Please input a body');
             }
 
+            // If selected a type of attachment (banner or poster)
             if (this.type_of_attachment !== '0') {
+
+                // If there are no image attachment uploaded but selected a type of attachment
                 if (this.upload_image_attachments.length < 1) {
                     return alert('Please upload an image');
                 }
@@ -212,18 +200,19 @@ export default {
             formData.append('body_input', this.body_input);
             formData.append('type_of_attachment', this.type_of_attachment);
 
-            // If an image file is selected, append it to the FormData object
-            if (this.type_of_attachment !== '0' && this.$refs.fileInput.files[0]) {
-                formData.append('attachment_image', this.$refs.fileInput.files[0]);
+            // Append the image attachments to the FormData object if there are any image attachments
+            if (this.type_of_attachment !== '0' && this.upload_image_attachments.length > 0) {
+                for (let i = 0; i < this.upload_image_attachments.length; i++) {
+                    formData.append('attachment_images', this.upload_image_attachments[i]);
+                }
             }
 
             axios.post(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/announcement/save`, formData, {
-                
                 }).then(response => {
-                    console.log(response.data.form_data);
-                    console.log(response.data.image_details);
-
+                    console.log(response.data);
                     alert('Announcement saved successfully')
+
+                    this.upload_image_attachments = [];
 
                 }).catch(error => {
                     console.error(error);
@@ -328,7 +317,6 @@ export default {
 
     margin-top: 2%;
     margin-left: 3%;
-
 }
 
 .file-list span {
