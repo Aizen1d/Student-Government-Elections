@@ -14,7 +14,6 @@ CHANGELOG.md export-ignore
 /bootstrap/* linguist-vendored
 /config/* linguist-vendored
 /database/* linguist-vendored
-/public/* linguist-vendored
 /resources/* linguist-vendored
 /routes/* linguist-vendored
 /storage/* linguist-vendored
