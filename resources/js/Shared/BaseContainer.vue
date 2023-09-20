@@ -1,8 +1,20 @@
 <template>
-    <div :class="$style.container">
+    <div :class="$style.container" :style="{ 'height':height }">
         <slot></slot>
     </div>
 </template>
+
+<script>
+    export default {
+        props: {
+            height: {
+                type: String,
+                required: true,
+                default: 'auto'
+            }
+        }
+    }
+</script>
 
 <style module>
     .container{

@@ -8,17 +8,17 @@
                 <h2>Announcements</h2>
             </div>
             <div class="col-6 new">
-                <ActionButton :disabled="new_button_disabled" class="new-btn">New Announcement</ActionButton>
+                <ActionButton :disabled="new_button_disabled" class="new-btn" @click="newButtonSelected">New Announcement</ActionButton>
             </div>
         </div>
 
-        <BaseContainer>
+        <BaseContainer :height="'auto'">
             <form @submit.prevent="save">
                 <div class="form-group row">
                     <div class="col-2">
                         <label class="form-label" for="selected">Type of Announcement</label>
                         <input type="hidden" name="announcement-type">
-                        <select class="form-select" aria-label="Default select example" v-model="type_select">
+                        <select class="form-select" aria-label="Default select example" v-model="type_select" :disabled="selectedItem">
                             <option value="" disabled hidden selected>Select Type</option>
                             <option value="election">Election</option>
                             <option value="debate">Debate</option>
@@ -33,7 +33,7 @@
                     </div>
                     <div class="col-2">
                         <label class="form-label" for="id">ID</label>
-                        <input class="form-control" type="id" name="id" v-model="count_input" readonly>
+                        <input class="form-control" type="id" name="id" v-model="count_input" :disabled="true">
                     </div>
                 </div>
 
@@ -49,13 +49,13 @@
                         <div class="form-group col-2">
                             <label class="form-label" for="selected">Type of Attachment</label>
                             <input type="hidden" name="attachment-type">
-                            <select class="form-select" aria-label="Default select example" v-model="type_of_attachment">
-                                <option value="0" selected>Select</option>
+                            <select class="form-select" aria-label="Default select example" v-model="type_of_attachment" :disabled="is_loading_attachments">
+                                <option value="None" selected>None</option>
                                 <option value="Banner">Banner</option>
                                 <option value="Poster">Poster</option>
                             </select>
 
-                            <div v-if="type_of_attachment !== '0'">
+                            <div v-if="type_of_attachment !== 'None'">
                                 <label for="file-upload" class="custom-file-upload">
                                     Select File
                                 </label>
@@ -64,28 +64,32 @@
                         </div>
 
                     <div class="form-group col-4">
-                        <DragAndDrop v-if="type_of_attachment !== '0'" v-model="upload_image_attachments" :acceptedFileTypes="'image/'">
+                        <DragAndDrop 
+                            v-if="type_of_attachment !== 'None'" 
+                            v-model="upload_image_attachments" 
+                            :acceptedFileTypes="'image/'" 
+                            :isLoadingAttachments="is_loading_attachments">
                         </DragAndDrop>
                     </div>
                 </div>
 
                 <div class="row">
                     <div class="col-6">
-                        <button class="delete-btn">Delete</button>
+                        <button class="delete-btn" :disabled="!selectedItem">Delete</button>
                     </div>
                     <div class="col-6 save">
-                        <ActionButton @submit.prevent="save" class="save-btn">Save</ActionButton>
+                        <ActionButton @submit.prevent="save" class="save-btn" :disabled="saving">{{ SaveButtonText }}</ActionButton>
                     </div>
                 </div>
             </form>
         </BaseContainer>
 
-        <BaseContainer>
-            <BaseTable :columns="['ID', 'Type', 'Title']">
+        <BaseContainer class="item-container" :height="'335px'">
+            <BaseTable class="item-table" :columns="['ID', 'Type', 'Title']" :table-height="'235px'">
                 <tr v-for="(item, index) in items" :key="index" @click="selectItem(item)" 
-                    v-bind:class="{ 'active-row': selectedItem && selectedItem.id === item.id && selectedItem.type === item.type }">
+                    v-bind:class="{ 'active-row': selectedItem && selectedItem.id === item.id && selectedItem.announcement_type === item.announcement_type }">
                     <td class="my-cell">{{ item.count }}</td>
-                    <td class="my-cell">{{ item.type.charAt(0).toUpperCase() + item.type.slice(1) }}</td>
+                    <td class="my-cell">{{ item.announcement_type.charAt(0).toUpperCase() + item.announcement_type.slice(1) }}</td>
                     <td class="my-cell">{{ item.title }}</td>
                 </tr>
             </BaseTable>
@@ -113,11 +117,14 @@ export default {
         const id_input = ref('');
         const count_input = ref('');
         const body_input = ref('');
-        const type_of_attachment = ref('0');
+        const type_of_attachment = ref('None');
         const upload_image_attachments = ref([]);
-        const fileInput = ref(null);
+        
+        // States
+        const selectedItem = ref(null);
         const new_button_disabled = ref(true);
         const saving = ref(false);
+        const is_loading_attachments = ref(false);
 
         // Data for the table
         const items = ref([]);
@@ -130,23 +137,81 @@ export default {
             body_input,
             type_of_attachment,
             upload_image_attachments,
-            fileInput,
+            selectedItem,
             new_button_disabled,
             saving,
+            is_loading_attachments,
             items,
         }
     },
     components: { Navbar, Sidebar, BaseTable, BaseContainer, ActionButton, DragAndDrop },
     created() {
-        axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/announcement/id/latest`)
+        this.getLatestAnnouncementCount();
+        this.fetchTableData();
+    },
+    computed: {
+        SaveButtonText() {
+            if (this.saving) {
+                return 'Saving...';
+            }
+            else{
+                if (this.selectedItem) {
+                    return 'Update';
+                }
+                else {
+                    return 'Save';
+                }
+            }
+        }
+    },
+    methods: {
+        fetchTableData() {
+            axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/announcement/all`)
+                .then(response => {
+                    const announcements = response.data.announcements.map(item => {
+                        return {
+                            id: item.AnnouncementId,
+                            count: "Announcement #" + item.count,
+                            announcement_type: item.AnnouncementType,
+                            title: item.AnnouncementTitle,
+                            body: item.AnnouncementBody,
+                            attachment_type: item.AttachmentType,
+                        }
+                    });
+
+                    this.items = [...announcements];
+                })
+                .catch(error => {
+                    console.log(error);
+                });
+        },
+        reset() {
+            // Reset the selected row item to null
+            this.selectedItem = null;
+
+            // Reset the input fields
+            this.type_select = '';
+            this.title_input = '';
+            this.id_input = '';
+            this.getLatestAnnouncementCount();
+            this.body_input = '';
+            this.type_of_attachment = 'None';
+            this.upload_image_attachments = [];
+
+            this.new_button_disabled = true;
+        },
+        newButtonSelected() {
+            this.reset();
+        },
+        getLatestAnnouncementCount() {
+            axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/announcement/count/latest`)
             .then(response => {
-                this.count_input = "Announcement #" + (response.data.id + 1);
+                this.count_input = "Announcement #" + (response.data.count + 1);
             })
             .catch(error => {
                 console.log(error);
             });
-    },
-    methods: {
+        },
         addFiles(files) {
             // Add the files to the list of files
             for (let i = 0; i < files.length; i++) {
@@ -168,6 +233,49 @@ export default {
         onFileChange(event) {
             this.addFiles(event.target.files);
         },
+        selectItem(item) {
+            // If currently loading the attachments, do not allow selecting a row
+            if (this.is_loading_attachments) {
+                return;
+            }
+
+            // When a row is selected
+            this.selectedItem = item;
+            this.new_button_disabled = false; // Enable the new button since a row is selected
+
+            // Set the input fields to the selected row item
+            this.type_select = item.announcement_type;
+            this.title_input = item.title;
+            this.id_input = item.id; 
+            this.count_input = item.count;
+            this.body_input = item.body;
+            this.type_of_attachment = item.attachment_type;
+
+            this.is_loading_attachments = true;
+
+            // Fetch the files for the selected item
+            axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/announcement/get/attachment/${item.id}`)
+                .then(response => {
+                    // Clear the list of files first
+                    this.upload_image_attachments = [];
+
+                    this.upload_image_attachments = response.data.files.map(file => ({
+                        id: file.id,
+                        name: file.name,
+                        size: file.size,
+                        createdDateTime: file.createdDateTime,
+                        lastModifiedDateTime: file.lastModifiedDateTime,
+                        downloadUrl: file.downloadUrl,
+                    }));
+                    console.log(response.duration);
+                })
+                .catch(error => {
+                    console.log(error);
+                })
+                .finally(() => {
+                    this.is_loading_attachments = false;
+                });
+        },
         save() {
             if (this.type_select.trim().length < 1) {
                 return alert('Please select a type');
@@ -183,7 +291,7 @@ export default {
             }
 
             // If selected a type of attachment (banner or poster)
-            if (this.type_of_attachment !== '0') {
+            if (this.type_of_attachment !== 'None') {
 
                 // If there are no image attachment uploaded but selected a type of attachment
                 if (this.upload_image_attachments.length < 1) {
@@ -201,23 +309,35 @@ export default {
             formData.append('type_of_attachment', this.type_of_attachment);
 
             // Append the image attachments to the FormData object if there are any image attachments
-            if (this.type_of_attachment !== '0' && this.upload_image_attachments.length > 0) {
+            if (this.type_of_attachment !== 'None' && this.upload_image_attachments.length > 0) {
                 for (let i = 0; i < this.upload_image_attachments.length; i++) {
                     formData.append('attachment_images', this.upload_image_attachments[i]);
                 }
             }
 
+            // If validation passed, check if can update
+            if (this.saving === true) {
+                return;
+            }
+            
+            // Saving state is true
+            this.saving = true;
+
             axios.post(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/announcement/save`, formData, {
-                }).then(response => {
-                    console.log(response.data);
+                })
+                .then(response => {
+                    console.log(response.duration);
                     alert('Announcement saved successfully')
 
-                    this.upload_image_attachments = [];
-
-                }).catch(error => {
+                    this.reset();
+                })
+                .catch(error => {
                     console.error(error);
+                })
+                .finally(() => {
+                    this.saving = false;
+                    this.fetchTableData();
                 });
-                
         }
     },
 }
@@ -342,6 +462,10 @@ export default {
     margin-top: 1.5%;
 }
 
+.save-btn:disabled{
+    background-color: #cccccc;
+}
+
 .delete-btn {
     padding-top: 20px;
     padding-bottom: 20px;
@@ -356,6 +480,10 @@ export default {
     color: #B90321;
 }
 
+.delete-btn:disabled{
+    color: #cccccc;
+}
+
 .head {
     text-align: center;
 }
@@ -363,5 +491,9 @@ export default {
 .section-title {
     font-weight: bolder;
     margin-top: 1%;
+}
+
+.item-container{
+    margin-bottom: 2%;
 }
 </style>

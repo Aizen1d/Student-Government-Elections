@@ -6,7 +6,7 @@
                 <th style="width: 17px;"></th> <!-- Add this line -->
             </tr>
         </thead>
-        <tbody class="my-tbody">
+        <tbody class="my-tbody" :style="{ 'max-height':tableHeight }">
             <slot></slot> <!-- This slot will be replaced by the content inserted from the child component -->
         </tbody>
     </table>
@@ -18,6 +18,11 @@
             columns: {
                 type: Array,
                 required: true
+            },
+            tableHeight: {
+                type: String,
+                required: false,
+                default: '180px'
             }
         }
     }
@@ -48,7 +53,6 @@
 
     .my-tbody {
         display: block;
-        max-height: 180px;
         overflow-y: auto;
     }
 

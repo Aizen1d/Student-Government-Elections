@@ -145,6 +145,7 @@ body{
 
 #sidebarMenu{
     background-color: white;
+    position: fixed;
 }
 
 .bg{

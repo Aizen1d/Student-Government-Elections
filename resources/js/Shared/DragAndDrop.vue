@@ -1,12 +1,18 @@
 <template>
     <div :class="$style.dropzone" @drop.prevent="onDrop" @dragenter.prevent @dragover.prevent>
 
-        <div :class="$style.dragDropDefaultContainer" v-if="!attachments.length">
+        <!-- Add a loading spinner -->
+        <div v-if="isLoadingAttachments" class="d-flex justify-content-center" :class="$style.loading">
+            <div class="spinner-border" role="status"></div>
+            <span class="sr-only my-2">Retrieving files..</span>
+        </div>
+
+        <div :class="$style.dragDropDefaultContainer" v-if="!attachments.length & !isLoadingAttachments">
             <img src="../../images/icons/insert_data.svg" alt="" height="30" width="30">
             <span>Drag and drop your files here</span>
         </div>
 
-        <div :class="$style.dragDropFilesContainer" v-if="attachments.length">
+        <div :class="$style.dragDropFilesContainer" v-if="attachments.length & !isLoadingAttachments">
             <div v-for="(file, index) in attachments" :key="index" :class="$style.fileList">
                 <span> {{ file.name }} 
                     <button type="button" :class="$style.removeAttachment"
@@ -15,14 +21,16 @@
                 </span>
             </div>
         </div>
+
     </div>
 </template>
-  
+
 <script>
 export default {
     props: {
         modelValue: Array,
-        acceptedFileTypes: String
+        acceptedFileTypes: String,
+        isLoadingAttachments: Boolean,
     },
     computed: {
         attachments: {
@@ -66,6 +74,15 @@ export default {
 </script>
 
 <style module>
+.loading{
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+
+    justify-content: center;
+    align-items: center;
+}
 .dropzone {
     width: 100%;
     height: 200px;

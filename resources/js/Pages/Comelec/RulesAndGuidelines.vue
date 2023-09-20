@@ -12,7 +12,7 @@
             </div>      
         </div>   
         
-        <BaseContainer>
+        <BaseContainer :height="'auto'">
             <form @submit.prevent="save">
                 <div class="form-group row">
                     <div class="col-2">
@@ -52,8 +52,8 @@
             </form>
         </BaseContainer>
         
-        <BaseContainer>
-            <BaseTable :columns="['ID', 'Type', 'Title']">
+        <BaseContainer class="item-container" :height="'300px'">
+            <BaseTable class="item-table" :columns="['ID', 'Type', 'Title']" :table-height="'200px'">
                 <tr v-for="(item, index) in items" :key="index" @click="selectItem(item)" 
                     v-bind:class="{ 'active-row': selectedItem && selectedItem.id === item.id && selectedItem.type === item.type }">
                     <td class="my-cell">{{ item.count }}</td>
@@ -96,14 +96,13 @@
             const updateIdInput = (prefix, endpoint) => () => {
                 axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}${endpoint}`)
                     .then(response => {
-                        console.log(response.duration); // Log the response time
                         const data = response.data;
 
-                        if (data.id === 0) {
+                        if (data.count === 0) {
                             count_input.value = prefix + 1;
                         }
                         else {
-                            count_input.value = prefix + (data.id + 1);
+                            count_input.value = prefix + (data.count + 1);
                         }
                     })
                     .catch(error => {
@@ -116,10 +115,10 @@
                 // Only update count_input.value if no row is selected
                 if (!selectedItem.value) {
                     if (newValue === 'rule') {
-                        updateIdInput('Rule #', '/api/v1/rule/id/latest')();
+                        updateIdInput('Rule #', '/api/v1/rule/count/latest')();
                     }
                     else if (newValue === 'guideline') {
-                        updateIdInput('Guideline #', '/api/v1/guideline/id/latest')();
+                        updateIdInput('Guideline #', '/api/v1/guideline/count/latest')();
                     }
                 }
             });
@@ -190,7 +189,6 @@
                     data: { id: id }
                 })
                 .then(response => {
-                    console.log(response.data);
                     alert('Item deleted successfully');
                 })
                 .catch(error => {
@@ -281,8 +279,6 @@
                             body: this.body_input 
                         })
                         .then(response => {
-                            console.log(response.duration);
-
                             alert('Rule saved successfully');
                             this.resetAfter();
                         })
@@ -301,8 +297,6 @@
                             body: this.body_input 
                         })
                         .then(response => {
-                            console.log(response.duration);
-
                             alert('Guideline saved successfully');
                             this.resetAfter();
                         })
@@ -343,8 +337,6 @@
                             body: this.body_input 
                         })
                         .then(response => {
-                            console.log(response.duration);
-
                             alert('Rule updated successfully');
                         })
                         .catch(error => {
@@ -363,8 +355,6 @@
                             body: this.body_input 
                         })
                         .then(response => {
-                            console.log(response.duration);
-
                             alert('Guideline updated successfully');
                         })
                         .catch(error => {
@@ -395,6 +385,10 @@
     .components h2{
         font-weight: 800;
         font-size: 28px;
+    }
+
+    .item-container{
+        margin-bottom: 2%;
     }
 
     .new{
