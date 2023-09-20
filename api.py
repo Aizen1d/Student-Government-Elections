@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException, Depends, APIRouter, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import inspect
 from sqlalchemy.orm import Session
-from database import engine, SessionLocal
+from database import engine, SessionLocal, Base
 
 from pydantic import BaseModel
 from typing import Optional, List
@@ -16,7 +16,7 @@ import time
 import os
 import requests
 
-from models import Student, Announcement, Rule, Guideline
+from models import Student, Announcement, Rule, Guideline, AzureToken 
 
 #################################################################
 """ Settings """
@@ -58,6 +58,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+#################################################################
+""" Initial Setup """
+
+def create_tables():
+    Base.metadata.create_all(bind=engine)
+
+create_tables()
 
 def get_db():
     db = SessionLocal()
@@ -68,16 +75,57 @@ def get_db():
 
 CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
-REFRESH_TOKEN = os.getenv("REFRESH_TOKEN")
 
 # Store the expiration time and access token
 EXPIRES_AT = 0
 ACCESS_TOKEN = ""
+REFRESH_TOKEN = ""
 
-def get_access_token():
+def get_initial_tokens(db: Session = Depends(get_db)):
+    # Redirect the user to the OAuth server to log in
+    auth_url = "https://login.microsoftonline.com/consumers/oauth2/v2.0/authorize"
+    params = {
+        "client_id": CLIENT_ID,
+        "response_type": "code",
+        "redirect_uri": "http://localhost:8000/callback",  #
+        "scope": "files.readwrite offline_access",
+    }
+    response = requests.get(auth_url, params=params)
+    return response.url
+
+def callback(code, db: Session = Depends(get_db)):
+    # The user has logged in and authorized your app, and the OAuth server has redirected them back to your app
+    # Now you can exchange the authorization code for an access token and refresh token
+    token_url = "https://login.microsoftonline.com/consumers/oauth2/v2.0/token"
+    payload = {
+        "client_id": CLIENT_ID,
+        "client_secret": CLIENT_SECRET,
+        "code": code,
+        "grant_type": "authorization_code",
+        "redirect_uri": "http://localhost:8000/callback",  # Use your actual redirect URI
+    }
+    response = requests.post(token_url, data=payload)
+    if response.status_code != 200:
+        raise HTTPException(status_code=400, detail="Failed to get tokens")
+
+    # Save the refresh token to the database
+    db.add(AzureToken(access_token=response.json()["access_token"], expires_at=time.time() + response.json()["expires_in"], refresh_token=response.json()["refresh_token"]))
+    db.commit()
+
+def get_access_token(db: Session = Depends(get_db)):
     global REFRESH_TOKEN
-    global EXPIRES_AT
-    global ACCESS_TOKEN
+
+    # Load the stored tokens and expiration time from the database
+    token = db.query(AzureToken).first()
+
+    if token is None:
+        # No token in the database, need to get a new one
+        EXPIRES_AT = 0
+        ACCESS_TOKEN = ""
+    else:
+        EXPIRES_AT = token.expires_at
+        ACCESS_TOKEN = token.access_token
+        REFRESH_TOKEN = token.refresh_token  # Load the refresh token from the database
 
     # Check if the access token is expired or near to expire
     if time.time() > EXPIRES_AT - 60:  # refresh 60 seconds early
@@ -101,8 +149,19 @@ def get_access_token():
         EXPIRES_AT = time.time() + response.json()["expires_in"]
         ACCESS_TOKEN = response.json()["access_token"]
 
-    return ACCESS_TOKEN, REFRESH_TOKEN
+        # Save the updated tokens and expiration time to the database
+        if token is None:
+            # No existing token, create a new one
+            db.add(AzureToken(access_token=ACCESS_TOKEN, expires_at=EXPIRES_AT, refresh_token=REFRESH_TOKEN))
+        else:
+            # Update the existing token
+            token.access_token = ACCESS_TOKEN
+            token.expires_at = EXPIRES_AT
+            token.refresh_token = REFRESH_TOKEN  # Save the new refresh token to the database
 
+        db.commit()
+
+    return ACCESS_TOKEN, REFRESH_TOKEN
 
 #################################################################
 """ All about students APIs """
@@ -112,7 +171,7 @@ def get_access_token():
 @router.get("/student/all", tags=["Student"])
 def get_All_Students(db: Session = Depends(get_db)):
     try:
-        students = db.query(Student).all()
+        students = db.query(Student).order_by(Student.StudentId).all()
         return {"students": [student.to_dict() for student in students]}
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while fetching all students from the database"})
@@ -132,19 +191,57 @@ class AnnouncementSaveData(BaseModel):
 @router.get("/announcement/all", tags=["Announcement"])
 def get_All_Announcement(db: Session = Depends(get_db)):
     try:
-        announcements = db.query(Announcement).all()
-        return {"Announcements": [announcement.to_dict(i+1) for i, announcement in enumerate(announcements)]} # Return the row number as well
-
+        announcements = db.query(Announcement).order_by(Announcement.AnnouncementId).all() 
+        return {"announcements": [announcement.to_dict(i+1) for i, announcement in enumerate(announcements)]} # Return the row number as well
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while fetching all announcements from the database"})
     
-@router.get("/announcement/id/latest", tags=["Announcement"])
-def get_Announcement_Latest_Id(db: Session = Depends(get_db)):
+@router.get("/announcement/get/attachment/{id}", tags=["Announcement"])
+def get_Announcement_Attachment_By_Id(id: int, db: Session = Depends(get_db)):
+    try:
+        # Fetch the announcement with the given ID
+        announcement = db.query(Announcement).filter(Announcement.AnnouncementId == id).first()
+
+        if not announcement:
+            raise HTTPException(status_code=404, detail="Announcement not found")
+
+        folder_id = announcement.AttachmentImage  # Get the folder ID from the announcement details
+
+        if folder_id:
+            # If there's a folder ID, retrieve the files in the folder
+            access_token, refresh_token = get_access_token(db)
+            headers = {'Authorization': 'Bearer ' + access_token}
+            response = requests.get(f'https://graph.microsoft.com/v1.0/me/drive/items/{folder_id}/children', headers=headers)
+            files = response.json().get('value', [])
+
+            # Extract the file details and download URLs
+            file_details = []
+            for file in files:
+                response = requests.get(f'https://graph.microsoft.com/v1.0/me/drive/items/{file.get("id")}', headers=headers)
+                download_url = response.json().get('@microsoft.graph.downloadUrl')
+                file_details.append({
+                    "id": file.get('id'),
+                    "name": file.get('name'),
+                    "size": file.get('size'),
+                    "createdDateTime": file.get('createdDateTime'),
+                    "lastModifiedDateTime": file.get('lastModifiedDateTime'),
+                    "downloadUrl": download_url,
+                })
+
+            return {"files": file_details}
+
+        return {"files": []}
+
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while fetching the attachment of the specified id"})
+        
+@router.get("/announcement/count/latest", tags=["Announcement"])
+def get_Announcement_Latest_Count(db: Session = Depends(get_db)):
     try:
         count = db.query(Announcement).count()
-        return {"id": count}
+        return {"count": count}
     except:
-        return JSONResponse(status_code=500, content={"detail": "Error while fetching latest announcement id from the table Announcement"})
+        return JSONResponse(status_code=500, content={"detail": "Error while fetching latest announcement count from the table Announcement"})
     
 
 """ ** POST Methods: Announcement Table APIs ** """
@@ -157,7 +254,7 @@ async def save_Announcement(type_select: str = Form(...), title_input: str = For
     folder_id = None
     
     if attachment_images:
-        access_token, refresh_token = get_access_token()
+        access_token, refresh_token = get_access_token(db)
         headers = {'Authorization': 'Bearer ' + access_token}
 
         announcement_count = db.query(Announcement).count() + 1
@@ -281,13 +378,13 @@ def get_All_Rules(db: Session = Depends(get_db)):
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while fetching all rules from the database"})
 
-@router.get("/rule/id/latest", tags=["Rule"])
-def get_Rule_Latest_Id(db: Session = Depends(get_db)):
+@router.get("/rule/count/latest", tags=["Rule"])
+def get_Rule_Latest_Count(db: Session = Depends(get_db)):
     try:
         count = db.query(Rule).count()
-        return {"id": count}
+        return {"count": count}
     except:
-        return JSONResponse(status_code=500, content={"detail": "Error while fetching latest rule id from the table Rule"})
+        return JSONResponse(status_code=500, content={"detail": "Error while fetching latest rule count from the table Rule"})
 
 """ ** POST Methods: Rule Table APIs ** """
 
@@ -388,13 +485,13 @@ def get_All_Guidelines(db: Session = Depends(get_db)):
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while fetching all guidelines from the database"})
 
-@router.get("/guideline/id/latest", tags=["Guideline"])
-def get_Guideline_Latest_Id(db: Session = Depends(get_db)):
+@router.get("/guideline/count/latest", tags=["Guideline"])
+def get_Guideline_Latest_Count(db: Session = Depends(get_db)):
     try:
         count = db.query(Guideline).count()
-        return {"id": count}
+        return {"count": count}
     except:
-        return JSONResponse(status_code=500, content={"detail": "Error while fetching latest guideline id from the table Guideline"})
+        return JSONResponse(status_code=500, content={"detail": "Error while fetching latest guideline count from the table Guideline"})
     
 """ ** POST Methods: Guideline Table APIs ** """
 

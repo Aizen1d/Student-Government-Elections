@@ -1,7 +1,7 @@
 from database import engine, Base
 from sqlalchemy.orm import sessionmaker
 
-from sqlalchemy import Column, Integer, String, Date, DateTime, Boolean, Text
+from sqlalchemy import Column, Integer, Float, String, Date, DateTime, Boolean, Text
 from sqlalchemy.sql import func
 
 Session = sessionmaker(bind=engine)
@@ -106,4 +106,20 @@ class Guideline(Base):
             "GuidelineBody": self.GuidelineBody,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
+        }
+
+class AzureToken(Base):
+    __tablename__ = "AzureToken"
+
+    id = Column(Integer, primary_key=True, index=True)
+    access_token = Column(String)
+    refresh_token = Column(String)
+    expires_at = Column(Float)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "access_token": self.access_token,
+            "refresh_token": self.refresh_token,
+            "expires_at": self.expires_at
         }
