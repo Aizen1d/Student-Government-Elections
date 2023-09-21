@@ -7,15 +7,15 @@
             <span class="sr-only my-2">Retrieving files..</span>
         </div>
 
-        <div :class="$style.dragDropDefaultContainer" v-if="!attachments.length & !isLoadingAttachments">
+        <div :class="$style.dragDropDefaultContainer" v-if="!attachments.length && !isLoadingAttachments">
             <img src="../../images/icons/insert_data.svg" alt="" height="30" width="30">
             <span>Drag and drop your files here</span>
         </div>
 
-        <div :class="$style.dragDropFilesContainer" v-if="attachments.length & !isLoadingAttachments">
+        <div :class="$style.dragDropFilesContainer" v-if="attachments.length && !isLoadingAttachments">
             <div v-for="(file, index) in attachments" :key="index" :class="$style.fileList">
                 <span> {{ file.name }} 
-                    <button type="button" :class="$style.removeAttachment"
+                    <button type="button" :class="$style.removeAttachment" :disabled="saving || updating"
                         @click="removeFile(index)">X
                     </button>
                 </span>
@@ -31,6 +31,9 @@ export default {
         modelValue: Array,
         acceptedFileTypes: String,
         isLoadingAttachments: Boolean,
+        saving: Boolean,
+        updating: Boolean,
+        fileSize: Number,
     },
     computed: {
         attachments: {
@@ -47,6 +50,11 @@ export default {
             // Add the files to the list of files
             for (let i = 0; i < files.length; i++) {
                 let file = files[i];
+
+                if (file.size > this.fileSize * 1024 * 1024) {
+                    alert(file.name + ' is larger than 5MB, please upload a smaller file');
+                    continue;
+                }
 
                 // Check if a file is of an accepted type
                 if (!file.type.startsWith(this.acceptedFileTypes)) {
