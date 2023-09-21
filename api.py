@@ -179,12 +179,8 @@ def get_All_Students(db: Session = Depends(get_db)):
 #################################################################
 """ Announcement Table APIs """
 
-class AnnouncementSaveData(BaseModel):
-    type: str
-    title: str
-    body: str
-    attachment_type: str
-    attachment_image: str
+class AnnouncementDeleteData(BaseModel):
+    id: int
 
 """ ** GET Methods: Announcement Table APIs ** """
 
@@ -200,7 +196,7 @@ def get_All_Announcement(db: Session = Depends(get_db)):
 def get_Announcement_Attachment_By_Id(id: int, db: Session = Depends(get_db)):
     try:
         # Fetch the announcement with the given ID
-        announcement = db.query(Announcement).filter(Announcement.AnnouncementId == id).first()
+        announcement = db.query(Announcement).get(id)
 
         if not announcement:
             raise HTTPException(status_code=404, detail="Announcement not found")
@@ -252,60 +248,59 @@ async def save_Announcement(type_select: str = Form(...), title_input: str = For
                             db: Session = Depends(get_db)):
     
     folder_id = None
-    
-    if attachment_images:
-        access_token, refresh_token = get_access_token(db)
-        headers = {'Authorization': 'Bearer ' + access_token}
 
-        announcement_count = db.query(Announcement).count() + 1
-        
-        # Check if "Announcements" folder exists
-        response = requests.get('https://graph.microsoft.com/v1.0/me/drive/root/children', headers=headers)
-        folders = response.json().get('value', [])
+    try:
+        if attachment_images:
+            access_token, refresh_token = get_access_token(db)
+            headers = {'Authorization': 'Bearer ' + access_token}
+            
+            # Check if "Announcements" folder exists
+            response = requests.get('https://graph.microsoft.com/v1.0/me/drive/root/children', headers=headers)
+            folders = response.json().get('value', [])
 
-        if not any(folder.get('name') == 'Announcements' for folder in folders):
-            requests.post('https://graph.microsoft.com/v1.0/me/drive/root/children', headers=headers, json={
-                "name": "Announcements",
-                "folder": {},
-                "@microsoft.graph.conflictBehavior": "rename"
-            })
+            if not any(folder.get('name') == 'Announcements' for folder in folders):
+                requests.post('https://graph.microsoft.com/v1.0/me/drive/root/children', headers=headers, json={
+                    "name": "Announcements",
+                    "folder": {},
+                    "@microsoft.graph.conflictBehavior": "rename"
+                })
 
-        # Create subfolder based on announcement count if not exists
-        announcement_count_folder_name = "Announcement_" + str(announcement_count)
+            # Create subfolder to store the announcement file(s)
+            response = requests.get('https://graph.microsoft.com/v1.0/me/drive/root:/Announcements:/children', headers=headers)
+            folders = response.json().get('value', [])
 
-        # Check if subfolder exists
-        response = requests.get('https://graph.microsoft.com/v1.0/me/drive/root:/Announcements:/children', headers=headers)
-        folders = response.json().get('value', [])
-
-        if not any(folder.get('name') == announcement_count_folder_name for folder in folders):
-            # Create subfolder
+            # Create subfolder with a temporary name first 
             response = requests.post('https://graph.microsoft.com/v1.0/me/drive/root:/Announcements:/children', headers=headers, json={
-                "name": announcement_count_folder_name,
+                "name": "temp_name",
                 "folder": {},
                 "@microsoft.graph.conflictBehavior": "rename"
             })
             folder_id = response.json().get('id')  # Store folder ID
 
-        for attachment_image in attachment_images:
-            contents = await attachment_image.read()
-            filename = attachment_image.filename
+            # Rename the folder using the folder_id
+            requests.patch(f'https://graph.microsoft.com/v1.0/me/drive/items/{folder_id}', headers=headers, json={
+                "name": "Announcement_" + str(folder_id),
+            })
 
-            # Upload file to subfolder
-            response = requests.put(
-                f'https://graph.microsoft.com/v1.0/me/drive/items/{folder_id}:/{filename}:/content',
-                headers=headers,
-                data=contents  # This is the file contents.
-            )
-            response.raise_for_status()  # Raise an exception if the request failed
+            for attachment_image in attachment_images:
+                contents = await attachment_image.read()
+                filename = attachment_image.filename
 
-        # Retrieve redirect URL for the folder
-        redirect_url = f'https://graph.microsoft.com/v1.0/me/drive/items/{folder_id}'  # Store redirect URL
+                # Upload file to subfolder
+                response = requests.put(
+                    f'https://graph.microsoft.com/v1.0/me/drive/items/{folder_id}:/{filename}:/content',
+                    headers=headers,
+                    data=contents  # This is the file contents.
+                )
+                response.raise_for_status()  # Raise an exception if the request failed
 
-        # Retrieve download URL for the folder
-        response = requests.get(f'https://graph.microsoft.com/v1.0/me/drive/items/{folder_id}', headers=headers)
-        download_url = response.json().get('@microsoft.graph.downloadUrl')  # Store download URL
+            # Retrieve redirect URL for the folder
+            redirect_url = f'https://graph.microsoft.com/v1.0/me/drive/items/{folder_id}'  # Store redirect URL
 
-    try:
+            # Retrieve download URL for the folder
+            response = requests.get(f'https://graph.microsoft.com/v1.0/me/drive/items/{folder_id}', headers=headers)
+            download_url = response.json().get('@microsoft.graph.downloadUrl')  # Store download URL
+
         new_announcement = Announcement(
             AnnouncementType=type_select, 
             AnnouncementTitle=title_input, 
@@ -332,24 +327,119 @@ async def save_Announcement(type_select: str = Form(...), title_input: str = For
         }
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while creating new announcement in the table Announcement"})
+    
+@router.put("/announcement/update", tags=["Announcement"])
+async def update_Announcement(id_input: int = Form(...), type_select: str = Form(...), title_input: str = Form(...), body_input: str = Form(...), 
+                            type_of_attachment: Optional[str] = Form(None), attachment_images: List[UploadFile] = File(None), 
+                            db: Session = Depends(get_db), attachments_modified: bool = Form(False)):
+    
+    try:
+        # Fetch the original announcement from the database
+        original_announcement = db.query(Announcement).get(id_input)
+
+        if not original_announcement:
+            return {"error": "Announcement not found"}
+
+        folder_id = original_announcement.AttachmentImage
+
+        if type_of_attachment == 'None' and folder_id:
+            # If type of attachment is None and a folder exists, delete the folder
+            access_token, refresh_token = get_access_token(db)
+            headers = {'Authorization': 'Bearer ' + access_token}
+            requests.delete(f'https://graph.microsoft.com/v1.0/me/drive/items/{folder_id}', headers=headers)
+            folder_id = ''  # Reset folder_id since the folder has been deleted
+
+        elif attachment_images and attachments_modified:
+            access_token, refresh_token = get_access_token(db)
+            headers = {'Authorization': 'Bearer ' + access_token}
+
+            if not folder_id:
+                # If folder does not exist, create a new one
+                response = requests.post(
+                    'https://graph.microsoft.com/v1.0/me/drive/root:/Announcements:/children',
+                    headers=headers,
+                    json={"name": "temp_name", "folder": {}, "@microsoft.graph.conflictBehavior": "rename"}
+                )
+                folder_id = response.json().get('id')  # Store new folder ID
+
+                # Rename the folder using the folder_id
+                requests.patch(f'https://graph.microsoft.com/v1.0/me/drive/items/{folder_id}', headers=headers, json={
+                    "name": "Announcement_" + str(folder_id),
+                })
+
+            # Get a list of all files in the folder
+            response = requests.get(f'https://graph.microsoft.com/v1.0/me/drive/items/{folder_id}/children', headers=headers)
+            files_in_folder = response.json().get('value', [])
+
+            # Check for removed files
+            for file in files_in_folder:
+                if not any(attachment_image.filename == file['name'] for attachment_image in attachment_images):
+                    # This file has been removed locally, delete it from OneDrive
+                    file_id = file['id']
+                    requests.delete(f'https://graph.microsoft.com/v1.0/me/drive/items/{file_id}', headers=headers)
+
+            # Check for new files
+            for attachment_image in attachment_images:
+                if not any(file['name'] == attachment_image.filename for file in files_in_folder):
+                    # This is a new file, upload it to OneDrive
+                    contents = await attachment_image.read()
+                    filename = attachment_image.filename
+                    requests.put(
+                        f'https://graph.microsoft.com/v1.0/me/drive/items/{folder_id}:/{filename}:/content',
+                        headers=headers,
+                        data=contents  # This is the file contents.
+                    )
+
+        # Update the announcement in the database
+        original_announcement.AnnouncementType = type_select
+        original_announcement.AnnouncementTitle = title_input
+        original_announcement.AnnouncementBody = body_input
+        original_announcement.AttachmentType = type_of_attachment
+        original_announcement.AttachmentImage = folder_id  
+        original_announcement.updated_at = datetime.now()
+
+        db.commit()
+
+        return {
+            "id": original_announcement.AnnouncementId,
+            "type": original_announcement.AnnouncementType,
+            "title": original_announcement.AnnouncementTitle,
+            "body": original_announcement.AnnouncementBody,
+            "attachment_type": original_announcement.AttachmentType,
+            "attachment_image": original_announcement.AttachmentImage,
+            "folder_id": folder_id if folder_id else '',
+            "created_at": original_announcement.created_at.isoformat() if original_announcement.created_at else None,
+            "updated_at": original_announcement.updated_at.isoformat() if original_announcement.updated_at else None
+        }
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while updating announcement in the table Announcement"})
+
+@router.delete("/announcement/delete", tags=["Announcement"])
+def delete_Announcement(announcement_data: AnnouncementDeleteData, db: Session = Depends(get_db)):
+    try:
+        announcement = db.query(Announcement).get(announcement_data.id)
         
-    return {
-        "form_data": {
-            "type_select": type_select,
-            "title_input": title_input,
-            "body_input": body_input,
-            "type_of_attachment": type_of_attachment,
-        },
-        "image_details": {
-            "filename": filename,
-            "size": len(contents),
-            "content_type": attachment_image.content_type,
-            "status": response.status_code,
-            "refresh_token": refresh_token,
-            "file_id": file_id, 
-            "download_url": download_url
-        },
-    }
+        if not announcement:
+            return JSONResponse(status_code=404, content={"detail": "Announcement not found"})
+        
+        if announcement.AttachmentImage:
+            # Get access token
+            access_token, refresh_token = get_access_token(db)
+            headers = {'Authorization': 'Bearer ' + access_token}
+
+            # Delete the folder
+            response = requests.delete(f'https://graph.microsoft.com/v1.0/me/drive/items/{announcement.AttachmentImage}', headers=headers)
+
+            # Check if the request was successful
+            if response.status_code != 204:
+                return JSONResponse(status_code=500, content={"detail": "Failed to delete folder"})
+        
+        db.delete(announcement)
+        db.commit()
+        
+        return {"detail": "Announcement id " + str(announcement_data.id) + " was successfully deleted)"}
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while deleting announcement from the table Announcement"})
 
 
     
@@ -444,18 +534,8 @@ def delete_Rule(rule_data: RuleDeleteData, db: Session = Depends(get_db)):
         
         db.delete(rule)
         db.commit()
-        
-        # Fetch all remaining rules
-        rules = db.query(Rule).order_by(Rule.RuleId).all()
-        
-        # Update the IDs of the remaining rules
-        for i, rule in enumerate(rules, start=1):
-            rule.RuleId = i
-            db.add(rule)
-        
-        db.commit()
 
-        return {"detail": "Rule id " + str(rule_data.id) + " was successfully deleted and re-arranged the IDs of the remaining rule(s)"}
+        return {"detail": "Rule id " + str(rule_data.id) + " was successfully deleted"}
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while deleting rule from the table Rule"})
 
@@ -552,17 +632,7 @@ def delete_Guideline(guideline_data: GuidelineDeleteData, db: Session = Depends(
         db.delete(guideline)
         db.commit()
         
-        # Fetch all remaining guidelines
-        guidelines = db.query(Guideline).order_by(Guideline.GuideId).all()
-        
-        # Update the IDs of the remaining guideline
-        for i, guideline in enumerate(guidelines, start=1):
-            guideline.GuideId = i
-            db.add(guideline)
-        
-        db.commit()
-
-        return {"detail": "Guideline id " + str(guideline_data.id) + " was successfully deleted and re-arranged the IDs of the remaining guideline(s)"}
+        return {"detail": "Guideline id " + str(guideline_data.id) + " was successfully deleted)"}
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while deleting guideline from the table Guideline"})
 
