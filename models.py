@@ -115,11 +115,13 @@ class AzureToken(Base):
     access_token = Column(String)
     refresh_token = Column(String)
     expires_at = Column(Float)
+    token_updates = Column(Integer, default=0)  # New column to track token updates
 
     def to_dict(self):
         return {
             "id": self.id,
             "access_token": self.access_token,
             "refresh_token": self.refresh_token,
-            "expires_at": self.expires_at
+            "expires_at": self.expires_at,
+            "token_updates": self.token_updates  # Include the new column in the dictionary
         }

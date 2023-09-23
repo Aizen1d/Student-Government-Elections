@@ -15,6 +15,9 @@ load_dotenv()
 import time
 import os
 import requests
+import cloudinary
+import cloudinary.uploader
+from cloudinary.api import resources_by_tag, delete_resources_by_tag, delete_folder
 
 from models import Student, Announcement, Rule, Guideline, AzureToken 
 
@@ -128,7 +131,7 @@ def get_access_token(db: Session = Depends(get_db)):
         REFRESH_TOKEN = token.refresh_token  # Load the refresh token from the database
 
     # Check if the access token is expired or near to expire
-    if time.time() > EXPIRES_AT - 60:  # refresh 60 seconds early
+    if time.time() > EXPIRES_AT:  # refresh
         token_url = "https://login.microsoftonline.com/consumers/oauth2/v2.0/token"
 
         payload = {
@@ -136,7 +139,7 @@ def get_access_token(db: Session = Depends(get_db)):
             "client_secret": CLIENT_SECRET,
             "refresh_token": REFRESH_TOKEN,
             "grant_type": "refresh_token",
-            "scope": "files.readwrite offline_access",
+            "scope": "files.readwrite",
         }
 
         response = requests.post(token_url, data=payload)
@@ -158,6 +161,7 @@ def get_access_token(db: Session = Depends(get_db)):
             token.access_token = ACCESS_TOKEN
             token.expires_at = EXPIRES_AT
             token.refresh_token = REFRESH_TOKEN  # Save the new refresh token to the database
+            token.token_updates += 1  # Increment the token_updates value
 
         db.commit()
 
@@ -194,42 +198,26 @@ def get_All_Announcement(db: Session = Depends(get_db)):
     
 @router.get("/announcement/get/attachment/{id}", tags=["Announcement"])
 def get_Announcement_Attachment_By_Id(id: int, db: Session = Depends(get_db)):
-    try:
-        # Fetch the announcement with the given ID
-        announcement = db.query(Announcement).get(id)
 
-        if not announcement:
-            raise HTTPException(status_code=404, detail="Announcement not found")
+    announcement = db.query(Announcement).get(id)
 
-        folder_id = announcement.AttachmentImage  # Get the folder ID from the announcement details
+    if not announcement:
+        raise HTTPException(status_code=404, detail="Announcement not found")
 
-        if folder_id:
-            # If there's a folder ID, retrieve the files in the folder
-            access_token, refresh_token = get_access_token(db)
-            headers = {'Authorization': 'Bearer ' + access_token}
-            response = requests.get(f'https://graph.microsoft.com/v1.0/me/drive/items/{folder_id}/children', headers=headers)
-            files = response.json().get('value', [])
+    tag_name = announcement.AttachmentImage
 
-            # Extract the file details and download URLs
-            file_details = []
-            for file in files:
-                response = requests.get(f'https://graph.microsoft.com/v1.0/me/drive/items/{file.get("id")}', headers=headers)
-                download_url = response.json().get('@microsoft.graph.downloadUrl')
-                file_details.append({
-                    "id": file.get('id'),
-                    "name": file.get('name'),
-                    "size": file.get('size'),
-                    "createdDateTime": file.get('createdDateTime'),
-                    "lastModifiedDateTime": file.get('lastModifiedDateTime'),
-                    "downloadUrl": download_url,
-                })
+    if tag_name:
 
-            return {"files": file_details}
+        # Search for images with the tag using the Admin API
+        response = resources_by_tag(tag_name)
 
-        return {"files": []}
+        # Get the URLs and file names of the images
+        images = [{"url": resource['secure_url'], 
+                "name": resource['public_id'].split('/')[-1]} for resource in response['resources']]
 
-    except:
-        return JSONResponse(status_code=500, content={"detail": "Error while fetching the attachment of the specified id"})
+        return {"images": images}
+    
+    return {"images": []}
         
 @router.get("/announcement/count/latest", tags=["Announcement"])
 def get_Announcement_Latest_Count(db: Session = Depends(get_db)):
@@ -239,7 +227,6 @@ def get_Announcement_Latest_Count(db: Session = Depends(get_db)):
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while fetching latest announcement count from the table Announcement"})
     
-
 """ ** POST Methods: Announcement Table APIs ** """
 
 @router.post("/announcement/save", tags=["Announcement"])
@@ -247,191 +234,136 @@ async def save_Announcement(type_select: str = Form(...), title_input: str = For
                             type_of_attachment: Optional[str] = Form(None), attachment_images: List[UploadFile] = File(None), 
                             db: Session = Depends(get_db)):
     
-    folder_id = None
+    # Create a new announcement with an empty string as the initial AttachmentImage
+    new_announcement = Announcement(
+        AnnouncementType=type_select, 
+        AnnouncementTitle=title_input, 
+        AnnouncementBody=body_input,
+        AttachmentType=type_of_attachment,
+        AttachmentImage='',  # Initialize with an empty string
+        created_at=datetime.now(), 
+        updated_at=datetime.now()
+    )
+
+    db.add(new_announcement)
+    db.commit()
 
     try:
         if attachment_images:
-            access_token, refresh_token = get_access_token(db)
-            headers = {'Authorization': 'Bearer ' + access_token}
-            
-            # Check if "Announcements" folder exists
-            response = requests.get('https://graph.microsoft.com/v1.0/me/drive/root/children', headers=headers)
-            folders = response.json().get('value', [])
-
-            if not any(folder.get('name') == 'Announcements' for folder in folders):
-                requests.post('https://graph.microsoft.com/v1.0/me/drive/root/children', headers=headers, json={
-                    "name": "Announcements",
-                    "folder": {},
-                    "@microsoft.graph.conflictBehavior": "rename"
-                })
-
-            # Create subfolder to store the announcement file(s)
-            response = requests.get('https://graph.microsoft.com/v1.0/me/drive/root:/Announcements:/children', headers=headers)
-            folders = response.json().get('value', [])
-
-            # Create subfolder with a temporary name first 
-            response = requests.post('https://graph.microsoft.com/v1.0/me/drive/root:/Announcements:/children', headers=headers, json={
-                "name": "temp_name",
-                "folder": {},
-                "@microsoft.graph.conflictBehavior": "rename"
-            })
-            folder_id = response.json().get('id')  # Store folder ID
-
-            # Rename the folder using the folder_id
-            requests.patch(f'https://graph.microsoft.com/v1.0/me/drive/items/{folder_id}', headers=headers, json={
-                "name": "Announcement_" + str(folder_id),
-            })
+            # Use the ID of the new announcement as the subfolder name under 'Announcements'            
+            folder_name = f"Announcements/announcement_{new_announcement.AnnouncementId}"
 
             for attachment_image in attachment_images:
                 contents = await attachment_image.read()
                 filename = attachment_image.filename
 
-                # Upload file to subfolder
-                response = requests.put(
-                    f'https://graph.microsoft.com/v1.0/me/drive/items/{folder_id}:/{filename}:/content',
-                    headers=headers,
-                    data=contents  # This is the file contents.
-                )
-                response.raise_for_status()  # Raise an exception if the request failed
+                # Upload file to Cloudinary with the folder name in the public ID
+                response = cloudinary.uploader.upload(contents, public_id=f"{folder_name}/{filename}", tags=[f'announcement_{new_announcement.AnnouncementId}'])
 
-            # Retrieve redirect URL for the folder
-            redirect_url = f'https://graph.microsoft.com/v1.0/me/drive/items/{folder_id}'  # Store redirect URL
-
-            # Retrieve download URL for the folder
-            response = requests.get(f'https://graph.microsoft.com/v1.0/me/drive/items/{folder_id}', headers=headers)
-            download_url = response.json().get('@microsoft.graph.downloadUrl')  # Store download URL
-
-        new_announcement = Announcement(
-            AnnouncementType=type_select, 
-            AnnouncementTitle=title_input, 
-            AnnouncementBody=body_input,
-            AttachmentType=type_of_attachment,
-            AttachmentImage=folder_id if folder_id else '',
-            created_at=datetime.now(), 
-            updated_at=datetime.now()
-        )
-
-        db.add(new_announcement)
-        db.commit()
-
-        return {
-            "id": new_announcement.AnnouncementId,
-            "type": new_announcement.AnnouncementType,
-            "title": new_announcement.AnnouncementTitle,
-            "body": new_announcement.AnnouncementBody,
-            "attachment_type": new_announcement.AttachmentType,
-            "attachment_image": new_announcement.AttachmentImage,
-            "folder_id": folder_id if folder_id else '',
-            "created_at": new_announcement.created_at.isoformat() if new_announcement.created_at else None,
-            "updated_at": new_announcement.updated_at.isoformat() if new_announcement.updated_at else None
-        }
+                # Store the URL in the AttachmentImage column
+                new_announcement.AttachmentImage = f'announcement_{new_announcement.AnnouncementId}'
+                db.commit()
     except:
-        return JSONResponse(status_code=500, content={"detail": "Error while creating new announcement in the table Announcement"})
-    
+        return JSONResponse(status_code=500, content={"detail": "Error while uploading attachment to Cloudinary"})
+
+    return {
+        "id": new_announcement.AnnouncementId,
+        "type": new_announcement.AnnouncementType,
+        "title": new_announcement.AnnouncementTitle,
+        "body": new_announcement.AnnouncementBody,
+        "attachment_type": new_announcement.AttachmentType,
+        "attachment_image": new_announcement.AttachmentImage,
+    }
+
 @router.put("/announcement/update", tags=["Announcement"])
 async def update_Announcement(id_input: int = Form(...), type_select: str = Form(...), title_input: str = Form(...), body_input: str = Form(...), 
-                            type_of_attachment: Optional[str] = Form(None), attachment_images: List[UploadFile] = File(None), 
+                            type_of_attachment: Optional[str] = Form(None), attachment_images: List[UploadFile] = File(None),
+                            new_files: List[UploadFile] = File(None),
                             db: Session = Depends(get_db), attachments_modified: bool = Form(False)):
     
-    try:
-        # Fetch the original announcement from the database
-        original_announcement = db.query(Announcement).get(id_input)
+    original_announcement = db.query(Announcement).get(id_input)
 
-        if not original_announcement:
-            return {"error": "Announcement not found"}
+    if not original_announcement:
+        return {"error": "Announcement not found"}
 
-        folder_id = original_announcement.AttachmentImage
+    # Use the ID of the announcement as the tag
+    folder_name = f"Announcements/announcement_{id_input}"
+    tag_name = f'announcement_{id_input}'
 
-        if type_of_attachment == 'None' and folder_id:
-            # If type of attachment is None and a folder exists, delete the folder
-            access_token, refresh_token = get_access_token(db)
-            headers = {'Authorization': 'Bearer ' + access_token}
-            requests.delete(f'https://graph.microsoft.com/v1.0/me/drive/items/{folder_id}', headers=headers)
-            folder_id = ''  # Reset folder_id since the folder has been deleted
+    if attachment_images and attachments_modified:
+        # Get all images with the tag
+        response = resources_by_tag(tag_name)
+        images_in_folder = [{"url": resource['secure_url'], "name": resource['public_id'].split('/')[-1]} for resource in response['resources']]
 
-        elif attachment_images and attachments_modified:
-            access_token, refresh_token = get_access_token(db)
-            headers = {'Authorization': 'Bearer ' + access_token}
+        # Check for removed files
+        for image in images_in_folder:
+            if not any(attachment_image.filename == image['name'] for attachment_image in attachment_images):
+                # This file has been removed locally, delete it from Cloudinary
+                delete_resources_by_tag(image['name'])
 
-            if not folder_id:
-                # If folder does not exist, create a new one
-                response = requests.post(
-                    'https://graph.microsoft.com/v1.0/me/drive/root:/Announcements:/children',
-                    headers=headers,
-                    json={"name": "temp_name", "folder": {}, "@microsoft.graph.conflictBehavior": "rename"}
-                )
-                folder_id = response.json().get('id')  # Store new folder ID
+    if new_files and attachments_modified:
+        # Check for new files
+        for new_file in new_files:
+            # This is a new file, upload it to Cloudinary
+            contents = await new_file.read()
+            filename = new_file.filename
 
-                # Rename the folder using the folder_id
-                requests.patch(f'https://graph.microsoft.com/v1.0/me/drive/items/{folder_id}', headers=headers, json={
-                    "name": "Announcement_" + str(folder_id),
-                })
+            # Upload file to Cloudinary with the folder name in the public ID
+            response = cloudinary.uploader.upload(contents, public_id=f"{folder_name}/{filename}", tags=[tag_name])
 
-            # Get a list of all files in the folder
-            response = requests.get(f'https://graph.microsoft.com/v1.0/me/drive/items/{folder_id}/children', headers=headers)
-            files_in_folder = response.json().get('value', [])
+        original_announcement.AttachmentImage = tag_name
 
-            # Check for removed files
-            for file in files_in_folder:
-                if not any(attachment_image.filename == file['name'] for attachment_image in attachment_images):
-                    # This file has been removed locally, delete it from OneDrive
-                    file_id = file['id']
-                    requests.delete(f'https://graph.microsoft.com/v1.0/me/drive/items/{file_id}', headers=headers)
+    if type_of_attachment == 'None' and original_announcement.AttachmentImage:
+        # Delete all images with the tag
+        delete_resources_by_tag(tag_name)
 
-            # Check for new files
-            for attachment_image in attachment_images:
-                if not any(file['name'] == attachment_image.filename for file in files_in_folder):
-                    # This is a new file, upload it to OneDrive
-                    contents = await attachment_image.read()
-                    filename = attachment_image.filename
-                    requests.put(
-                        f'https://graph.microsoft.com/v1.0/me/drive/items/{folder_id}:/{filename}:/content',
-                        headers=headers,
-                        data=contents  # This is the file contents.
-                    )
+        # Delete the folder in Cloudinary
+        delete_folder(folder_name)
 
-        # Update the announcement in the database
-        original_announcement.AnnouncementType = type_select
-        original_announcement.AnnouncementTitle = title_input
-        original_announcement.AnnouncementBody = body_input
-        original_announcement.AttachmentType = type_of_attachment
-        original_announcement.AttachmentImage = folder_id  
-        original_announcement.updated_at = datetime.now()
+        original_announcement.AttachmentImage = ''
 
-        db.commit()
+    # Update the announcement in the database
+    original_announcement.AnnouncementType = type_select
+    original_announcement.AnnouncementTitle = title_input
+    original_announcement.AnnouncementBody = body_input
+    original_announcement.AttachmentType = type_of_attachment
+    original_announcement.updated_at = datetime.now()
 
-        return {
-            "id": original_announcement.AnnouncementId,
-            "type": original_announcement.AnnouncementType,
-            "title": original_announcement.AnnouncementTitle,
-            "body": original_announcement.AnnouncementBody,
-            "attachment_type": original_announcement.AttachmentType,
-            "attachment_image": original_announcement.AttachmentImage,
-            "folder_id": folder_id if folder_id else '',
-            "created_at": original_announcement.created_at.isoformat() if original_announcement.created_at else None,
-            "updated_at": original_announcement.updated_at.isoformat() if original_announcement.updated_at else None
-        }
-    except:
-        return JSONResponse(status_code=500, content={"detail": "Error while updating announcement in the table Announcement"})
+    db.commit()
+    
+    return {
+        "id": original_announcement.AnnouncementId,
+        "type": original_announcement.AnnouncementType,
+        "title": original_announcement.AnnouncementTitle,
+        "body": original_announcement.AnnouncementBody,
+        "attachment_type": original_announcement.AttachmentType if original_announcement.AttachmentType else 'None',
+        "attachment_image": original_announcement.AttachmentImage if original_announcement.AttachmentImage else '',
+    }
 
 @router.delete("/announcement/delete", tags=["Announcement"])
 def delete_Announcement(announcement_data: AnnouncementDeleteData, db: Session = Depends(get_db)):
     try:
         announcement = db.query(Announcement).get(announcement_data.id)
-        
-        if not announcement:
-            return JSONResponse(status_code=404, content={"detail": "Announcement not found"})
-        
-        if announcement.AttachmentImage:
-            # Get access token
-            access_token, refresh_token = get_access_token(db)
-            headers = {'Authorization': 'Bearer ' + access_token}
 
-            # Delete the folder
-            response = requests.delete(f'https://graph.microsoft.com/v1.0/me/drive/items/{announcement.AttachmentImage}', headers=headers)
+        if not announcement:
+            return {"error": "Announcement not found"}
+
+        if announcement.AttachmentImage:
+            folder_name = f"Announcements/announcement_{announcement.AnnouncementId}"
+            tag_name = f'announcement_{announcement.AnnouncementId}'
+
+            # Delete all images with the tag
+            response = delete_resources_by_tag(tag_name)
 
             # Check if the request was successful
-            if response.status_code != 204:
+            if 'result' in response and response['result'] != 'ok':
+                return JSONResponse(status_code=500, content={"detail": "Failed to delete images"})
+
+            # Delete the folder in Cloudinary
+            response = delete_folder(folder_name)
+
+            # Check if the request was successful
+            if 'result' in response and response['result'] != 'ok':
                 return JSONResponse(status_code=500, content={"detail": "Failed to delete folder"})
         
         db.delete(announcement)
@@ -440,8 +372,7 @@ def delete_Announcement(announcement_data: AnnouncementDeleteData, db: Session =
         return {"detail": "Announcement id " + str(announcement_data.id) + " was successfully deleted)"}
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while deleting announcement from the table Announcement"})
-
-
+  
     
 #################################################################
 """ Rule Table APIs """
