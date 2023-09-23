@@ -289,7 +289,7 @@ export default {
                     this.upload_image_attachments = [];
 
                     // Push the retrieved files to the upload_image_attachments array
-                    response.data.files.forEach(retrieved_file => {
+                    response.data.images.forEach(retrieved_file => {
                         let file = new File([], retrieved_file.name);
                         this.upload_image_attachments.push(file);
                     });
@@ -449,7 +449,21 @@ export default {
             // To improve performance, if not modified, just look for db updates directly
             if (attachments_modified) {
                 formData.append('attachments_modified', 'true');
-            } else {
+                let new_files = [];
+
+                // Check for new files
+                for (let i = 0; i < this.upload_image_attachments.length; i++) {
+                    if (!this.retrieved_attachments.includes(this.upload_image_attachments[i])) {
+                        new_files.push(this.upload_image_attachments[i]);
+                    }
+                }
+
+                // Append new files
+                for (let i = 0; i < new_files.length; i++) {
+                    formData.append('new_files', new_files[i]);
+                }
+            } 
+            else {
                 formData.append('attachments_modified', 'false');
             }
 
