@@ -14,7 +14,8 @@
 
         <div :class="$style.dragDropFilesContainer" v-if="attachments.length && !isLoadingAttachments">
             <div v-for="(file, index) in attachments" :key="index" :class="$style.fileList">
-                <span> {{ file.name }} 
+                <span> 
+                    <a :class="$style.fileItem" :href="file.url" target="_blank" style="color: black;"> {{ file.name }} </a>
                     <button type="button" :class="$style.removeAttachment" :disabled="saving || updating"
                         @click="removeFile(index)">X
                     </button>
@@ -62,10 +63,16 @@ export default {
                     continue;
                 }
 
+                // Create a new object URL for the file
+                let url = URL.createObjectURL(file);
+
                 // Check if the file is already in the list of files
                 // If it is, then do not add it again
                 if (!this.attachments.some(existingFile => existingFile.name === file.name)) {
-                    this.attachments.push(file);
+                    this.attachments.push({ file:file, 
+                                            name: file.name, 
+                                            url: url 
+                                        });
                 }
             }
         },
@@ -94,7 +101,8 @@ export default {
 .dropzone {
     width: 100%;
     height: 200px;
-    background-color: #e0e0e0;
+    background-color: rgb(243, 243, 243);
+    border: 2px dashed rgb(205, 205, 205);
     border-radius: 10px;
 }
 
@@ -122,6 +130,14 @@ export default {
     overflow-x: hidden;
 }
 
+.fileItem {
+    text-decoration: none;
+}
+.fileItem:hover{
+    text-decoration: underline;
+    cursor: pointer;
+}
+
 .fileList {
     display: flex;
     justify-content: space-between;
@@ -137,12 +153,17 @@ export default {
 }
 
 .removeAttachment {
+    margin-left: 2%;
     background-color: #B90321;
     color: white;
     width: 30px;
     border-radius: 8px;
     outline: none;
     border: none;
+}
+
+.removeAttachment:hover{
+    background-color: #b20522;
 }
 </style>
   

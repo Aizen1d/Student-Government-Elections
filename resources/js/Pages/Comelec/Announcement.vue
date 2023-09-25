@@ -8,7 +8,7 @@
                 <h2>Announcements</h2>
             </div>
             <div class="col-6 new">
-                <ActionButton :disabled="new_button_disabled || saving || updating" class="new-btn" @click="newButtonSelected">New Announcement</ActionButton>
+                <ActionButton :disabled="new_button_disabled || saving || updating || is_loading_attachments" class="new-btn" @click="newButtonSelected">New Announcement</ActionButton>
             </div>
         </div>
 
@@ -243,10 +243,16 @@ export default {
                     continue;  
                 }
 
+                // Create a new object URL for the file
+                let url = URL.createObjectURL(file);
+
                 // Check if the file is already in the list of files
                 // If it is, then do not add it again
                 if (!this.upload_image_attachments.some(existingFile => existingFile.name === file.name)) {
-                    this.upload_image_attachments.push(file);
+                    this.upload_image_attachments.push({file: file, 
+                                                        name: file.name,
+                                                        url: url
+                                                    });
                 }
             }
         },
@@ -291,7 +297,10 @@ export default {
                     // Push the retrieved files to the upload_image_attachments array
                     response.data.images.forEach(retrieved_file => {
                         let file = new File([], retrieved_file.name);
-                        this.upload_image_attachments.push(file);
+                        this.upload_image_attachments.push({file: file, 
+                                                            name: file.name,
+                                                            url: ''
+                                                        });
                     });
 
                     console.log(response.duration);
@@ -371,7 +380,7 @@ export default {
             // Append the image attachments to the FormData object if there are any image attachments
             if (this.type_of_attachment !== 'None' && this.upload_image_attachments.length > 0) {
                 for (let i = 0; i < this.upload_image_attachments.length; i++) {
-                    formData.append('attachment_images', this.upload_image_attachments[i]);
+                    formData.append('attachment_images', this.upload_image_attachments[i].file);
                 }
             }
 
@@ -434,6 +443,8 @@ export default {
 
             // Check if the attachments were modified
             let attachments_modified = false;
+            let removed_files = [];
+
             if (this.upload_image_attachments.length !== this.retrieved_attachments.length) {
                 attachments_modified = true;
             } 
@@ -454,13 +465,25 @@ export default {
                 // Check for new files
                 for (let i = 0; i < this.upload_image_attachments.length; i++) {
                     if (!this.retrieved_attachments.includes(this.upload_image_attachments[i])) {
-                        new_files.push(this.upload_image_attachments[i]);
+                        new_files.push(this.upload_image_attachments[i].file);
+                    }
+                }
+
+                // Check for removed files
+                for (let i = 0; i < this.retrieved_attachments.length; i++) {
+                    if (!this.upload_image_attachments.includes(this.retrieved_attachments[i])) {
+                        removed_files.push(this.retrieved_attachments[i]);
                     }
                 }
 
                 // Append new files
                 for (let i = 0; i < new_files.length; i++) {
                     formData.append('new_files', new_files[i]);
+                }
+
+                // Append removed files
+                for (let i = 0; i < removed_files.length; i++) {
+                    formData.append('removed_files', removed_files[i].file);
                 }
             } 
             else {
@@ -470,7 +493,7 @@ export default {
             // Append the image attachments to the FormData object if there are any image attachments
             if (this.type_of_attachment !== 'None' && this.upload_image_attachments.length > 0) {
                 for (let i = 0; i < this.upload_image_attachments.length; i++) {
-                    formData.append('attachment_images', this.upload_image_attachments[i]);
+                    formData.append('attachment_images', this.upload_image_attachments[i].file);
                 }
             }
 
