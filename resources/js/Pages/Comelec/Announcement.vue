@@ -297,10 +297,13 @@ export default {
                     // Push the retrieved files to the upload_image_attachments array
                     response.data.images.forEach(retrieved_file => {
                         let file = new File([], retrieved_file.name);
-                        this.upload_image_attachments.push({file: file, 
+                        this.upload_image_attachments.push({
+                                                            file: file, 
                                                             name: file.name,
-                                                            url: ''
+                                                            url: retrieved_file.url
                                                         });
+
+                    
                     });
 
                     console.log(response.duration);
@@ -409,6 +412,11 @@ export default {
                 });
         },
         update() {
+            // If validation passed, check if can update
+            if (this.updating === true) {
+                return;
+            }
+            
             if (this.type_select.trim().length < 1) {
                 return alert('Please select a type');
             }
@@ -497,11 +505,6 @@ export default {
                 }
             }
 
-            // If validation passed, check if can update
-            if (this.updating === true) {
-                return;
-            }
-            
             // Updating state is true
             this.updating = true;
 
@@ -509,6 +512,13 @@ export default {
                 })
                 .then(response => {
                     console.log(response.duration);
+                    this.upload_image_attachments = response.data.uploaded_files_urls.map(url => 
+                                                    ({
+                                                        file: null, 
+                                                        name: url, 
+                                                        url: url
+                                                    }));
+                                                    
                     alert('Announcement updated successfully')
                 })
                 .catch(error => {
