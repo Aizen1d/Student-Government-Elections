@@ -278,7 +278,7 @@ async def save_Announcement(type_select: str = Form(...), title_input: str = For
 @router.put("/announcement/update", tags=["Announcement"])
 async def update_Announcement(id_input: int = Form(...), type_select: str = Form(...), title_input: str = Form(...), body_input: str = Form(...), 
                             type_of_attachment: Optional[str] = Form(None), attachment_images: List[UploadFile] = File(None),
-                            new_files: List[UploadFile] = File(None),
+                            new_files: List[UploadFile] = File(None), removed_files: List[UploadFile] = File(None),
                             db: Session = Depends(get_db), attachments_modified: bool = Form(False)):
     
     original_announcement = db.query(Announcement).get(id_input)
@@ -287,19 +287,15 @@ async def update_Announcement(id_input: int = Form(...), type_select: str = Form
         return {"error": "Announcement not found"}
 
     # Use the ID of the announcement as the tag
-    folder_name = f"Announcements/announcement_{id_input}"
-    tag_name = f'announcement_{id_input}'
+    tag_name = original_announcement.AttachmentImage if original_announcement.AttachmentImage else "announcement_" + str(original_announcement.AnnouncementId)
+    folder_name = f"Announcements/{tag_name}"
 
-    if attachment_images and attachments_modified:
-        # Get all images with the tag
-        response = resources_by_tag(tag_name)
-        images_in_folder = [{"url": resource['secure_url'], "name": resource['public_id'].split('/')[-1]} for resource in response['resources']]
-
+    if removed_files and attachments_modified:
         # Check for removed files
-        for image in images_in_folder:
-            if not any(attachment_image.filename == image['name'] for attachment_image in attachment_images):
-                # This file has been removed locally, delete it from Cloudinary
-                delete_resources_by_tag(image['name'])
+        for removed_file in removed_files:
+            # This is a removed file, delete it from Cloudinary
+            file_path = f"{folder_name}/{removed_file.filename}"
+            cloudinary.uploader.destroy(file_path)
 
     if new_files and attachments_modified:
         # Check for new files
@@ -339,6 +335,7 @@ async def update_Announcement(id_input: int = Form(...), type_select: str = Form
         "attachment_type": original_announcement.AttachmentType if original_announcement.AttachmentType else 'None',
         "attachment_image": original_announcement.AttachmentImage if original_announcement.AttachmentImage else '',
     }
+
 
 @router.delete("/announcement/delete", tags=["Announcement"])
 def delete_Announcement(announcement_data: AnnouncementDeleteData, db: Session = Depends(get_db)):
