@@ -46,7 +46,7 @@
         font-weight: normal;
     }
 
-    .my-table tr:hover:not(.active-row) {
+    .my-tbody tr:hover:not(.active-row) {
         cursor: pointer;
         background-color: #d9ecf3;
     }

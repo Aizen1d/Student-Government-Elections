@@ -1,0 +1,47 @@
+<template>
+    <div class="row">
+        <div class="col-2" :class="$style.filterDropDown">
+            <input type="hidden" name="filter-type">
+            <select class="form-select" :class="$style.filter" aria-label="Default select example">
+                <option value="" disabled hidden selected>Filter by</option>
+                <option value="semester">Semester</option>
+                <option value="school year">School Year</option>
+            </select>
+        </div>
+        <div class="col-3">
+            <input :class="$style.searchbar" type="text" placeholder="Search..">
+        </div>
+    </div>
+</template>
+
+<script>
+</script>
+
+<style module>
+    .searchbar  {
+        width: 100%;
+        margin-left: -3%;
+        padding: 7px;
+        border-radius: 8px;
+        outline: none;
+        border: 1px solid rgba(40, 40, 40, 0.25);
+
+        transition: border 0.15s ease-out;
+    }
+
+    .searchbar:focus {
+        border: 1px solid rgba(13, 13, 13, 0.561)
+    }
+
+    .filter{
+        margin-left: -5%;
+        width: 100%;
+        height: 40px;
+        border-radius: 8px;
+        border: 1px solid rgba(40, 40, 40, 0.25);
+    }
+
+    .filterDropDown{
+        margin-left: 1%;
+    }
+</style>
