@@ -50,6 +50,9 @@
                 if (this.countdown > 0) {
                     return;
                 }
+                if (this.loggingIn) {
+                    return;
+                }
                 this.loggingIn = true;
                 this.login_text = 'Logging in...';
                 axios.post('/login/auth', this.form)
@@ -78,6 +81,9 @@
                                 // handle other errors
                             }
                         }
+
+                        this.loggingIn = false;
+                        this.login_text = 'Login';
                     });
             },
             startCountdown(seconds) {
@@ -145,13 +151,13 @@
         cursor: pointer;
     }
 
+    .login-button:hover{
+        background-color: #a0031d;
+    }
+
     .login-button:disabled {
         background-color: #ccc;
         cursor: default;
-    }
-
-    .login-button:hover{
-        background-color: #a0031d;
     }
 
     .switch {

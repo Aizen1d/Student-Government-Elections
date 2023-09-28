@@ -256,8 +256,15 @@ export default {
                 }
             }
         },
-        onFileChange(event) {
-            this.addFiles(event.target.files);
+        onFileChange(e) {
+            let files = e.target.files;
+
+            if (files) {
+                this.addFiles(files);
+            }
+
+            // Clear the input value
+            e.target.value = null;
         },
         selectItem(item) {
             if (item === this.selectedItem) {
@@ -441,6 +448,9 @@ export default {
 
             // Create a FormData object
             let formData = new FormData();
+            let attachments_modified = false;
+            let new_files = [];
+            let removed_files = [];
 
             // Append the form fields to the FormData object
             formData.append('id_input', this.id_input);
@@ -450,9 +460,6 @@ export default {
             formData.append('type_of_attachment', this.type_of_attachment);
 
             // Check if the attachments were modified
-            let attachments_modified = false;
-            let removed_files = [];
-
             if (this.upload_image_attachments.length !== this.retrieved_attachments.length) {
                 attachments_modified = true;
             } 
@@ -468,8 +475,7 @@ export default {
             // To improve performance, if not modified, just look for db updates directly
             if (attachments_modified) {
                 formData.append('attachments_modified', 'true');
-                let new_files = [];
-
+                
                 // Check for new files
                 for (let i = 0; i < this.upload_image_attachments.length; i++) {
                     if (!this.retrieved_attachments.includes(this.upload_image_attachments[i])) {
@@ -508,16 +514,15 @@ export default {
             // Updating state is true
             this.updating = true;
 
+            for (const value of this.upload_image_attachments) {
+                console.log(value);
+            }
+
             axios.put(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/announcement/update`, formData, {
                 })
                 .then(response => {
                     console.log(response.duration);
-                    this.upload_image_attachments = response.data.uploaded_files_urls.map(url => 
-                                                    ({
-                                                        file: null, 
-                                                        name: url, 
-                                                        url: url
-                                                    }));
+                    this.retrieved_attachments = [...this.upload_image_attachments];
                                                     
                     alert('Announcement updated successfully')
                 })
