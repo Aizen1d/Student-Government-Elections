@@ -198,26 +198,28 @@ def get_All_Announcement(db: Session = Depends(get_db)):
     
 @router.get("/announcement/get/attachment/{id}", tags=["Announcement"])
 def get_Announcement_Attachment_By_Id(id: int, db: Session = Depends(get_db)):
+    try:
+        announcement = db.query(Announcement).get(id)
 
-    announcement = db.query(Announcement).get(id)
+        if not announcement:
+            raise HTTPException(status_code=404, detail="Announcement not found")
 
-    if not announcement:
-        raise HTTPException(status_code=404, detail="Announcement not found")
+        tag_name = announcement.AttachmentImage
 
-    tag_name = announcement.AttachmentImage
+        if tag_name:
 
-    if tag_name:
+            # Search for images with the tag using the Admin API
+            response = resources_by_tag(tag_name)
 
-        # Search for images with the tag using the Admin API
-        response = resources_by_tag(tag_name)
+            # Get the URLs and file names of the images
+            images = [{"url": resource['secure_url'], 
+                    "name": resource['public_id'].split('/')[-1]} for resource in response['resources']]
 
-        # Get the URLs and file names of the images
-        images = [{"url": resource['secure_url'], 
-                "name": resource['public_id'].split('/')[-1]} for resource in response['resources']]
-
-        return {"images": images}
-    
-    return {"images": []}
+            return {"images": images}
+        
+        return {"images": []}
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while fetching announcement attachment from Cloudinary"})
         
 @router.get("/announcement/count/latest", tags=["Announcement"])
 def get_Announcement_Latest_Count(db: Session = Depends(get_db)):
@@ -281,61 +283,73 @@ async def update_Announcement(id_input: int = Form(...), type_select: str = Form
                             new_files: List[UploadFile] = File(None), removed_files: List[UploadFile] = File(None),
                             db: Session = Depends(get_db), attachments_modified: bool = Form(False)):
     
-    original_announcement = db.query(Announcement).get(id_input)
+    try:
+        original_announcement = db.query(Announcement).get(id_input)
 
-    if not original_announcement:
-        return {"error": "Announcement not found"}
+        if not original_announcement:
+            return {"error": "Announcement not found"}
 
-    # Use the ID of the announcement as the tag
-    tag_name = original_announcement.AttachmentImage if original_announcement.AttachmentImage else "announcement_" + str(original_announcement.AnnouncementId)
-    folder_name = f"Announcements/{tag_name}"
+        # Use the ID of the announcement as the tag
+        tag_name = original_announcement.AttachmentImage if original_announcement.AttachmentImage else "announcement_" + str(original_announcement.AnnouncementId)
+        folder_name = f"Announcements/{tag_name}"
 
-    if removed_files and attachments_modified:
-        # Check for removed files
-        for removed_file in removed_files:
-            # This is a removed file, delete it from Cloudinary
-            file_path = f"{folder_name}/{removed_file.filename}"
-            cloudinary.uploader.destroy(file_path)
+        if removed_files and attachments_modified:
+            # Check for removed files
+            for removed_file in removed_files:
+                # This is a removed file, delete it from Cloudinary
+                file_path = f"{folder_name}/{removed_file.filename}"
+                cloudinary.uploader.destroy(file_path)
 
-    if new_files and attachments_modified:
-        # Check for new files
-        for new_file in new_files:
-            # This is a new file, upload it to Cloudinary
-            contents = await new_file.read()
-            filename = new_file.filename
+        uploaded_files = []
 
-            # Upload file to Cloudinary with the folder name in the public ID
-            response = cloudinary.uploader.upload(contents, public_id=f"{folder_name}/{filename}", tags=[tag_name])
+        if new_files and attachments_modified:
+            # Check for new files
+            for new_file in new_files:
+                # This is a new file, upload it to Cloudinary
+                contents = await new_file.read()
+                filename = new_file.filename
 
-        original_announcement.AttachmentImage = tag_name
+                # Upload file to Cloudinary with the folder name in the public ID
+                response = cloudinary.uploader.upload(contents, public_id=f"{folder_name}/{filename}", tags=[tag_name])
 
-    if type_of_attachment == 'None' and original_announcement.AttachmentImage:
-        # Delete all images with the tag
-        delete_resources_by_tag(tag_name)
+                # Add the name and URL of the uploaded file to the list
+                uploaded_files.append({
+                    'name': filename,
+                    'url': response['url']
+                })
 
-        # Delete the folder in Cloudinary
-        delete_folder(folder_name)
+            original_announcement.AttachmentImage = tag_name
 
-        original_announcement.AttachmentImage = ''
+        if type_of_attachment == 'None' and original_announcement.AttachmentImage:
+            # Delete all images with the tag
+            delete_resources_by_tag(tag_name)
 
-    # Update the announcement in the database
-    original_announcement.AnnouncementType = type_select
-    original_announcement.AnnouncementTitle = title_input
-    original_announcement.AnnouncementBody = body_input
-    original_announcement.AttachmentType = type_of_attachment
-    original_announcement.updated_at = datetime.now()
+            # Delete the folder in Cloudinary
+            delete_folder(folder_name)
 
-    db.commit()
+            original_announcement.AttachmentImage = ''
+
+        # Update the announcement in the database
+        original_announcement.AnnouncementType = type_select
+        original_announcement.AnnouncementTitle = title_input
+        original_announcement.AnnouncementBody = body_input
+        original_announcement.AttachmentType = type_of_attachment
+        original_announcement.updated_at = datetime.now()
+
+        db.commit()
+        
+        return {
+            "id": original_announcement.AnnouncementId,
+            "type": original_announcement.AnnouncementType,
+            "title": original_announcement.AnnouncementTitle,
+            "body": original_announcement.AnnouncementBody,
+            "attachment_type": original_announcement.AttachmentType if original_announcement.AttachmentType else 'None',
+            "attachment_image": original_announcement.AttachmentImage if original_announcement.AttachmentImage else '',
+            "uploaded_files": uploaded_files,  
+        }
     
-    return {
-        "id": original_announcement.AnnouncementId,
-        "type": original_announcement.AnnouncementType,
-        "title": original_announcement.AnnouncementTitle,
-        "body": original_announcement.AnnouncementBody,
-        "attachment_type": original_announcement.AttachmentType if original_announcement.AttachmentType else 'None',
-        "attachment_image": original_announcement.AttachmentImage if original_announcement.AttachmentImage else '',
-    }
-
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while updating announcement in the table Announcement"})
 
 @router.delete("/announcement/delete", tags=["Announcement"])
 def delete_Announcement(announcement_data: AnnouncementDeleteData, db: Session = Depends(get_db)):
