@@ -8,13 +8,13 @@
                 <h2>Elections</h2>
             </div>
             <div class="col-6 new">
-                <ActionButton class="new-btn">Create Election</ActionButton>
+                <ActionButton @click="createElectionRedirect" class="new-btn">Create Election</ActionButton>
             </div>      
         </div>   
         
-        <BaseContainer>
+        <BaseContainer :height="'auto'">
             <div class="utilities">
-               <SearchBarAndFilter></SearchBarAndFilter>
+               <SearchBarAndFilter :options="options"></SearchBarAndFilter>
             </div>
 
             <BaseTable class="item-table" :columns="['ID', 'Type', 'Name', 'Date Created']" :table-height="'235px'">
@@ -31,6 +31,8 @@
 
 <script>
     import { useUserStore } from '../../Stores/UserStore';
+    import { router } from '@inertiajs/vue3'
+    import { ref } from 'vue';
 
     import Navbar from '../../Shared/Navbar.vue';
     import Sidebar from '../../Shared/Sidebar.vue';
@@ -46,16 +48,33 @@
             // Since this is the landing page for the Comelec after loggin in,
             // We need to set the user's role to comelec in the user store
             const userStore = useUserStore();
-            userStore.user_role = props.user_role;
+            userStore.id = props.comelec_id;
+            userStore.student_number = props.student_number;
             userStore.full_name = props.full_name;
+            userStore.user_role = props.user_role;
+            
+            const options = [
+                { text: 'Semester', value: 'semester' },
+                { text: 'School Year', value: 'school-year' },
+            ];
 
-            return {}
+            const items = ref([]);
+
+            return {options, 
+                    items,}
         },
         components: { Navbar, Sidebar, ActionButton, SearchBarAndFilter, BaseContainer, BaseTable, },
         props: {
+            comelec_id: Number,
+            student_number: String,
             full_name: String,
             user_role: String,
         },
+        methods: {
+            createElectionRedirect(){
+                router.visit('/comelec/elections/create');
+            }
+        }
     }
 </script>
 

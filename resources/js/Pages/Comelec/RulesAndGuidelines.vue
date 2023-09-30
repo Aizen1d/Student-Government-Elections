@@ -12,7 +12,7 @@
             </div>      
         </div>   
         
-        <BaseContainer :height="'auto'">
+        <BaseContainer :height="'auto'" :maxHeight="'600px'">
             <form @submit.prevent="save">
                 <div class="form-group row">
                     <div class="col-2">

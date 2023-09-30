@@ -12,7 +12,7 @@
             </div>
         </div>
 
-        <BaseContainer :height="'auto'">
+        <BaseContainer :height="'auto'" :maxHeight="'800px'">
             <form @submit.prevent="save">
                 <div class="form-group row">
                     <div class="col-2">
@@ -87,7 +87,7 @@
             </form>
         </BaseContainer>
 
-        <BaseContainer class="item-container" :height="'335px'">
+        <BaseContainer class="item-container" :height="'auto'" :maxHeight="'500px'">
             <BaseTable class="item-table" :columns="['ID', 'Type', 'Title']" :table-height="'235px'">
                 <tr v-for="(item, index) in items" :key="index" @click="selectItem(item)" 
                     v-bind:class="{ 'active-row': selectedItem && selectedItem.id === item.id && selectedItem.announcement_type === item.announcement_type }">

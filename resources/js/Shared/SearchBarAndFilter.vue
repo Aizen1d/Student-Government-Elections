@@ -3,9 +3,12 @@
         <div class="col-2" :class="$style.filterDropDown">
             <input type="hidden" name="filter-type">
             <select class="form-select" :class="$style.filter" aria-label="Default select example">
-                <option value="" disabled hidden selected>Filter by</option>
-                <option value="semester">Semester</option>
-                <option value="school year">School Year</option>
+                <option value="" disabled hidden selected>Filter Search by</option>
+                <option v-for="(option, index) in options" 
+                        :key="index" 
+                        :value="option.value">
+                        {{ option.text }}
+                </option>
             </select>
         </div>
         <div class="col-3">
@@ -15,6 +18,14 @@
 </template>
 
 <script>
+    export default {
+        props: {
+            options: {
+                type: Array,
+                required: true
+            }
+        }
+    }
 </script>
 
 <style module>

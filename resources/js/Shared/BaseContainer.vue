@@ -1,5 +1,5 @@
 <template>
-    <div :class="$style.container" :style="{ 'height':height }">
+    <div :class="$style.container" :style="{ 'height':height, 'max-height':maxHeight }">
         <slot></slot>
     </div>
 </template>
@@ -11,6 +11,11 @@
                 type: String,
                 required: true,
                 default: 'auto'
+            },
+            maxHeight: {
+                type: String,
+                required: false,
+                default: '335px'
             }
         }
     }

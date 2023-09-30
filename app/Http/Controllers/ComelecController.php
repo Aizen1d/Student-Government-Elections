@@ -33,12 +33,20 @@ class ComelecController extends Controller
         $email_address = $student->EmailAddress;
 
         return Inertia::render('Comelec/Elections', [
+            'comelec_id' => $comelec_id,
+            'student_number' => $student_number,
             'full_name' => $full_name,
             'position' => $position,
             'user_role' => 'comelec',
         ]);
                
     }
+
+    public function electionsCreate() 
+    { 
+        return inertia('Comelec/ElectionsCreate');
+    }
+
 
     public function insertData() 
     { 

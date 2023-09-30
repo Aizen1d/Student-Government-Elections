@@ -45,7 +45,7 @@ export default {
         <div class="position-sticky">
             <div class="list-group list-group-flush mx-3">
             <Link :href="linkHref" 
-                :class="{ 'active': $inertia.page.url === linkHref }" 
+                :class="{ 'active': $inertia.page.url === linkHref || $inertia.page.url === linkHref + '/create'}" 
                 class="main list-group-item py-2">
                 <img class="side-icon" src="../../images/icons/elections.svg" alt="Icon" height="35" width="35">
                 <span>Elections</span>
@@ -109,10 +109,10 @@ body{
 }
 
 .sidebar-header-title{
-    font-family: 'Source Sans Pro Black', sans-serif;
-    font-size: 23px;
+    font-family: 'Source Sans', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
     color: #B90321;
-    font-weight: bolder;
 }
 
 .sidebar-header{
