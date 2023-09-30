@@ -19,7 +19,7 @@ import cloudinary
 import cloudinary.uploader
 from cloudinary.api import resources_by_tag, delete_resources_by_tag, delete_folder
 
-from models import Student, Announcement, Rule, Guideline, AzureToken 
+from models import Student, Announcement, Rule, Guideline, AzureToken, Election, SavedPosition, CreatedElectionPosition
 
 #################################################################
 """ Settings """
@@ -28,6 +28,10 @@ tags_metadata = [
     {
         "name": "Student",
         "description": "Manage students.",
+    },
+    {
+        "name": "Election",
+        "description": "Manage elections.",
     },
     {
         "name": "Announcement",
@@ -179,7 +183,50 @@ def get_All_Students(db: Session = Depends(get_db)):
         return {"students": [student.to_dict() for student in students]}
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while fetching all students from the database"})
-    
+
+#################################################################
+""" Election Table APIs """
+
+class ElectionSaveData(BaseModel):
+    name: str
+
+""" ** GET Methods: All about election APIs ** """
+@router.get("/election/position/all", tags=["Election"])    
+def get_All_Election_Position(db: Session = Depends(get_db)):
+    try:
+        positions = db.query(SavedPosition).order_by(SavedPosition.SavedPositionId).all()
+        return {"positions": [position.to_dict() for position in positions]}
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while fetching all positions from the database"})
+
+
+""" ** POST Methods: All about election APIs ** """
+
+@router.post("/election/position/reusable/save", tags=["Election"])
+async def save_Election_Position_Reusable(data: ElectionSaveData, db: Session = Depends(get_db)):
+    capitalized_first_letter = data.name.capitalize()
+    new_position = SavedPosition(PositionName=capitalized_first_letter,
+                                            created_at=datetime.now(),
+                                            updated_at=datetime.now())
+    db.add(new_position)
+    db.commit()
+
+    return {"message": f"Position {capitalized_first_letter} is now re-usable."}
+
+@router.delete("/election/position/reusable/delete", tags=["Election"])
+def delete_Election_Position_Reusable(data: ElectionSaveData, db: Session = Depends(get_db)):
+    capitalized_first_letter = data.name.capitalize()
+    position = db.query(SavedPosition).filter(SavedPosition.PositionName == capitalized_first_letter).first()
+
+    if not position:
+        return {"error": "Position not found"}
+
+    db.delete(position)
+    db.commit()
+
+    return {"message": f"Position {capitalized_first_letter} is not re-usable anymore."}
+
+
 #################################################################
 """ Announcement Table APIs """
 

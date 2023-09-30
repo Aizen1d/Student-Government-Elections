@@ -1,7 +1,7 @@
 from database import engine, Base
 from sqlalchemy.orm import sessionmaker
 
-from sqlalchemy import Column, Integer, Float, String, Date, DateTime, Boolean, Text
+from sqlalchemy import Column, Integer, Float, String, Date, DateTime, Boolean, Text, ForeignKey
 from sqlalchemy.sql import func
 
 Session = sessionmaker(bind=engine)
@@ -37,6 +37,90 @@ class Student(Base):
             "CurrentSemesterEnrolled": self.CurrentSemesterEnrolled,
             "YearEnrolled": self.YearEnrolled,
             "IsOfficer": self.IsOfficer,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None
+        }
+    
+class Election(Base):
+    __tablename__ = "Election"
+    
+    ElectionId = Column(Integer, primary_key=True)
+    ElectionName = Column(String)
+    ElectionType = Column(String)
+    ElectionStatus = Column(String)
+    SchoolYear = Column(String)
+    Semester = Column(String)
+    CreatedBy = Column(String, ForeignKey('Student.StudentNumber'))
+
+    DataInsertionEnd = Column(DateTime)
+    CoCFilingStart = Column(DateTime)
+    CoCFilingEnd = Column(DateTime)
+    CampaignStart = Column(DateTime)
+    CampaignEnd = Column(DateTime)
+    VotingStart = Column(DateTime)
+    VotingEnd = Column(DateTime)
+    AppealStart = Column(DateTime)
+    AppealEnd = Column(DateTime)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    def to_dict(self, row=None):
+        return {
+            "ElectionId": self.ElectionId,
+            "count": row,
+            "ElectionName": self.ElectionName,
+            "ElectionType": self.ElectionType,
+            "ElectionStatus": self.ElectionStatus,
+            "SchoolYear": self.SchoolYear,
+            "Semester": self.Semester,
+            "CreatedBy": self.CreatedBy,
+            "DataInsertionEnd": self.DataInsertionEnd.isoformat() if self.DataInsertionEnd else None,
+            "CoCFilingStart": self.CoCFilingStart.isoformat() if self.CoCFilingStart else None,
+            "CoCFilingEnd": self.CoCFilingEnd.isoformat() if self.CoCFilingEnd else None,
+            "CampaignStart": self.CampaignStart.isoformat() if self.CampaignStart else None,
+            "CampaignEnd": self.CampaignEnd.isoformat() if self.CampaignEnd else None,
+            "VotingStart": self.VotingStart.isoformat() if self.VotingStart else None,
+            "VotingEnd": self.VotingEnd.isoformat() if self.VotingEnd else None,
+            "AppealStart": self.AppealStart.isoformat() if self.AppealStart else None,
+            "AppealEnd": self.AppealEnd.isoformat() if self.AppealEnd else None,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None
+        }
+    
+class CreatedElectionPosition(Base):
+    __tablename__ = "CreatedElectionPosition"
+    
+    CreatedElectionPositionId = Column(Integer, primary_key=True)
+    ElectionId = Column(Integer)
+    PositionName = Column(String)
+    PositionQuantity = Column(String)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    def to_dict(self, row=None):
+        return {
+            "CreatedElectionPositionId": self.CreatedElectionPositionId,
+            "count": row,
+            "ElectionId": self.ElectionId,
+            "PositionName": self.PositionName,
+            "PositionQuantity": self.PositionQuantity,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None
+        }
+    
+class SavedPosition(Base):
+    __tablename__ = "SavedPosition"
+    
+    SavedPositionId = Column(Integer, primary_key=True)
+    PositionName = Column(String)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    def to_dict(self):
+        return {
+            "SavedPositionId": self.SavedPositionId,
+            "PositionName": self.PositionName,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }
