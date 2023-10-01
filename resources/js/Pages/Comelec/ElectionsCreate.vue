@@ -133,10 +133,12 @@
                             <label class="form-label" for="position-name">Position Name</label>
                             <div class="row">
                                 <div class="col-4">
-                                    <select class="form-select margin" aria-label="Position selection" v-model="position.value">
+                                    <select v-model="position.value" @change="onPositionListSelect" class="form-select margin" aria-label="Position selection">
                                         <option value="" disabled hidden selected>Saved Positions</option>
                                         <option value="New" style="color: #00ae0c;">Create new</option>
-                                        <option v-for="saved_position in position_saved_selection" :value="saved_position.value">
+                                        <option v-for="saved_position in position_saved_selection" 
+                                                :value="saved_position.value"
+                                                :disabled="saved_position.is_already_selected">
                                             {{ saved_position.name }}
                                         </option>
                                     </select>
@@ -159,7 +161,7 @@
                                 </div>
                                 <div class="col-6 save">
                                     <button :disabled="position.name === ''" class="reusable-btn" :style="{ color: position.is_re_usable ? '#00ae0c' : '#B90321' }"
-                                            @click.prevent="makePositionReusableOrNot(index)">{{ position.is_re_usable ? 'Make this position reusable' : 'Remove this position re-usability' }}
+                                            @click.prevent="makePositionReusableOrNot(index)">{{ position.is_re_usable ? 'Make this position reusable' : 'Make this position non-reusable' }}
                                     </button>
                                 </div>
                             </div>
@@ -199,9 +201,10 @@
             const userStore = useUserStore();
             const createdByStudentNumber = userStore.student_number;
             
-            const position_count = ref(1);
-            const position_saved_selection = ref([]);
-            const position_list = ref([{
+            const position_count = ref(1); // The number of positions
+
+            const position_saved_selection = ref([]); // The list of saved positions in the DB
+            const position_list = ref([{ // The list of positions created by the user
                 count: position_count,
                 name: '',
                 value: '',
@@ -221,11 +224,12 @@
 
                 // Determine if the position is reusable or not in initial load
                 watch(() => position.name, (newName) => {
-                    axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/election/position/all`)
+                    axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/election/position/reusable/all`)
                     .then((response) => {
                         const positions = response.data.positions;
                         const positionExists = positions.some((pos) => pos.PositionName === newName);
 
+                        // Determine if can make reusable or remove reusability
                         if (positionExists) {
                             position.is_re_usable = false;
                         } 
@@ -243,7 +247,7 @@
             position_list.value.forEach(watchPosition);
 
             // Get all saved positions in DB and add them to the position saved selection list
-            axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/election/position/all`)
+            axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/election/position/reusable/all`)
                 .then((response) => {
                     const positions = response.data.positions;
                     
@@ -251,6 +255,7 @@
                         const savedPositionsSelection = {
                             name: pos.PositionName,
                             value: pos.PositionName,
+                            is_already_selected: false,
                         };
                         position_saved_selection.value.push(savedPositionsSelection);
                     });
@@ -259,13 +264,20 @@
                     console.log(error);
                 });
 
+            // Button (add new position) logic handler
             // Return true if the most recent position is filled, if true enable the add new position button
             const isMostRecentPositionFilled = computed(() => {
                 const mostRecentPosition = position_list.value[position_list.value.length - 1];
                 return mostRecentPosition.name !== '' && mostRecentPosition.quantity > 0;
             });
 
-            return { createdByStudentNumber, position_count, position_list, isMostRecentPositionFilled, position_saved_selection}
+            return { 
+                    createdByStudentNumber, 
+                    position_count, 
+                    position_list, 
+                    isMostRecentPositionFilled, 
+                    position_saved_selection, 
+                }
         },
         components: { Navbar, Sidebar, ActionButton, SearchBarAndFilter, BaseContainer, BaseTable, },
         props: {
@@ -285,12 +297,14 @@
                     quantity: 1,
                 };
                 this.position_list.push(newPosition);
-                this.watchPositionValue();
+                this.watchNewAddedPositionValue();
             },
             removePosition(index) {
                 this.position_list.splice(index, 1);
             },
-            watchPositionValue() {
+            watchNewAddedPositionValue() {
+                // Watch for the old as well as the new position list value
+
                 this.position_list.forEach((position, index) => {
                     watch(() => position.value, (newVal) => {
                         if (newVal === 'New') {
@@ -304,11 +318,12 @@
 
                 this.position_list.forEach((position, index) => {
                     watch(() => position.name, (newName) => {
-                        axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/election/position/all`)
+                        axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/election/position/reusable/all`)
                         .then((response) => {
                             const positions = response.data.positions;
                             const positionExists = positions.some((pos) => pos.PositionName === newName);
 
+                            // Determine if can make reusable or remove reusability
                             if (positionExists) {
                                 position.is_re_usable = false;
                             } 
@@ -324,11 +339,12 @@
             },
             refreshPositionListAndReusabilityState() {
                 this.position_list.forEach((position, index) => {
-                    axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/election/position/all`)
+                    axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/election/position/reusable/all`)
                     .then((response) => {
                         const positions = response.data.positions;
                         const positionExists = positions.some((pos) => pos.PositionName === position.name);
 
+                        // Determine if can make reusable or remove reusability
                         if (positionExists) {
                             position.is_re_usable = false;
                         } 
@@ -338,14 +354,19 @@
                             position.is_re_usable = true;
                         }
 
+                        // Re-fetch the position saved selection list from the DB
                         this.position_saved_selection = [];
                         positions.forEach((pos) => {
                             const savedPositionsSelection = {
                                 name: pos.PositionName,
                                 value: pos.PositionName,
+                                is_already_selected: false,
                             };
                             this.position_saved_selection.push(savedPositionsSelection);
                         });
+
+                        // Re attach the correct is_already_selected value
+                        this.onPositionListSelect();
                     })
                     .catch((error) => {
                         console.log(error);
@@ -387,6 +408,12 @@
                         console.log(error);
                     });
                 }
+            },
+            onPositionListSelect(e) {
+                // If found on the created position list, it means its already selected and should be disabled
+                this.position_saved_selection.forEach(savedPosition => {
+                    savedPosition.is_already_selected = this.position_list.some(position => position.name === savedPosition.name);
+                });
             },
             submit(){
                 for (const value of this.position_list) {
