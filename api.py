@@ -191,8 +191,8 @@ class ElectionSaveData(BaseModel):
     name: str
 
 """ ** GET Methods: All about election APIs ** """
-@router.get("/election/position/all", tags=["Election"])    
-def get_All_Election_Position(db: Session = Depends(get_db)):
+@router.get("/election/position/reusable/all", tags=["Election"])    
+def get_All_Election_Position_Reusable(db: Session = Depends(get_db)):
     try:
         positions = db.query(SavedPosition).order_by(SavedPosition.SavedPositionId).all()
         return {"positions": [position.to_dict() for position in positions]}
