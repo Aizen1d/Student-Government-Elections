@@ -21,8 +21,8 @@ return new class extends Migration
             $table->string('CreatedBy');
             $table->foreign('CreatedBy')->references('StudentNumber')->on('Student');
 
-
-            $table->datetime('DataInsertionEnd');
+            $table->datetime('ElectionStart');
+            $table->datetime('ElectionEnd');
             $table->datetime('CoCFilingStart');
             $table->datetime('CoCFilingEnd');
             $table->datetime('CampaignStart');
