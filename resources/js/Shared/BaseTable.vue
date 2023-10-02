@@ -1,17 +1,18 @@
 <template>
-    <table class="my-table table-responsive">
-        <thead class="my-thead head">
-            <tr>
-                <th class="my-cell" v-for="(column, index) in columns" :key="index">{{ column }}</th>
-                <th style="width: 17px;"></th> <!-- Add this line -->
-            </tr>
-        </thead>
-        <tbody class="my-tbody" :style="{ 'max-height':tableHeight }">
-            <slot></slot> <!-- This slot will be replaced by the content inserted from the child component -->
-        </tbody>
-    </table>
+    <div class="table-container" :style="{ 'height': tableHeight, 'max-height': maxTableHeight }">
+        <table class="my-table table-responsive">
+            <thead class="my-thead head">
+                <tr>
+                    <th class="my-cell" :style="{ 'width': columnWidths[index] }" v-for="(column, index) in columns" :key="index">{{ column }}</th>
+                </tr>
+            </thead>
+            <tbody class="my-tbody">
+                <slot></slot> <!-- This slot will be replaced by the content inserted from the child component -->
+            </tbody>
+        </table>
+    </div>
 </template>
-  
+
 <script>
     export default {
         props: {
@@ -19,16 +20,30 @@
                 type: Array,
                 required: true
             },
+            columnWidths: {
+                type: Array,
+                required: false,
+                default: () => ['auto']
+            },
             tableHeight: {
                 type: String,
                 required: false,
-                default: '180px'
+                default: 'auto'
+            },
+            maxTableHeight: {
+                type: String,
+                required: false,
+                default: '1000px'
             }
         }
     }
 </script>
   
 <style>
+    .table-container {
+        overflow-y: auto;
+    }
+    
     .my-table {
         font-size: 18px;
         font-family: Arial, sans-serif;
@@ -61,6 +76,11 @@
         display: table;
         width: 100%;
         table-layout: fixed;
+    }
+
+    .my-thead {
+        position: sticky;
+        top: 0;
     }
 
     .my-table tr:nth-child(even) {
