@@ -12,17 +12,18 @@
             </div>      
         </div>   
         
-        <BaseContainer :height="'auto'">
+        <BaseContainer :height="'auto'" :maxHeight="'400px'">
             <div class="utilities">
                <SearchBarAndFilter :options="options"></SearchBarAndFilter>
             </div>
 
-            <BaseTable class="item-table" :columns="['ID', 'Type', 'Name', 'Date Created']" :table-height="'235px'">
-                <tr v-for="(item, index) in items" :key="index" @click="selectItem(item)" 
-                    v-bind:class="{ 'active-row': selectedItem && selectedItem.id === item.id && selectedItem.announcement_type === item.announcement_type }">
-                    <td class="my-cell">{{ item.count }}</td>
-                    <td class="my-cell">{{ item.announcement_type.charAt(0).toUpperCase() + item.announcement_type.slice(1) }}</td>
-                    <td class="my-cell">{{ item.title }}</td>
+            <BaseTable class="item-table" 
+                :columns="['ID', 'Name', 'Type', 'School Year', 'Date Created']" 
+                :columnWidths=columnWidths
+                :tableHeight="'auto'"
+                :maxTableHeight="'300px'">
+                <tr v-for="(item, index) in items" :key="index" @click="selectItem(item)">
+                    <td v-for="(value, key, i) in item" :key="key" :style="{ width: columnWidths[i] }" class="my-cell">{{ value }}</td>
                 </tr>
             </BaseTable>
         </BaseContainer>
@@ -54,14 +55,20 @@
             userStore.user_role = props.user_role;
             
             const options = [
-                { text: 'Semester', value: 'semester' },
+                { text: 'Name', value: 'name' },
+                { text: 'Type', value: 'type' },
                 { text: 'School Year', value: 'school-year' },
             ];
 
             const items = ref([]);
+            const columnWidths = ['10%', '30%', '20%', '20%', '20%'];
 
             return {options, 
-                    items,}
+                    items,
+                    columnWidths,}
+        },
+        created() {
+            this.fetchTableData();
         },
         components: { Navbar, Sidebar, ActionButton, SearchBarAndFilter, BaseContainer, BaseTable, },
         props: {
@@ -73,7 +80,30 @@
         methods: {
             createElectionRedirect(){
                 router.visit('/comelec/elections/create');
-            }
+            },
+            fetchTableData() {
+                axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/election/all`)
+                    .then(response => {
+                        console.log(`Elections table fetched successfully. Duration: ${response.duration}`)
+                        const elections = response.data.elections.map(item => {
+                            let date_created = new Date(item.created_at);
+                            let formattedDate = date_created.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+                            return {
+                                count: item.count,
+                                name: item.ElectionName,
+                                type: item.ElectionType,
+                                school_year: item.SchoolYear,
+                                date_created: formattedDate,
+                            }
+                        });
+
+                        this.items = [...elections];
+                    })
+                    .catch(error => {
+                        console.log(error);
+                    });
+            },
         }
     }
 </script>

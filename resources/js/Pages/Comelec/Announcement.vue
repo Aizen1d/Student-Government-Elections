@@ -88,7 +88,10 @@
         </BaseContainer>
 
         <BaseContainer class="item-container" :height="'auto'" :maxHeight="'500px'">
-            <BaseTable class="item-table" :columns="['ID', 'Type', 'Title']" :table-height="'235px'">
+            <BaseTable class="item-table" 
+                    :columns="['ID', 'Type', 'Title']" 
+                    :tableHeight="'auto'"
+                    :maxTableHeight="'280px'">
                 <tr v-for="(item, index) in items" :key="index" @click="selectItem(item)" 
                     v-bind:class="{ 'active-row': selectedItem && selectedItem.id === item.id && selectedItem.announcement_type === item.announcement_type }">
                     <td class="my-cell">{{ item.count }}</td>
@@ -183,6 +186,7 @@ export default {
         fetchTableData() {
             axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/announcement/all`)
                 .then(response => {
+                    console.log(`Announcement table data fetched successfully. Duration: ${response.duration}ms`)
                     const announcements = response.data.announcements.map(item => {
                         return {
                             id: item.AnnouncementId,
@@ -221,6 +225,7 @@ export default {
         getLatestAnnouncementCount() {
             axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/announcement/count/latest`)
             .then(response => {
+                console.log(`Latest announcement count fetched successfully. Duration: ${response.duration}ms`)
                 this.count_input = "Announcement #" + (response.data.count + 1);
             })
             .catch(error => {
@@ -298,6 +303,8 @@ export default {
             // Fetch the files for the selected item
             axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/announcement/get/attachment/${item.id}`)
                 .then(response => {
+                    console.log(`Announcement attachments fetched successfully. Duration: ${response.duration}ms`)
+
                     // Clear the list of files first
                     this.upload_image_attachments = [];
 
@@ -312,8 +319,6 @@ export default {
 
                     
                     });
-
-                    console.log(response.duration);
                 })
                 .catch(error => {
                     console.log(error);
@@ -340,6 +345,7 @@ export default {
                 data: { id: id }
             })
             .then(response => {
+                console.log(`Announcement with id ${id} was deleted successfully. Duration: ${response.duration}ms`)
                 alert('Item deleted successfully');
             })
             .catch(error => {
@@ -405,7 +411,7 @@ export default {
             axios.post(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/announcement/save`, formData, {
                 })
                 .then(response => {
-                    console.log(response.duration);
+                    console.log(`Announcement saved successfully. Duration: ${response.duration}ms`)
                     alert('Announcement saved successfully')
 
                     this.reset();
@@ -514,14 +520,10 @@ export default {
             // Updating state is true
             this.updating = true;
 
-            for (const value of this.upload_image_attachments) {
-                console.log(value);
-            }
-
             axios.put(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/announcement/update`, formData, {
                 })
                 .then(response => {
-                    console.log(response.duration);
+                    console.log(`Announcement updated successfully. Duration: ${response.duration}ms`);
                     this.retrieved_attachments = [...this.upload_image_attachments];
                                                     
                     alert('Announcement updated successfully')
@@ -695,6 +697,6 @@ export default {
 }
 
 .item-container{
-    margin-bottom: 2%;
+    margin-bottom: 2.5%;
 }
 </style>

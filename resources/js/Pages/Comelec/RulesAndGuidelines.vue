@@ -52,8 +52,11 @@
             </form>
         </BaseContainer>
         
-        <BaseContainer class="item-container" :height="'300px'">
-            <BaseTable class="item-table" :columns="['ID', 'Type', 'Title']" :table-height="'200px'">
+        <BaseContainer class="item-container" :height="'300px'" :maxHeight="'335px'">
+            <BaseTable class="item-table" 
+                    :columns="['ID', 'Type', 'Title']" 
+                    :tableHeight="'auto'"
+                    :maxTableHeight="'235px'">
                 <tr v-for="(item, index) in items" :key="index" @click="selectItem(item)" 
                     v-bind:class="{ 'active-row': selectedItem && selectedItem.id === item.id && selectedItem.type === item.type }">
                     <td class="my-cell">{{ item.count }}</td>
@@ -96,6 +99,7 @@
             const updateIdInput = (prefix, endpoint) => () => {
                 axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}${endpoint}`)
                     .then(response => {
+                        console.log(`Get latest ${prefix} count successful. Duration: ${response.duration}ms`)
                         const data = response.data;
 
                         if (data.count === 0) {
@@ -189,6 +193,7 @@
                     data: { id: id }
                 })
                 .then(response => {
+                    console.log(`Item with id ${id} was deleted successfully. Duration ${response.duration}ms`)
                     alert('Item deleted successfully');
                 })
                 .catch(error => {
@@ -215,6 +220,7 @@
                 // Fetches all rules
                 axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/rule/all`)
                 .then(response => {
+                    console.log(`Get all rules successful. Duration: ${response.duration}ms`)
                     const rules = response.data.rules.map(rule => ({
                         id: rule.RuleId,
                         count: "Rule #" + rule.count,
@@ -226,6 +232,7 @@
                     // Fetches all guidelines
                     axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/guideline/all`)
                     .then(response => {
+                        console.log(`Get all guidelines successful. Duration: ${response.duration}ms`)
                         const guidelines = response.data.guidelines.map(guideline => ({
                             id: guideline.GuideId,
                             count: "Guideline #" + guideline.count,
@@ -279,6 +286,7 @@
                             body: this.body_input 
                         })
                         .then(response => {
+                            console.log(`Rule saved successfully. Duration: ${response.duration}ms`)
                             alert('Rule saved successfully');
                             this.resetAfter();
                         })
@@ -297,6 +305,7 @@
                             body: this.body_input 
                         })
                         .then(response => {
+                            console.log(`Guideline saved successfully. Duration: ${response.duration}ms`)
                             alert('Guideline saved successfully');
                             this.resetAfter();
                         })
@@ -337,6 +346,7 @@
                             body: this.body_input 
                         })
                         .then(response => {
+                            console.log(`Rule updated successfully. Duration: ${response.duration}ms`)
                             alert('Rule updated successfully');
                         })
                         .catch(error => {
@@ -355,6 +365,7 @@
                             body: this.body_input 
                         })
                         .then(response => {
+                            console.log(`Guideline updated successfully. Duration: ${response.duration}ms`)
                             alert('Guideline updated successfully');
                         })
                         .catch(error => {
