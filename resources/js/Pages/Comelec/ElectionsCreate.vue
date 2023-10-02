@@ -19,14 +19,14 @@
                     </div>
                     <div class="box upper-box">
                         <label class="form-label" for="name">Election Name</label>
-                        <input class="form-control margin" type="text" name="name">
+                        <input class="form-control margin" type="text" name="name" v-model="election_name_input">
                         
                         <label class="form-label" for="type">Election Type</label>
                         <input type="hidden" name="election-type">
-                            <select class="form-select" aria-label="Default select example">
-                                <option disabled hidden selected>Select</option>
-                                <option value="1">SSC</option>
-                                <option value="2">Organization</option>
+                            <select v-model="election_type_input" class="form-select" aria-label="Default select example">
+                                <option value="" disabled hidden selected>Select election type</option>
+                                <option value="SSC">SSC</option>
+                                <option value="Organization">Organization</option>
                             </select>
                     </div>
                 </div>
@@ -36,10 +36,17 @@
                     </div>
                     <div class="box upper-box">
                         <label class="form-label" for="sy">School Year</label>
-                        <input class="form-control margin" type="text" name="sy">
+                        <select class="form-control margin" name="SY" v-model="election_school_year_input">
+                            <option value="" disabled hidden selected>Select school year</option>
+                            <option v-for="year in nextFiveYears" :key="year" :value="year">{{ year }}</option>
+                        </select>
     
                         <label class="form-label" for="sem">Semester</label>
-                        <input class="form-control" type="text" name="sem">
+                        <select class="form-control" name="sem" v-model="election_semester_input">
+                            <option value="" disabled hidden selected>Select semester</option>
+                            <option value="1st Semester">1st Semester</option>
+                            <option value="2nd Semester">2nd Semester</option>
+                        </select>
                     </div>
                 </div>
             </div>
@@ -53,10 +60,10 @@
                         <label for="election-period" class="col-3 col-form-label">Election Period</label>
                         <div class="col-5">
                             <label class="form-label" for="e-start">Election Start</label>
-                            <input type="date" class="form-control margin">
+                            <input type="datetime-local" class="form-control margin" v-model="election_start_input">
 
                             <label class="form-label" for="e-end">Election End</label>
-                            <input type="date" class="form-control margin">
+                            <input type="datetime-local" class="form-control margin" v-model="election_end_input">
                         </div>
                     </div>
 
@@ -66,10 +73,10 @@
                         <label for="filing-period" class="col-3 col-form-label">Filing of COC Period</label>
                         <div class="col-5">
                             <label class="form-label" for="f-start">Filing Start</label>
-                            <input type="date" class="form-control margin">
+                            <input type="datetime-local" class="form-control margin" v-model="election_filing_coc_start_input">
 
                             <label class="form-label" for="f-end">Filing End</label>
-                            <input type="date" class="form-control margin">
+                            <input type="datetime-local" class="form-control margin" v-model="election_filing_coc_end_input">
                         </div>
                     </div>
 
@@ -79,10 +86,10 @@
                         <label for="filing-period" class="col-3 col-form-label">Campaign Period</label>
                         <div class="col-5">
                             <label class="form-label" for="c-start">Campaign Start</label>
-                            <input type="date" class="form-control margin">
+                            <input type="datetime-local" class="form-control margin" v-model="election_campaign_start_input">
 
                             <label class="form-label" for="c-end">Campaign End</label>
-                            <input type="date" class="form-control margin">
+                            <input type="datetime-local" class="form-control margin" v-model="election_campaign_end_input">
                         </div>
                     </div>
 
@@ -92,10 +99,10 @@
                         <label for="filing-period" class="col-3 col-form-label">Voting Period</label>
                         <div class="col-5">
                             <label class="form-label" for="v-start">Voting Start</label>
-                            <input type="date" class="form-control margin">
+                            <input type="datetime-local" class="form-control margin" v-model="election_voting_start_input">
 
                             <label class="form-label" for="v-end">Voting End</label>
-                            <input type="date" class="form-control margin">
+                            <input type="datetime-local" class="form-control margin" v-model="election_voting_end_input">
                         </div>
                     </div>
 
@@ -105,10 +112,10 @@
                         <label for="filing-period" class="col-3 col-form-label">Appeal Period</label>
                         <div class="col-5">
                             <label class="form-label" for="a-start">Appeal Start</label>
-                            <input type="date" class="form-control margin">
+                            <input type="datetime-local" class="form-control margin" v-model="election_appeal_start_input">
 
                             <label class="form-label" for="a-end">Appeal End</label>
-                            <input type="date" class="form-control">
+                            <input type="datetime-local" class="form-control" v-model="election_appeal_end_input">
                         </div>
                     </div>
                 </div>
@@ -174,7 +181,7 @@
             </div>
             <div>
                 <div class="election-btn mb-4">
-                    <ActionButton class="cancel">Cancel</ActionButton>
+                    <ActionButton class="cancel" @click.prevent="returnPage">Cancel</ActionButton>
                     <ActionButton class="create">Create Election</ActionButton>
                 </div>
             </div>
@@ -200,9 +207,23 @@
         setup(props) {
             const userStore = useUserStore();
             const createdByStudentNumber = userStore.student_number;
-            
-            const position_count = ref(1); // The number of positions
 
+            const election_name_input = ref('');
+            const election_type_input = ref('');
+            const election_school_year_input = ref('');
+            const election_semester_input = ref('');
+            const election_start_input = ref('');
+            const election_end_input = ref('');
+            const election_filing_coc_start_input = ref('');
+            const election_filing_coc_end_input = ref('');
+            const election_campaign_start_input = ref('');
+            const election_campaign_end_input = ref('');
+            const election_voting_start_input = ref('');
+            const election_voting_end_input = ref('');
+            const election_appeal_start_input = ref('');
+            const election_appeal_end_input = ref('');
+
+            const position_count = ref(1); // The number of positions
             const position_saved_selection = ref([]); // The list of saved positions in the DB
             const position_list = ref([{ // The list of positions created by the user
                 count: position_count,
@@ -273,6 +294,20 @@
 
             return { 
                     createdByStudentNumber, 
+                    election_name_input,
+                    election_type_input,
+                    election_school_year_input,
+                    election_semester_input,
+                    election_start_input,
+                    election_end_input,
+                    election_filing_coc_start_input,
+                    election_filing_coc_end_input,
+                    election_campaign_start_input,
+                    election_campaign_end_input,
+                    election_voting_start_input,
+                    election_voting_end_input,
+                    election_appeal_start_input,
+                    election_appeal_end_input,
                     position_count, 
                     position_list, 
                     isMostRecentPositionFilled, 
@@ -284,9 +319,22 @@
             full_name: String,
             user_role: String,
         },
+        computed:{
+            nextFiveYears() {
+                return this.getNextFiveYears();
+            },
+        },
         methods:{
-            returnPage(){
+            returnPage() {
+                const confirm = window.confirm('Are you sure you want to cancel and return? inputs will not be saved.');
+                if (!confirm) return;
                 router.visit('/comelec/elections');
+            },
+            getNextFiveYears() {
+                const currentYear = new Date().getFullYear();
+
+                // Return an array of the next five years
+                return Array.from({length: 5}, (_, i) => currentYear + i);
             },
             addNewPosition() {
                 this.position_count = this.position_count + 1;
@@ -415,10 +463,119 @@
                     savedPosition.is_already_selected = this.position_list.some(position => position.name === savedPosition.name);
                 });
             },
-            submit(){
-                for (const value of this.position_list) {
-                    console.log(value.name);
+            validateInputs() {
+                // Validates the election info inputs
+                if (this.election_name_input === '') {
+                    return alert('Election name cannot be empty');
                 }
+                if (this.election_type_input === '') {
+                    return alert('Election type cannot be empty');
+                }
+                if (this.election_school_year_input === '') {
+                    return alert('School year cannot be empty');
+                }
+                if (this.election_semester_input === '') {
+                    return alert('Semester cannot be empty');
+                }
+                if (this.election_start_input === '') {
+                    return alert('Election start cannot be empty');
+                }
+                if (this.election_end_input === '') {
+                    return alert('Election end cannot be empty');
+                }
+                if (this.election_filing_coc_start_input === '') {
+                    return alert('Filing start cannot be empty');
+                }
+                if (this.election_filing_coc_end_input === '') {
+                    return alert('Filing end cannot be empty');
+                }
+                if (this.election_campaign_start_input === '') {
+                    return alert('Campaign start cannot be empty');
+                }
+                if (this.election_campaign_end_input === '') {
+                    return alert('Campaign end cannot be empty');
+                }
+                if (this.election_voting_start_input === '') {
+                    return alert('Voting start cannot be empty');
+                }
+                if (this.election_voting_end_input === '') {
+                    return alert('Voting end cannot be empty');
+                }
+                if (this.election_appeal_start_input === '') {
+                    return alert('Appeal start cannot be empty');
+                }
+                if (this.election_appeal_end_input === '') {
+                    return alert('Appeal end cannot be empty');
+                }
+
+                // Create a set to store unique values
+                const valueSet = new Set();
+
+                // Validates the position list inputs
+                for (const position of this.position_list) {
+                    if (valueSet.has(position.name)) {
+                        return alert('Duplicate position name found');
+                    }
+                    valueSet.add(position.name);
+                }
+
+                for (const position of this.position_list) {
+                    if (position.name === '') {
+                        return alert('Position name cannot be empty');
+                    }
+                }
+                
+                for (const position of this.position_list) {
+                    if (position.quantity < 1) {
+                        return alert('Position quantity cannot be less than 1 or empty');
+                    }
+                }
+
+                return true;
+            },
+            submit() {
+                // Validate inputs returns false if there are errors
+                if (!this.validateInputs()) {
+                    return;
+                }
+
+                const positionData = this.position_list.map(position => ({
+                    value: position.name.trim(),
+                    quantity: String(position.quantity)
+                }));
+
+                const electionData = {
+                    election_name: this.election_name_input,
+                    election_type: this.election_type_input,
+                    school_year: String(this.election_school_year_input),
+                    semester: String(this.election_semester_input),
+                    election_start: this.election_start_input,
+                    election_end: this.election_end_input,
+                    filing_coc_start: this.election_filing_coc_start_input,
+                    filing_coc_end: this.election_filing_coc_end_input,
+                    campaign_start: this.election_campaign_start_input,
+                    campaign_end: this.election_campaign_end_input,
+                    voting_start: this.election_voting_start_input,
+                    voting_end: this.election_voting_end_input,
+                    appeal_start: this.election_appeal_start_input,
+                    appeal_end: this.election_appeal_end_input,
+                    created_by: this.createdByStudentNumber
+                };
+
+                const data = {
+                    positions: positionData,
+                    election_info: electionData
+                };
+
+                axios.post(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/election/create`, data)
+                    .then((response) => {
+                        console.log(`Election created successfully. Duration: ${response.duration}`);
+                        alert(response.data.message);
+                        router.visit('/comelec/elections');
+                    })
+                    .catch((error) => {
+                        console.log(error);
+                    });
             }
         }
     }
