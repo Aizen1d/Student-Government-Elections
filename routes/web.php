@@ -66,6 +66,9 @@ Route::group(['middleware' => 'check.auth.comelec'], function () {
     Route::get('/comelec/elections/create', [ComelecController::class, 'electionsCreate'])
         ->name('comelec.elections.create');
 
+    Route::get('/comelec/elections/view', [ComelecController::class, 'electionsView'])
+        ->name('comelec.elections.view');
+
     Route::get('/comelec/insert-data', [ComelecController::class, 'insertData'])
         ->name('comelec.insert.data');
 

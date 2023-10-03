@@ -45,7 +45,7 @@ export default {
         <div class="position-sticky">
             <div class="list-group list-group-flush mx-3">
             <Link :href="linkHref" 
-                :class="{ 'active': $inertia.page.url === linkHref || $inertia.page.url === linkHref + '/create'}" 
+                :class="{ 'active': $inertia.page.url.startsWith(linkHref)}" 
                 class="main list-group-item py-2">
                 <img class="side-icon" src="../../images/icons/elections.svg" alt="Icon" height="35" width="35">
                 <span>Elections</span>

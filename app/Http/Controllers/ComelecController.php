@@ -47,6 +47,19 @@ class ComelecController extends Controller
         return inertia('Comelec/ElectionsCreate');
     }
 
+    public function electionsView(Request $request) 
+    { 
+        $id = $request->id;
+
+        if (!$id) {
+            // Implement a return a message feature here soon
+            return redirect()->route('comelec.elections');
+        }
+
+        return inertia('Comelec/ElectionsView', [
+            'id' => $id,
+        ]);
+    }
 
     public function insertData() 
     { 
