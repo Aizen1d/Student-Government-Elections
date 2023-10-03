@@ -18,13 +18,18 @@
             </div>
 
             <BaseTable class="item-table" 
-                :columns="['ID', 'Name', 'Type', 'School Year', 'Date Created']" 
+                :columns="['ID', 'Name', 'Type', 'School Year', 'Created By', 'Date Created']" 
                 :columnWidths=columnWidths
                 :tableHeight="'auto'"
                 :maxTableHeight="'300px'">
                 <tr v-for="(item, index) in items" :key="index" @click="selectItem(item)">
-                    <td v-for="(value, key, i) in item" :key="key" :style="{ width: columnWidths[i] }" class="my-cell">{{ value }}</td>
+                    <td v-for="(value, key, i) in itemsWithoutId[0]" 
+                        :key="key" 
+                        :style="{ width: columnWidths[i] }" 
+                        class="my-cell">{{ item[key] }}
+                    </td>
                 </tr>
+
             </BaseTable>
         </BaseContainer>
     </div>
@@ -58,10 +63,11 @@
                 { text: 'Name', value: 'name' },
                 { text: 'Type', value: 'type' },
                 { text: 'School Year', value: 'school-year' },
+                { text: 'Created By', value: 'created-by' },
             ];
 
             const items = ref([]);
-            const columnWidths = ['10%', '30%', '20%', '20%', '20%'];
+            const columnWidths = ['10%', '20%', '20%', '20%', '20%', '20%'];
 
             return {options, 
                     items,
@@ -69,6 +75,15 @@
         },
         created() {
             this.fetchTableData();
+        },
+        computed: {
+            itemsWithoutId() {
+                return this.items.map(item => {
+                    let newItem = { ...item };
+                    delete newItem.id;
+                    return newItem;
+                });
+            }
         },
         components: { Navbar, Sidebar, ActionButton, SearchBarAndFilter, BaseContainer, BaseTable, },
         props: {
@@ -90,10 +105,12 @@
                             let formattedDate = date_created.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
                             return {
+                                id: item.ElectionId,
                                 count: item.count,
                                 name: item.ElectionName,
                                 type: item.ElectionType,
                                 school_year: item.SchoolYear,
+                                created_by_name: item.CreatedByName,
                                 date_created: formattedDate,
                             }
                         });
@@ -104,6 +121,13 @@
                         console.log(error);
                     });
             },
+            selectItem(item) {
+                router.visit(`/comelec/elections/view`, {
+                    data: {
+                        id: item.id,
+                    }
+                });
+            }
         }
     }
 </script>

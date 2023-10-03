@@ -539,6 +539,11 @@
                     return;
                 }
 
+                const confirmCreate = window.confirm('Are you sure you want to create this election?');
+                if (!confirmCreate) {
+                    return;
+                }
+
                 const positionData = this.position_list.map(position => ({
                     value: position.name.trim(),
                     quantity: String(position.quantity)
