@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from database import engine, SessionLocal, Base
 
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Dict, Union
 from datetime import datetime
 from fastapi.responses import JSONResponse
 
@@ -187,10 +187,73 @@ def get_All_Students(db: Session = Depends(get_db)):
 #################################################################
 """ Election Table APIs """
 
-class ElectionSaveData(BaseModel):
+class ElectionInfoData(BaseModel):
+    election_name: str
+    election_type: str
+    school_year: str
+    semester: str
+    election_start: datetime
+    election_end: datetime
+    filing_coc_start: datetime
+    filing_coc_end: datetime
+    campaign_start: datetime
+    campaign_end: datetime
+    voting_start: datetime
+    voting_end: datetime
+    appeal_start: datetime
+    appeal_end: datetime
+    created_by: str
+
+class CreatedPositionData(BaseModel):
+    value: str
+    quantity: str
+
+class CreateElectionData(BaseModel):
+    positions: List[CreatedPositionData]
+    election_info: ElectionInfoData
+
+class SaveReusablePositionData(BaseModel):
     name: str
 
+class ElectionDelete(BaseModel):
+    id: int
+
 """ ** GET Methods: All about election APIs ** """
+@router.get("/election/all", tags=["Election"])
+def get_All_Election(db: Session = Depends(get_db)):
+    try:
+        elections = db.query(Election).order_by(Election.ElectionId).all()
+        elections_with_creator = []
+
+        for i, election in enumerate(elections):
+            creator = db.query(Student).filter(Student.StudentNumber == election.CreatedBy).first()
+            election_dict = election.to_dict(i+1)
+            election_dict["CreatedByName"] = (creator.FirstName + ' ' + (creator.MiddleName + ' ' if creator.MiddleName else '') + creator.LastName) if creator else ""
+            
+            elections_with_creator.append(election_dict)
+
+        return {"elections": elections_with_creator}
+
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while fetching all elections from the database"})
+
+    
+@router.get("/election/view/{id}", tags=["Election"])
+def get_Election_By_Id(id: int, db: Session = Depends(get_db)):
+    try:
+        election = db.query(Election).get(id)
+
+        if not election:
+            return JSONResponse(status_code=404, content={"detail": "Election not found"})
+
+        positions = db.query(CreatedElectionPosition).filter(CreatedElectionPosition.ElectionId == id).all()
+
+        election_count = db.query(Election).count()
+        return {"election": election.to_dict(election_count),
+                "positions": [position.to_dict(i+1) for i, position in enumerate(positions)]}
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while fetching election from the database"})
+
 @router.get("/election/position/reusable/all", tags=["Election"])    
 def get_All_Election_Position_Reusable(db: Session = Depends(get_db)):
     try:
@@ -201,9 +264,44 @@ def get_All_Election_Position_Reusable(db: Session = Depends(get_db)):
 
 
 """ ** POST Methods: All about election APIs ** """
+@router.post("/election/create", tags=["Election"])
+def save_election(election_data: CreateElectionData, db: Session = Depends(get_db)):
+    new_election = Election(ElectionName=election_data.election_info.election_name,
+                            ElectionType=election_data.election_info.election_type,
+                            ElectionStatus="Active",
+                            SchoolYear=election_data.election_info.school_year,
+                            Semester=election_data.election_info.semester,
+                            CreatedBy=election_data.election_info.created_by,
+                            ElectionStart=election_data.election_info.election_start,
+                            ElectionEnd=election_data.election_info.election_end,
+                            CoCFilingStart=election_data.election_info.filing_coc_start,
+                            CoCFilingEnd=election_data.election_info.filing_coc_end,
+                            CampaignStart=election_data.election_info.campaign_start,
+                            CampaignEnd=election_data.election_info.campaign_end,
+                            VotingStart=election_data.election_info.voting_start,
+                            VotingEnd=election_data.election_info.voting_end,
+                            AppealStart=election_data.election_info.appeal_start,
+                            AppealEnd=election_data.election_info.appeal_end,
+                            created_at=datetime.now(), 
+                            updated_at=datetime.now())
+    db.add(new_election)
+    db.commit()
+
+    for position in election_data.positions:
+        new_position = CreatedElectionPosition(ElectionId=new_election.ElectionId,
+                                                PositionName=position.value,
+                                                PositionQuantity=position.quantity,
+                                                created_at=datetime.now(), 
+                                                updated_at=datetime.now())
+        db.add(new_position)
+        db.commit()
+
+    return {"message": "Election created successfully",
+            "election_id": new_election.ElectionId,}
+
 
 @router.post("/election/position/reusable/save", tags=["Election"])
-async def save_Election_Position_Reusable(data: ElectionSaveData, db: Session = Depends(get_db)):
+async def save_Election_Position_Reusable(data: SaveReusablePositionData, db: Session = Depends(get_db)):
     capitalized_first_letter = data.name.capitalize()
     new_position = SavedPosition(PositionName=capitalized_first_letter,
                                             created_at=datetime.now(),
@@ -214,7 +312,7 @@ async def save_Election_Position_Reusable(data: ElectionSaveData, db: Session = 
     return {"message": f"Position {capitalized_first_letter} is now re-usable."}
 
 @router.delete("/election/position/reusable/delete", tags=["Election"])
-def delete_Election_Position_Reusable(data: ElectionSaveData, db: Session = Depends(get_db)):
+def delete_Election_Position_Reusable(data: SaveReusablePositionData, db: Session = Depends(get_db)):
     capitalized_first_letter = data.name.capitalize()
     position = db.query(SavedPosition).filter(SavedPosition.PositionName == capitalized_first_letter).first()
 
@@ -226,6 +324,23 @@ def delete_Election_Position_Reusable(data: ElectionSaveData, db: Session = Depe
 
     return {"message": f"Position {capitalized_first_letter} is not re-usable anymore."}
 
+@router.post("/election/delete", tags=["Election"])
+def delete_Election(data: ElectionDelete, db: Session = Depends(get_db)):
+    election = db.query(Election).filter(Election.ElectionId == data.id).first()
+    positions = db.query(CreatedElectionPosition).filter(CreatedElectionPosition.ElectionId == data.id).all()
+
+    if not election:
+        return {"error": "Election not found"}
+
+    for position in positions:
+        if position:
+            db.delete(position)
+            db.commit()
+
+    db.delete(election)
+    db.commit()
+
+    return {"message": f"Election {election.ElectionName} was deleted successfully."}
 
 #################################################################
 """ Announcement Table APIs """

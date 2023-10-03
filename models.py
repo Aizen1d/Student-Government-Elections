@@ -50,9 +50,10 @@ class Election(Base):
     ElectionStatus = Column(String)
     SchoolYear = Column(String)
     Semester = Column(String)
-    CreatedBy = Column(String, ForeignKey('Student.StudentNumber'))
+    CreatedBy = Column(String)
 
-    DataInsertionEnd = Column(DateTime)
+    ElectionStart = Column(DateTime)
+    ElectionEnd = Column(DateTime)
     CoCFilingStart = Column(DateTime)
     CoCFilingEnd = Column(DateTime)
     CampaignStart = Column(DateTime)
@@ -75,7 +76,9 @@ class Election(Base):
             "SchoolYear": self.SchoolYear,
             "Semester": self.Semester,
             "CreatedBy": self.CreatedBy,
-            "DataInsertionEnd": self.DataInsertionEnd.isoformat() if self.DataInsertionEnd else None,
+
+            "ElectionStart": self.ElectionStart.isoformat() if self.ElectionStart else None,
+            "ElectionEnd": self.ElectionEnd.isoformat() if self.ElectionEnd else None,
             "CoCFilingStart": self.CoCFilingStart.isoformat() if self.CoCFilingStart else None,
             "CoCFilingEnd": self.CoCFilingEnd.isoformat() if self.CoCFilingEnd else None,
             "CampaignStart": self.CampaignStart.isoformat() if self.CampaignStart else None,
@@ -84,6 +87,7 @@ class Election(Base):
             "VotingEnd": self.VotingEnd.isoformat() if self.VotingEnd else None,
             "AppealStart": self.AppealStart.isoformat() if self.AppealStart else None,
             "AppealEnd": self.AppealEnd.isoformat() if self.AppealEnd else None,
+            
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }
