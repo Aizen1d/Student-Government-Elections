@@ -7,6 +7,7 @@ use Inertia\Inertia;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Models\Organization;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Election;
 
 class OrganizationController extends Controller
 {
@@ -34,10 +35,36 @@ class OrganizationController extends Controller
         $email_address = $student->EmailAddress;
 
         return Inertia::render('Organization/Elections', [
-            'full_name' => $full_name,
+            'student_number' => $student_number,
+            'organization_id' => $organization_id,
             'organization_name' => $organization_name,
+            'officer_position_id' => $officer_position_id,
             'user_role' => 'organization',
+            'full_name' => $full_name,
+        ]);    
+    }
+
+    public function electionsCreate() {
+        return Inertia::render('Organization/ElectionsCreate');
+    }
+
+    public function electionsView(Request $request) 
+    { 
+        $id = $request->id;
+        $electionTable = Election::where('ElectionId', $id)->first();
+
+        if (!$id) {
+            // Implement a return a message feature here soon
+            return redirect()->route('organization.elections');
+        }
+
+        if (!$electionTable) {
+            // Implement a return a message feature here soon
+            return redirect()->route('organization.elections');
+        }
+
+        return inertia('Organization/ElectionsView', [
+            'id' => $id,
         ]);
-               
     }
 }

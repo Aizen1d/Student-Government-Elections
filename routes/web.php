@@ -84,4 +84,10 @@ Route::group(['middleware' => 'check.auth.organization'], function () {
 
     Route::get('/organization/elections', [OrganizationController::class, 'elections'])
     ->name('organization.elections');
+
+    Route::get('/organization/elections/create', [OrganizationController::class, 'electionsCreate'])
+    ->name('organization.elections.create');
+
+    Route::get('/organization/elections/view', [OrganizationController::class, 'electionsView'])
+    ->name('organization.elections.view');
 });
