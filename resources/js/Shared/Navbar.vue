@@ -5,7 +5,7 @@
             </div>
             <li class="nav-item dropdown">
                 <button class="btn btn-link nav-link dropdown-toggle mx-4 user" href="#" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    {{ full_name }}
+                    {{ label }}, {{ full_name }}
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
                     <li><a class="dropdown-item" href="#" @click="logout">Logout</a></li>
@@ -18,12 +18,22 @@
 <script>
     import axios from 'axios';
     import { useUserStore } from '../Stores/UserStore.js'
+    import { ref } from 'vue';
 
     export default {
         setup() {
             const userStore = useUserStore();
+            let label = ref('');
+
+            if (!userStore.organization_name) {
+                label = 'Comelec'
+            }
+            else {
+                label = userStore.organization_name;
+            }
 
             return {
+                label,
                 full_name: userStore.full_name,
             };
         },
@@ -31,8 +41,10 @@
             logout(){
                 axios.post('/logout')
                     .then(response => {
+                        useUserStore().reset(); // Reset the user store 
                         location.reload(); // trick the system to logout and prevent backing 
                                          // (Reloading to check for cookie token and throw back to login page)
+
                     })
                     .catch(error => {
                         console.log(error);

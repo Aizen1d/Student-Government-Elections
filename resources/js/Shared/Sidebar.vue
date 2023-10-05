@@ -8,11 +8,14 @@ export default {
         const userStore = useUserStore();
 
         const linkHref = computed(() => {
-            if (userStore.user_role === 'comelec') {
+            if (userStore.user_role === 'comelec') { // Added .value here
                 return '/comelec/elections';
             } 
-            else if (userStore.user_role === 'organization') {
+            else if (userStore.user_role === 'organization') { // Added .value here
                 return '/organization/elections';
+            }
+            else {
+                return '/login'; // default path?
             }
         });
 
