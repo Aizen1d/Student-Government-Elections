@@ -22,12 +22,7 @@
                         <input class="form-control margin" type="text" name="name" v-model="election_name_input">
                         
                         <label class="form-label" for="type">Election Type</label>
-                        <input type="hidden" name="election-type">
-                            <select v-model="election_type_input" class="form-select" aria-label="Default select example">
-                                <option value="" disabled hidden selected>Select election type</option>
-                                <option value="SSC">SSC</option>
-                                <option value="Organization">Organization</option>
-                            </select>
+                        <input class="form-control" type="text" name="name" v-model="election_type_input" :disabled="true">
                     </div>
                 </div>
                 <div class="col-6">
@@ -164,12 +159,7 @@
                                 <div class="col-6">
                                     <button class="remove-btn" 
                                             v-if="index !== 0"
-                                            @click="removePosition(index)">Remove position</button>
-                                </div>
-                                <div class="col-6 save">
-                                    <button :disabled="position.name === ''" class="reusable-btn" :style="{ color: position.is_re_usable ? '#00ae0c' : '#B90321' }"
-                                            @click.prevent="makePositionReusableOrNot(index)">{{ position.is_re_usable ? 'Make this position reusable' : 'Make this position non-reusable' }}
-                                    </button>
+                                            @click.prevent="removePosition(index)">Remove position</button>
                                 </div>
                             </div>
                         </div>
@@ -207,9 +197,10 @@
         setup(props) {
             const userStore = useUserStore();
             const createdByStudentNumber = userStore.student_number;
+            const organization_name = userStore.organization_name;
 
             const election_name_input = ref('');
-            const election_type_input = ref('');
+            const election_type_input = ref(organization_name);
             const election_school_year_input = ref('');
             const election_semester_input = ref('');
             const election_start_input = ref('');
@@ -294,6 +285,7 @@
 
             return { 
                     createdByStudentNumber, 
+                    organization_name,
                     election_name_input,
                     election_type_input,
                     election_school_year_input,
@@ -328,7 +320,7 @@
             returnPage() {
                 const confirm = window.confirm('Are you sure you want to cancel and return? inputs will not be saved.');
                 if (!confirm) return;
-                router.visit('/comelec/elections');
+                router.visit('/organization/elections');
             },
             getNextFiveYears() {
                 const currentYear = new Date().getFullYear();
@@ -540,7 +532,7 @@
                     return;
                 }
 
-                const confirmCreate = window.confirm('Are you sure you want to create this election?');
+                const confirmCreate = window.confirm('Are you sure you want to create this election? You cannot re-edit this election once created.');
                 if (!confirmCreate) {
                     return;
                 }
@@ -577,7 +569,7 @@
                     .then((response) => {
                         console.log(`Election created successfully. Duration: ${response.duration}`);
                         alert(response.data.message);
-                        router.visit('/comelec/elections');
+                        router.visit('/organization/elections');
                     })
                     .catch((error) => {
                         console.log(error);

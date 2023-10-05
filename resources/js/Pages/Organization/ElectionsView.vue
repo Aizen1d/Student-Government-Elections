@@ -6,7 +6,7 @@
         <div class="row utilities">
             <div class="col-6">
                 <h2 class="my-1">
-                    <span class="return" @click="returnPage">Elections</span> / View / {{ election_name_input  }}
+                    <span class="return" @click.prevent="returnPage">Elections</span> / View / {{ election_name_input  }}
                 </h2>
             </div>
             <div class="col-6" style="text-align: end;">
@@ -25,7 +25,7 @@
                         <input class="form-control margin" type="text" name="name" v-model="election_name_input" :disabled="true">
                         
                         <label class="form-label" for="type">Election Type</label>
-                        <input class="form-control margin" type="text" name="name" v-model="election_type_input" :disabled="true">
+                        <input class="form-control" type="text" name="name" v-model="election_type_input" :disabled="true">
                     </div>
                 </div>
                 <div class="col-6">
@@ -212,7 +212,7 @@
         },
         methods: {
             returnPage() {
-                router.visit('/comelec/elections');
+                router.visit('/organization/elections');
             },
             fetchElectionData() {
                 axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/election/view/${this.election_id}`)
@@ -264,7 +264,7 @@
                     console.log(`Election deleted successfully. Duration: ${response.duration}`);
 
                     alert(response.data.message)
-                    router.visit('/comelec/elections');
+                    router.visit('/organization/elections');
                 })
                 .catch((error) => {
                     console.log(error);
