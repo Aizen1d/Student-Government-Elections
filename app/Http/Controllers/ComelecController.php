@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Models\Comelec;
+use App\Models\Election;
 
 class ComelecController extends Controller
 {   
@@ -50,8 +51,14 @@ class ComelecController extends Controller
     public function electionsView(Request $request) 
     { 
         $id = $request->id;
+        $electionTable = Election::where('ElectionId', $id)->first();
 
         if (!$id) {
+            // Implement a return a message feature here soon
+            return redirect()->route('comelec.elections');
+        }
+
+        if (!$electionTable) {
             // Implement a return a message feature here soon
             return redirect()->route('comelec.elections');
         }
