@@ -19,7 +19,7 @@ import cloudinary
 import cloudinary.uploader
 from cloudinary.api import resources_by_tag, delete_resources_by_tag, delete_folder
 
-from models import Student, Announcement, Rule, Guideline, AzureToken, Election, SavedPosition, CreatedElectionPosition
+from models import Student, Organization, Announcement, Rule, Guideline, AzureToken, Election, SavedPosition, CreatedElectionPosition
 
 #################################################################
 """ Settings """
@@ -45,11 +45,16 @@ tags_metadata = [
         "name": "Guideline",
         "description": "Manage guidelines.",
     },
+
+    {
+        "name": "Organization Election",
+        "description": "Manage organization elections.",
+    },
 ]
 
 app = FastAPI(
     title="API for Student Goverment Election",
-    description="This is the API for the Student Government Election",
+    description="This is the API for the Student Government Election. (Default API's are for comelec e.g (Election APIs))",
     version="v1",
     docs_url="/",
     redoc_url="/redoc",
@@ -739,6 +744,36 @@ def delete_Guideline(guideline_data: GuidelineDeleteData, db: Session = Depends(
         return {"detail": "Guideline id " + str(guideline_data.id) + " was successfully deleted)"}
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while deleting guideline from the table Guideline"})
+    
+
+#################################################################
+## Organizations APIs ## 
+class OrganizationName(BaseModel):
+    name: str
+
+""" Organization Election Table APIs """
+
+""" ** POST Methods: All about orgnanization election APIs ** """
+@router.post("/election/organization/all", tags=["Organization Election"])
+def get_All_Organization_Election(org_data: OrganizationName, db: Session = Depends(get_db)):
+    try:
+        # Join Election and Organization tables
+        elections = db.query(Election, Organization).join(Organization, Election.CreatedBy == Organization.StudentNumber).filter(Organization.OrganizationName == org_data.name).order_by(Election.ElectionId).all()
+        
+        elections_with_creator = []
+
+        for i, (election, organization) in enumerate(elections):
+            creator = db.query(Student).filter(Student.StudentNumber == election.CreatedBy).first()
+            election_dict = election.to_dict(i+1)
+            election_dict["CreatedByName"] = (creator.FirstName + ' ' + (creator.MiddleName + ' ' if creator.MiddleName else '') + creator.LastName) if creator else ""
+            
+            elections_with_creator.append(election_dict)
+
+        return {"elections": elections_with_creator}
+
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while fetching all elections from the database"})
+
 
 #################################################################
 app.include_router(router)

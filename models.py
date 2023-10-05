@@ -41,6 +41,26 @@ class Student(Base):
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }
     
+class Organization(Base):
+    __tablename__ = "Organization"
+    
+    OrganizationId = Column(Integer, primary_key=True)
+    StudentNumber = Column(String(15), unique=True)
+    OfficerPositionId = Column(Integer, unique=True)
+    OrganizationName = Column(String)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    def to_dict(self):
+        return {
+            "OrganizationId": self.OrganizationId,
+            "StudentNumber": self.StudentNumber,
+            "OfficerPositionId": self.OfficerPositionId,
+            "OrganizationName": self.OrganizationName,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None
+        }
+    
 class Election(Base):
     __tablename__ = "Election"
     
