@@ -21,7 +21,7 @@
                                 <label class="form-label" for="course">Course</label>
                                 <input type="hidden" name="course">
                                 <select class="form-select" aria-label="Default select example">
-                                    <option selected>Select</option>
+                                    <option disabled hidden selected>Select</option>
                                     <option value="1">BBTLEDHE</option>
                                     <option value="2">BSBAHRM</option>
                                     <option value="3">BSBA-MM</option>
@@ -61,33 +61,38 @@
                         <div>
                             <div class="row mt-3">
                                 <div class="col">
-                                    <button class="cancel">Cancel</button>
+                                    <ActionButton class="clear">Clear All</ActionButton>
                                 </div>
                                 <div class="col">
-                                    <button class="insert">Insert</button>
+                                    <ActionButton class="insert">Insert</ActionButton>
                                 </div>
                             </div>
-                            
-                            
                         </div>
                     </div>
                 </div>
+
                 <div class="col-6">
                     <div class="note">
                         <h6>Upload CSV/Excel files.</h6>
                     </div>
                     <div class="box">
-                        <input class="form-control margin" type="file">
-    
-                        <div class="drop">
-                            <div>
-                                <span>Drag and Drop file</span>
-                                <br>
-                                <img src="upload.svg" width="40px" alt="upload" draggable="false">
-                            </div>
-                        </div>
+                        <label for="file-upload" class="custom-file-upload" :class="{ 'disabled': is_loading_attachments || saving || updating }">
+                                    Select File
+                        </label>
+                        <input id="file-upload" type="file" style="display: none;" @change="onFileChange" :disabled="is_loading_attachments || saving || updating" multiple/>
 
-                        <button class="mt-4 upload">Upload file</button>
+                        <DragAndDrop 
+                            class="drag-and-drop"
+                            v-model="upload_image_attachments" 
+                            :fileSize="file_size"
+                            :acceptedFileTypes="extensions"
+                            :notAcceptedMessage="notAcceptedMessage"
+                            :isLoadingAttachments="is_loading_attachments"
+                            :saving="saving"
+                            :updating="updating">
+                        </DragAndDrop>
+
+                        <ActionButton class="mt-4 upload">Upload file</ActionButton>
                     </div>
                 </div>
             </div>
@@ -96,11 +101,84 @@
 </template>
 
 <script >
+    import { useUserStore } from '../../Stores/UserStore';
+    import { router } from '@inertiajs/vue3'
+    import { ref } from 'vue';
+
     import Navbar from '../../Shared/Navbar.vue';
     import Sidebar from '../../Shared/Sidebar.vue';
+    import ActionButton from '../../Shared/ActionButton.vue';
+    import SearchBarAndFilter from '../../Shared/SearchBarAndFilter.vue';
+    import BaseContainer from '../../Shared/BaseContainer.vue';
+    import BaseTable from '../../Shared/BaseTable.vue';
+    import DragAndDrop from '../../Shared/DragAndDrop.vue';
+
+    import axios from 'axios';
 
     export default {
-        components: { Navbar, Sidebar },
+        setup() {
+            const upload_image_attachments = ref([]);
+            const file_size = ref(10); // mega bytes
+            const saving = ref(false);
+            const updating = ref(false);
+            const is_loading_attachments = ref(false);
+            const notAcceptedMessage = ref('please upload a csv/excel file.');
+            const extensions = ref('application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv') 
+
+            return {
+                upload_image_attachments,
+                file_size,
+                saving,
+                updating,
+                is_loading_attachments,
+                notAcceptedMessage,
+                extensions,
+            }
+        },
+        components: { Navbar, Sidebar, ActionButton, SearchBarAndFilter, BaseContainer, BaseTable, DragAndDrop },
+        methods: {
+            addFiles(files) {
+                // Add the files to the list of files
+                for (let i = 0; i < files.length; i++) {
+                    let file = files[i];
+
+                    if (file.size > this.file_size * 1024 * 1024) {
+                        alert(file.name + ' is larger than ' + String(this.file_size) + ' MB, please upload a smaller file');
+                        continue;
+                    }
+
+                    const extensions = this.extensions;
+                    let acceptedTypes = extensions.split(',');
+
+                    if (!acceptedTypes.includes(file.type)) {
+                        alert(file.name + ' is not an accepted file type, ' + this.notAcceptedMessage);
+                        continue;
+                    }
+
+                    // Create a new object URL for the file
+                    let url = URL.createObjectURL(file);
+
+                    // Check if the file is already in the list of files
+                    // If it is, then do not add it again
+                    if (!this.upload_image_attachments.some(existingFile => existingFile.name === file.name)) {
+                        this.upload_image_attachments.push({file: file, 
+                                                            name: file.name,
+                                                            url: url
+                                                        });
+                    }
+                }
+            },
+            onFileChange(e) {
+                let files = e.target.files;
+
+                if (files) {
+                    this.addFiles(files);
+                }
+
+                // Clear the input value
+                e.target.value = null;
+            },
+        }
     }
 </script>
 
@@ -126,6 +204,7 @@
 .note{
     margin-top: 1.5%;
     background-color: #FDD5D5;
+    box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.14), 0 6px 20px 0 rgba(0, 0, 0, 0.08);
     padding: 2%;
 }
 
@@ -135,65 +214,44 @@
 
 .box{
     background-color: white;
+    box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.14), 0 6px 20px 0 rgba(0, 0, 0, 0.08);
     padding: 3%;
 }
 
-.cancel{
-    padding-top: 20px;
-    padding-bottom: 20px;
-    padding: 15px 100px 15px 100px;
-    border: transparent;
-    border-radius: 10px;
-    background-color: #FDD5D5;
-    color: black;
-    margin-right: 2%;
+.clear{
     width: 100%;
 }
 
 .insert{
-    padding-top: 20px;
-    padding-bottom: 20px;
-    padding: 15px 100px 15px 100px;
-    border: transparent;
-    border-radius: 10px;
-    background-color: #B90321;
-    color: white;
     width: 100%;
 }
 
 .upload{
-    padding-top: 20px;
-    padding-bottom: 20px;
-    padding: 15px 100px 15px 100px;
-    border: transparent;
-    border-radius: 10px;
-    background-color: #B90321;
-    color: white;
     width: 100%;
 }
 
-.drop{
-    background-color: rgb(243, 243, 243);
+.custom-file-upload {
+    margin-bottom: 2.5%;
+    padding: 7px;
+    width: 100%;
+    font-size: 100%;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    display: inline-block;
+    cursor: pointer;
+    text-align: center;
+}
+
+.custom-file-upload:hover{
+    background-color: #f4f4f4;
+}
+
+.custom-file-upload.disabled {
+    background-color: #E9ECEF;
+    cursor: default;
+}
+
+.drag-and-drop{
     height: 250px;
-    border: 2px dashed rgb(205, 205, 205);
-    border-radius: 10px;
-    color: #BFBFBF;
-    display: flex; 
-    flex-direction: column; 
-    align-items: center; 
-    justify-content: center;
-}
-
-.drop span{
-    -webkit-user-select: none;  /* Chrome, Safari, Opera */
-    -moz-user-select: none;     /* Firefox */
-    -ms-user-select: none;      /* IE 10+ */
-    user-select: none;          /* Standard syntax */    
-}
-
-.drop img{
-    filter: invert(56%) sepia(100%) saturate(0%) hue-rotate(183deg) brightness(115%) contrast(86%);
-    display: block; 
-    margin: 0 auto;
 }
 </style>

@@ -68,7 +68,8 @@
                             v-if="type_of_attachment !== 'None'" 
                             v-model="upload_image_attachments" 
                             :fileSize="file_size"
-                            :acceptedFileTypes="'image/'" 
+                            :acceptedFileTypes="extensions"
+                            :notAcceptedMessage="notAcceptedMessage"
                             :isLoadingAttachments="is_loading_attachments"
                             :saving="saving"
                             :updating="updating">
@@ -127,6 +128,8 @@ export default {
         const upload_image_attachments = ref([]);
         const retrieved_attachments = ref([]);
         const file_size = ref(5); // mega bytes
+        const notAcceptedMessage = ref('please upload an image only.');
+        const extensions = ref('image/jpeg,image/png,image/gif,image/bmp')
         
         // States
         const selectedItem = ref(null);
@@ -148,6 +151,8 @@ export default {
             upload_image_attachments,
             retrieved_attachments,
             file_size,
+            notAcceptedMessage,
+            extensions,
 
             selectedItem,
             new_button_disabled,
@@ -238,14 +243,16 @@ export default {
                 let file = files[i];
 
                 if (file.size > this.file_size * 1024 * 1024) {
-                    alert(file.name + ' is larger than 5MB, please upload a smaller file');
+                    alert(file.name + ' is larger than ' + String(this.file_size) + ' MB, please upload a smaller file');
                     continue;
                 }
 
-                // Since we are only accepting images (banner or poster), check if a file is an image or not
-                if (!file.type.startsWith('image/')) {
-                    alert(file.name + ' is not an image, please upload an image file');
-                    continue;  
+                const extensions = this.extensions;
+                let acceptedTypes = extensions.split(',');
+
+                if (!acceptedTypes.includes(file.type)) {
+                    alert(file.name + ' is not an accepted file type, ' + this.notAcceptedMessage);
+                    continue;
                 }
 
                 // Create a new object URL for the file

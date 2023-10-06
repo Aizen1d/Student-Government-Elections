@@ -31,6 +31,7 @@ export default {
     props: {
         modelValue: Array,
         acceptedFileTypes: String,
+        notAcceptedMessage: String,
         isLoadingAttachments: Boolean,
         saving: Boolean,
         updating: Boolean,
@@ -53,15 +54,20 @@ export default {
                 let file = files[i];
 
                 if (file.size > this.fileSize * 1024 * 1024) {
-                    alert(file.name + ' is larger than 5MB, please upload a smaller file');
+                    alert(file.name + ' is larger than ' + String(this.fileSize) + ' MB, please upload a smaller file');
                     continue;
                 }
 
-                // Check if a file is of an accepted type
-                if (!file.type.startsWith(this.acceptedFileTypes)) {
-                    alert(file.name + ' is not an accepted file type, please upload a ' + this.acceptedFileTypes + ' file');
+                let acceptedTypes = this.acceptedFileTypes.split(',');
+                if (!acceptedTypes.includes(file.type)) {
+                    alert(file.name + ' is not an accepted file type, ' + this.notAcceptedMessage);
                     continue;
                 }
+
+                /*if (!this.acceptedFileTypes.includes(file.type)) {
+                    alert(file.name + ' is not an accepted file type, please upload a ' + this.acceptedFileTypes + ' file');
+                    continue;
+                }*/
 
                 // Create a new object URL for the file
                 let url = URL.createObjectURL(file);
