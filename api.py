@@ -6,7 +6,7 @@ from database import engine, SessionLocal, Base
 
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Union
-from datetime import datetime
+from datetime import datetime, date
 from fastapi.responses import JSONResponse
 
 from dotenv import load_dotenv # for .env file
@@ -180,6 +180,17 @@ def get_access_token(db: Session = Depends(get_db)):
 #################################################################
 """ All about students APIs """
 
+class SaveStudentData(BaseModel):
+    student_number: str
+    course: str
+    first_name: str
+    middle_name: str
+    last_name: str
+    email: str
+    birth_date: date
+    semester: str
+    year_enrolled: str
+
 def validate_columns(df, expected_columns):
     if not set(expected_columns).issubset(df.columns):
         missing_columns = list(set(expected_columns) - set(df.columns))
@@ -213,8 +224,38 @@ def get_All_Students(db: Session = Depends(get_db)):
         return {"students": [student.to_dict() for student in students]}
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while fetching all students from the database"})
+    
+@router.post("/student/insert/data/manual", tags=["Student"])
+def student_Insert_Data_Manual(data: SaveStudentData, db: Session = Depends(get_db)):
+    # Check if a student with the given StudentNumber already exists
+    existing_student = db.query(Student).filter(Student.StudentNumber == data.student_number).first()
+    existing_email = db.query(Student).filter(Student.EmailAddress == data.email).first()
 
-@router.post("/student/insert/data", tags=["Student"])
+    if existing_student:
+        return {"error": f"Student with student number {data.student_number} already exists."}
+    
+    if existing_email:
+        return {"error": f"Student with email address {data.email} already exists."}
+
+    # Insert the data into the database
+    student = Student(
+        StudentNumber=data.student_number,
+        FirstName=data.first_name,
+        MiddleName=data.middle_name,
+        LastName=data.last_name,
+        EmailAddress=data.email,
+        BirthDate=data.birth_date,
+        Course=data.course,
+        CurrentSemesterEnrolled=data.semester,
+        YearEnrolled=data.year_enrolled,
+        IsOfficer=False
+    )
+    db.add(student)
+    db.commit()
+
+    return {"message": f"Student {data.student_number} was inserted successfully."}
+
+@router.post("/student/insert/data/attachment", tags=["Student"])
 async def student_Insert_Data_Attachment(files: List[UploadFile] = File(...), db: Session = Depends(get_db)):
     responses = []
     
