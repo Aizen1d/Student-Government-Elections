@@ -12,6 +12,7 @@ from fastapi.responses import JSONResponse
 from dotenv import load_dotenv # for .env file
 load_dotenv()
 
+import pandas as pd
 import time
 import os
 import requests
@@ -179,6 +180,30 @@ def get_access_token(db: Session = Depends(get_db)):
 #################################################################
 """ All about students APIs """
 
+def validate_columns(df, expected_columns):
+    if not set(expected_columns).issubset(df.columns):
+        missing_columns = list(set(expected_columns) - set(df.columns))
+        return False, {"message": f"Upload failed. The following required columns are missing: {missing_columns}"}
+    return True, {}
+
+def process_data(df):
+    # Convert 'YearEnrolled' to string
+    df['YearEnrolled'] = df['YearEnrolled'].apply(lambda x: str(int(x)) if pd.notnull(x) else x)
+
+    # Handle missing values: drop rows with any column missing except for MiddleName
+    df = df.dropna(subset=[column for column in df.columns if column != 'MiddleName'])
+
+    # Replace 'nan' with None
+    df = df.where(pd.notnull(df), None)
+
+    # Clean the data: trim leading/trailing whitespace
+    df = df.apply(lambda col: col.str.strip() if col.dtype == 'object' else col)
+
+    # Remove duplicate entries based on 'StudentNumber'
+    df.drop_duplicates(subset=['StudentNumber'], keep='first', inplace=True)
+    
+    return df
+
 """ ** GET Methods: All about students APIs ** """
 
 @router.get("/student/all", tags=["Student"])
@@ -188,6 +213,71 @@ def get_All_Students(db: Session = Depends(get_db)):
         return {"students": [student.to_dict() for student in students]}
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while fetching all students from the database"})
+
+@router.post("/student/insert/data", tags=["Student"])
+async def student_Insert_Data_Attachment(files: List[UploadFile] = File(...), db: Session = Depends(get_db)):
+    responses = []
+    
+    for file in files:
+        if file.filename.endswith('.csv'):
+            df = pd.read_csv(file.file, encoding='ISO-8859-1')
+        elif file.filename.endswith('.xlsx'):
+            df = pd.read_excel(file.file, engine='openpyxl')
+        else:
+            responses.append({"file": file.filename, "message": "Upload failed. The file format is not supported."})
+            continue
+
+        # Define the expected columns
+        expected_columns = ['StudentNumber', 'FirstName', 'MiddleName', 'LastName', 'EmailAddress', 
+                            'BirthDate', 'Course', 'CurrentSemesterEnrolled', 'YearEnrolled', 'IsOfficer']
+
+        # Check if all expected columns exist in the DataFrame
+        valid, response = validate_columns(df, expected_columns)
+        if not valid:
+            responses.append({"file": file.filename, "unexpected_columns": response})
+            continue
+
+        # Process the data
+        df = process_data(df)
+
+        existing_students = {student.StudentNumber for student in db.query(Student).all()}
+        existing_emails = {student.EmailAddress for student in db.query(Student).all()}
+        inserted_student_count = 0
+
+        # Insert the data into the database
+        for index, row in df.iterrows():
+            # Check if a student with the given StudentNumber already exists
+            
+            if str(row['StudentNumber']) not in existing_students and str(row['EmailAddress']) not in existing_emails:
+                student = Student(
+                    StudentNumber=row['StudentNumber'],
+                    FirstName=row['FirstName'],
+                    MiddleName=row.get('MiddleName', ''),  # Use .get() to make MiddleName optional
+                    LastName=row['LastName'],
+                    EmailAddress=row['EmailAddress'],
+                    BirthDate=row['BirthDate'],
+                    Course=row['Course'],
+                    CurrentSemesterEnrolled=row['CurrentSemesterEnrolled'],
+                    YearEnrolled=row['YearEnrolled'],
+                    IsOfficer=row['IsOfficer']
+                )
+                inserted_student_count += 1
+                db.add(student)
+                
+                # Commit every 100 students
+                if inserted_student_count % 100 == 0:
+                    db.commit()
+
+        # Commit any remaining students
+        if inserted_student_count % 100 != 0:
+            db.commit()
+
+        if inserted_student_count == 0:
+            responses.append({"no_new_students": f"All students in ({file.filename}) we're inserted already. No changes applied."})
+        else:
+            responses.append({"file": file.filename, "message": "Upload successful, inserted students: " + str(inserted_student_count)})
+    
+    return responses
 
 #################################################################
 """ Election Table APIs """
