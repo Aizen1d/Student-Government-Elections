@@ -36,13 +36,13 @@
                     </div>
                     <div class="box upper-box">
                         <label class="form-label" for="sy">School Year</label>
-                        <select class="form-control margin" name="SY" v-model="election_school_year_input">
+                        <select class="form-select margin" name="SY" v-model="election_school_year_input">
                             <option value="" disabled hidden selected>Select school year</option>
                             <option v-for="year in nextFiveYears" :key="year" :value="year">{{ year }}</option>
                         </select>
     
                         <label class="form-label" for="sem">Semester</label>
-                        <select class="form-control" name="sem" v-model="election_semester_input">
+                        <select class="form-select" name="sem" v-model="election_semester_input">
                             <option value="" disabled hidden selected>Select semester</option>
                             <option value="1st Semester">1st Semester</option>
                             <option value="2nd Semester">2nd Semester</option>

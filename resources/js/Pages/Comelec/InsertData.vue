@@ -15,13 +15,13 @@
                         <div class="row mb-2">
                             <div class="col">
                                 <label class="form-label" for="stud-num">Student Number</label>
-                                <input class="form-control margin" type="text" name="stud-num">
+                                <input class="form-control margin" type="text" maxlength="15" name="stud-num" v-model="student_number">
                             </div>
                             <div class="col">
                                 <label class="form-label" for="course">Course</label>
                                 <input type="hidden" name="course">
-                                <select class="form-select" aria-label="Default select example">
-                                    <option disabled hidden selected>Select</option>
+                                <select class="form-select" aria-label="Default select example" v-model="course">
+                                    <option value="" disabled hidden selected>Select</option>
                                     <option value="1">BBTLEDHE</option>
                                     <option value="2">BSBAHRM</option>
                                     <option value="3">BSBA-MM</option>
@@ -33,38 +33,45 @@
                             </div>
                         </div>
                         <label class="form-label" for="f-name">First Name</label>
-                        <input class="form-control margin" type="text" name="f-name">
+                        <input class="form-control margin" type="text" name="f-name" v-model="first_name">
                         
                         <label class="form-label" for="m-name">Middle Name</label>
-                        <input class="form-control margin" type="text" name="m-name">
+                        <input class="form-control margin" type="text" name="m-name" v-model="middle_name">
 
                         <label class="form-label" for="l-name">Last Name</label>
-                        <input class="form-control margin" type="text" name="l-name">
+                        <input class="form-control margin" type="text" name="l-name" v-model="last_name">
 
                         <div class="row">
                             <div class="col">
                                 <label class="form-label" for="email">Email Address</label>
-                                <input class="form-control margin mb-3" type="email" name="email">
+                                <input class="form-control margin mb-3" type="email" name="email" v-model="email">
 
                                 <label class="form-label" for="sem">Current Semester</label>
-                                <input class="form-control margin" type="text" name="sem">
+                                <select class="form-select margin" name="sem" v-model="semester" aria-label="Default select example">
+                                    <option value="" disabled hidden selected>Select semester</option>
+                                    <option value="1st Semester">1st Semester</option>
+                                    <option value="2nd Semester">2nd Semester</option>
+                                </select>
                             </div>
                             <div class="col">
                                 <label class="form-label" for="bday">Birth Date</label>
-                                <input class="form-control margin mb-3" type="date" name="bday">
+                                <input class="form-control margin mb-3" type="date" name="bday" v-model="birth_date">
 
                                 <label class="form-label" for="year">Year Enrolled</label>
-                                <input class="form-control margin" type="text" name="year">
+                                <select class="form-select margin" name="SY" v-model="year_enrolled">
+                                    <option value="" disabled hidden selected>Select year enrolled</option>
+                                    <option v-for="year in validYears" :key="year" :value="year">{{ year }}</option>
+                                </select>
                             </div>
                         </div>
 
                         <div>
                             <div class="row mt-3">
                                 <div class="col">
-                                    <ActionButton class="clear">Clear All</ActionButton>
+                                    <ActionButton class="clear" @click.prevent="clearAll">Clear All</ActionButton>
                                 </div>
                                 <div class="col">
-                                    <ActionButton class="insert">Insert</ActionButton>
+                                    <ActionButton class="insert" @click.prevent="manualInsert">Insert</ActionButton>
                                 </div>
                             </div>
                         </div>
@@ -92,7 +99,7 @@
                             :updating="updating">
                         </DragAndDrop>
 
-                        <ActionButton @click.prevent="submitAttachmentFile" class="mt-4 upload">Upload file</ActionButton>
+                        <ActionButton @click.prevent="submitAttachmentFile" :disabled="saving" class="mt-4 upload">Upload file</ActionButton>
                     </div>
                 </div>
             </div>
@@ -117,6 +124,16 @@
 
     export default {
         setup() {
+            const student_number = ref('');
+            const course = ref('');
+            const first_name = ref('');
+            const middle_name = ref('');
+            const last_name = ref('');
+            const email = ref('');
+            const birth_date = ref('');
+            const semester = ref('');
+            const year_enrolled = ref('');
+
             const selectedFiles = ref([]);
             const file_size = ref(10); // mega bytes
             const saving = ref(false);
@@ -126,6 +143,15 @@
             const extensions = ref('application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv') 
 
             return {
+                student_number,
+                course,
+                first_name,
+                middle_name,
+                last_name,
+                email,
+                birth_date,
+                semester,
+                year_enrolled,
                 selectedFiles,
                 file_size,
                 saving,
@@ -136,7 +162,92 @@
             }
         },
         components: { Navbar, Sidebar, ActionButton, SearchBarAndFilter, BaseContainer, BaseTable, DragAndDrop },
+        computed:{
+            validYears() {
+                return this.getYears();
+            },
+        },
         methods: {
+            getYears() {
+                const startYear = 2020;
+                const endYear = new Date().getFullYear() + 2;
+                return Array.from({length: endYear - startYear}, (_, i) => startYear + i);
+            },
+            clearAll() {
+                this.student_number = '';
+                this.course = '';
+                this.first_name = '';
+                this.middle_name = '';
+                this.last_name = '';
+                this.email = '';
+                this.birth_date = null;
+                this.semester = '';
+                this.year_enrolled = '';
+            },
+            manualInsert() {
+                if (this.student_number == '') {
+                    alert('Please enter a student number.');
+                    return;
+                }
+                if (this.course == '') {
+                    alert('Please select a course.');
+                    return;
+                }
+                if (this.first_name == '') {
+                    alert('Please enter a first name.');
+                    return;
+                }
+                if (this.last_name == '') {
+                    alert('Please enter a last name.');
+                    return;
+                }
+                if (this.email == '') {
+                    alert('Please enter an email address.');
+                    return;
+                }
+                if (this.birth_date == null || this.birth_date == '') {
+                    alert('Please enter a birth date.');
+                    return;
+                }
+                if (this.semester == '') {
+                    alert('Please select a semester.');
+                    return;
+                }
+                if (this.year_enrolled == '') {
+                    alert('Please select a year enrolled.');
+                    return;
+                }
+
+                this.saving = true;
+
+                axios.post(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/student/insert/data/manual`, {
+                    student_number: this.student_number,
+                    course: this.course,
+                    first_name: this.first_name,
+                    middle_name: this.middle_name,
+                    last_name: this.last_name,
+                    email: this.email,
+                    birth_date: this.birth_date,
+                    semester: this.semester,
+                    year_enrolled: String(this.year_enrolled),
+                })
+                .then(response => {
+                    if (response.data.error) {
+                        alert(response.data.error);
+                    } 
+                    else {
+                        console.log(`Student successfully inserted. Duration: ${response.duration}`)
+                        alert(response.data.message);
+                        this.clearAll();
+                    }
+                }).catch(error => {
+                    console.log(error);
+                })
+                .finally(() => {
+                    this.saving = false;
+                });
+
+            },
             addFiles(files) {
                 // Add the files to the list of files
                 for (let i = 0; i < files.length; i++) {
@@ -179,14 +290,22 @@
                 e.target.value = null;
             },
             submitAttachmentFile() {
+                if (this.selectedFiles.length == 0) {
+                    alert('Please select a file to upload.');
+                    return;
+                }
+
                 let formData = new FormData();
 
                 for (let i = 0; i < this.selectedFiles.length; i++) {
                     formData.append('files', this.selectedFiles[i].file);
                 }
 
-                axios.post(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/student/insert/data`, formData, {
-                }).then(response => {
+                this.saving = true;
+
+                axios.post(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/student/insert/data/attachment`, formData, {
+                    })
+                .then(response => {
                     response.data.forEach(fileResponse => {
                         if (fileResponse.unexpected_columns) {
                             alert(`File: ${fileResponse.file}, Message: ${fileResponse.unexpected_columns.message}`);
@@ -201,6 +320,10 @@
                     });
                 }).catch(error => {
                     console.log(error);
+                })
+                .finally(() => {
+                    this.saving = false;
+                    this.selectedFiles = [];
                 });
             },
         }
@@ -253,6 +376,10 @@
 
 .upload{
     width: 100%;
+}
+
+.upload:disabled{
+    background-color: #cccccc;
 }
 
 .custom-file-upload {
