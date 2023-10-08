@@ -83,7 +83,7 @@
 
                         <DragAndDrop 
                             class="drag-and-drop"
-                            v-model="upload_image_attachments" 
+                            v-model="selectedFiles" 
                             :fileSize="file_size"
                             :acceptedFileTypes="extensions"
                             :notAcceptedMessage="notAcceptedMessage"
@@ -92,7 +92,7 @@
                             :updating="updating">
                         </DragAndDrop>
 
-                        <ActionButton class="mt-4 upload">Upload file</ActionButton>
+                        <ActionButton @click.prevent="submitAttachmentFile" class="mt-4 upload">Upload file</ActionButton>
                     </div>
                 </div>
             </div>
@@ -117,7 +117,7 @@
 
     export default {
         setup() {
-            const upload_image_attachments = ref([]);
+            const selectedFiles = ref([]);
             const file_size = ref(10); // mega bytes
             const saving = ref(false);
             const updating = ref(false);
@@ -126,7 +126,7 @@
             const extensions = ref('application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv') 
 
             return {
-                upload_image_attachments,
+                selectedFiles,
                 file_size,
                 saving,
                 updating,
@@ -160,16 +160,16 @@
 
                     // Check if the file is already in the list of files
                     // If it is, then do not add it again
-                    if (!this.upload_image_attachments.some(existingFile => existingFile.name === file.name)) {
-                        this.upload_image_attachments.push({file: file, 
-                                                            name: file.name,
-                                                            url: url
-                                                        });
+                    if (!this.selectedFiles.some(existingFile => existingFile.name === file.name)) {
+                        this.selectedFiles.push({ file:file, 
+                                                name: file.name, 
+                                                url: url
+                                            });
                     }
                 }
             },
             onFileChange(e) {
-                let files = e.target.files;
+                let files = e.target.files || e.dataTransfer.files;
 
                 if (files) {
                     this.addFiles(files);
@@ -177,6 +177,31 @@
 
                 // Clear the input value
                 e.target.value = null;
+            },
+            submitAttachmentFile() {
+                let formData = new FormData();
+
+                for (let i = 0; i < this.selectedFiles.length; i++) {
+                    formData.append('files', this.selectedFiles[i].file);
+                }
+
+                axios.post(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/student/insert/data`, formData, {
+                }).then(response => {
+                    response.data.forEach(fileResponse => {
+                        if (fileResponse.unexpected_columns) {
+                            alert(`File: ${fileResponse.file}, Message: ${fileResponse.unexpected_columns.message}`);
+                        } 
+                        else if (fileResponse.no_new_students) {
+                            alert(fileResponse.no_new_students)
+                        }
+                        else {
+                            console.log(`File successfully uploaded. Duration: ${response.duration}`)
+                            alert(`File: ${fileResponse.file}, Message: ${fileResponse.message}`);
+                        }
+                    });
+                }).catch(error => {
+                    console.log(error);
+                });
             },
         }
     }
