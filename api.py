@@ -1,13 +1,21 @@
 from fastapi import FastAPI, HTTPException, Depends, APIRouter, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse, FileResponse
+
 from sqlalchemy import inspect
 from sqlalchemy.orm import Session
+
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+
 from database import engine, SessionLocal, Base
 
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Union
 from datetime import datetime, date
-from fastapi.responses import JSONResponse
 
 from dotenv import load_dotenv # for .env file
 load_dotenv()
@@ -258,7 +266,9 @@ def student_Insert_Data_Manual(data: SaveStudentData, db: Session = Depends(get_
 @router.post("/student/insert/data/attachment", tags=["Student"])
 async def student_Insert_Data_Attachment(files: List[UploadFile] = File(...), db: Session = Depends(get_db)):
     responses = []
-    
+    elements = []
+    styleSheet = getSampleStyleSheet()
+
     for file in files:
         if file.filename.endswith('.csv'):
             df = pd.read_csv(file.file, encoding='ISO-8859-1')
@@ -286,6 +296,7 @@ async def student_Insert_Data_Attachment(files: List[UploadFile] = File(...), db
         inserted_student_count = 0
 
         # Insert the data into the database
+        inserted_students = []
         for index, row in df.iterrows():
             # Check if a student with the given StudentNumber already exists
             
@@ -304,7 +315,8 @@ async def student_Insert_Data_Attachment(files: List[UploadFile] = File(...), db
                 )
                 inserted_student_count += 1
                 db.add(student)
-                
+                inserted_students.append([row['StudentNumber'], row['FirstName'], row.get('MiddleName', ''), row['LastName'], row['EmailAddress']])
+
                 # Commit every 100 students
                 if inserted_student_count % 100 == 0:
                     db.commit()
@@ -314,11 +326,40 @@ async def student_Insert_Data_Attachment(files: List[UploadFile] = File(...), db
             db.commit()
 
         if inserted_student_count == 0:
-            responses.append({"no_new_students": f"All students in ({file.filename}) we're inserted already. No changes applied."})
+            responses.append({"no_new_students": f"All students in ({file.filename}) were already inserted. No changes applied."})
         else:
             responses.append({"file": file.filename, "message": "Upload successful, inserted students: " + str(inserted_student_count)})
-    
-    return responses
+
+        # Add a table to the PDF for each file
+        if inserted_students:
+            elements.append(Paragraph(f"<para align=center><b>{file.filename}</b></para>", styleSheet["BodyText"]))
+            elements.append(Spacer(1, 12))
+            elements.append(Paragraph(f"Number of inserted students: {len(inserted_students)}"))
+            elements.append(Spacer(1, 12))
+            table = Table([["Student Number", "First Name", "Middle Name", "Last Name", "Email"]] + inserted_students)
+            table.setStyle(TableStyle([
+                ('GRID', (0,0), (-1,-1), 1, colors.black),
+                ('FONTNAME', (0,0), (-1,-1), 'Helvetica'),
+                ('FONTSIZE', (0,0), (-1,-1), 10),
+            ]))
+            elements.append(table)
+            elements.append(Spacer(1, 12))
+
+    # Save the PDF to a temporary file
+    now = datetime.now()
+    pdf_path = f"Report_{now.strftime('%Y%m%d_%H%M%S')}.pdf"
+    doc = SimpleDocTemplate(pdf_path, pagesize=letter)
+    doc.build(elements)
+
+    # Return the responses and a URL to download the PDF
+    return JSONResponse({
+        "responses": responses,
+        "pdf_url": f"/student/insert/data/attachment/download/{pdf_path}"
+    })
+
+@app.get("/student/insert/data/attachment/download/{filename}")
+async def download_pdf(filename: str):
+    return FileResponse(filename, media_type="application/pdf")
 
 #################################################################
 """ Election Table APIs """
