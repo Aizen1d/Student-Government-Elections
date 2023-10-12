@@ -18,7 +18,7 @@
             </div>
 
             <BaseTable class="item-table" 
-                :columns="['ID', 'Name', 'Type', 'School Year', 'Created By', 'Date Created']" 
+                :columns="['ID', 'Name', 'Type', 'School Year', 'Created By', 'Date Created', 'Status']" 
                 :columnWidths=columnWidths
                 :tableHeight="'auto'"
                 :maxTableHeight="'300px'">
@@ -67,7 +67,7 @@
             ];
 
             const items = ref([]);
-            const columnWidths = ['10%', '20%', '20%', '20%', '20%', '20%'];
+            const columnWidths = ['10%', '20%', '20%', '20%', '20%', '20%', '20%'];
 
             return {options, 
                     items,
@@ -112,6 +112,7 @@
                                 school_year: item.SchoolYear,
                                 created_by_name: item.CreatedByName,
                                 date_created: formattedDate,
+                                status: item.ElectionStatus,
                             }
                         });
 

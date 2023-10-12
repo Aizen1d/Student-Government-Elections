@@ -317,10 +317,12 @@
                             console.log(`File successfully uploaded. Duration: ${response.duration}`)
                             alert(`File: ${fileResponse.file}, Message: ${fileResponse.message}`);
                         }
-
-                        // Open the PDF in a new tab
-                        window.open(`${import.meta.env.VITE_FASTAPI_BASE_URL}${response.data.pdf_url}`);
                     });
+
+                    // Open the PDF in a new tab
+                    if (response.data.pdf_url) {
+                        window.open(response.data.pdf_url);
+                    }
                 }).catch(error => {
                     console.log(error);
                 })
