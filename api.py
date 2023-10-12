@@ -209,17 +209,14 @@ def process_data(df):
     # Convert 'YearEnrolled' to string
     df['YearEnrolled'] = df['YearEnrolled'].apply(lambda x: str(int(x)) if pd.notnull(x) else x)
 
-    # Handle missing values: drop rows with any column missing except for MiddleName
-    df = df.dropna(subset=[column for column in df.columns if column != 'MiddleName'])
-
-    # Replace 'nan' with None
-    df = df.where(pd.notnull(df), None)
-
     # Clean the data: trim leading/trailing whitespace
     df = df.apply(lambda col: col.str.strip() if col.dtype == 'object' else col)
 
     # Remove duplicate entries based on 'StudentNumber'
     df.drop_duplicates(subset=['StudentNumber'], keep='first', inplace=True)
+
+    # Replace 'nan' with an empty string
+    df.fillna('', inplace=True)
     
     return df
 
@@ -294,13 +291,15 @@ async def student_Insert_Data_Attachment(files: List[UploadFile] = File(...), db
         existing_students = {student.StudentNumber for student in db.query(Student).all()}
         existing_emails = {student.EmailAddress for student in db.query(Student).all()}
         inserted_student_count = 0
+        incomplete_student_column = 0
 
         # Insert the data into the database
         inserted_students = []
+        not_inserted_students = []  # List to store students not inserted
         for index, row in df.iterrows():
-            # Check if a student with the given StudentNumber already exists
-            
-            if str(row['StudentNumber']) not in existing_students and str(row['EmailAddress']) not in existing_emails:
+           
+            # If the student number and email do not exist and all fields are not empty
+            if str(row['StudentNumber']) not in existing_students and str(row['EmailAddress']) not in existing_emails and all(row[field] != '' for field in ['FirstName', 'LastName', 'EmailAddress', 'BirthDate', 'Course', 'CurrentSemesterEnrolled', 'YearEnrolled', 'IsOfficer']):
                 student = Student(
                     StudentNumber=row['StudentNumber'],
                     FirstName=row['FirstName'],
@@ -320,46 +319,90 @@ async def student_Insert_Data_Attachment(files: List[UploadFile] = File(...), db
                 # Commit every 100 students
                 if inserted_student_count % 100 == 0:
                     db.commit()
+            
+            # If the student number or email already exists
+            elif str(row['StudentNumber']) in existing_students or str(row['EmailAddress']) in existing_emails:
+                not_inserted_students.append([row['StudentNumber'], row['FirstName'], row.get('MiddleName', ''), row['LastName'], row['EmailAddress']])
+            
+            # If there are missing fields
+            else:
+                incomplete_student_column += 1
+                not_inserted_students.append([row['StudentNumber'], row['FirstName'], row.get('MiddleName', ''), row['LastName'], row['EmailAddress']])
 
         # Commit any remaining students
         if inserted_student_count % 100 != 0:
             db.commit()
 
-        if inserted_student_count == 0:
+        if inserted_student_count == 0 and incomplete_student_column == 0:
             responses.append({"no_new_students": f"All students in ({file.filename}) were already inserted. No changes applied."})
         else:
-            responses.append({"file": file.filename, "message": "Upload successful, inserted students: " + str(inserted_student_count)})
-
+            # If there are inserted students but no incomplete student columns
+            if inserted_student_count > 0 and incomplete_student_column <= 0:
+                responses.append({"file": file.filename, "message": "Upload successful, inserted students: " + str(inserted_student_count)})
+            
+            # If there are inserted students and incomplete student columns
+            elif inserted_student_count > 0 and incomplete_student_column > 0:
+                responses.append({"file": file.filename, "message": "Upload successful, inserted students: " + str(inserted_student_count) + ", incomplete student columns: " + str(incomplete_student_column)})
+            
+            # If there are no inserted students but there are incomplete student columns
+            elif inserted_student_count <= 0 and incomplete_student_column > 0:
+                responses.append({"file": file.filename, "message": "No new students inserted, incomplete student columns: " + str(incomplete_student_column)})
+            
         # Add a table to the PDF for each file
-        if inserted_students:
+        if inserted_student_count > 0 or incomplete_student_column > 0:
             elements.append(Paragraph(f"<para align=center><b>{file.filename}</b></para>", styleSheet["BodyText"]))
             elements.append(Spacer(1, 12))
-            elements.append(Paragraph(f"Number of inserted students: {len(inserted_students)}"))
-            elements.append(Spacer(1, 12))
-            table = Table([["Student Number", "First Name", "Middle Name", "Last Name", "Email"]] + inserted_students)
-            table.setStyle(TableStyle([
-                ('GRID', (0,0), (-1,-1), 1, colors.black),
-                ('FONTNAME', (0,0), (-1,-1), 'Helvetica'),
-                ('FONTSIZE', (0,0), (-1,-1), 10),
-            ]))
-            elements.append(table)
+
+            if inserted_students:
+                elements.append(Paragraph(f"Number of inserted students: {len(inserted_students)}"))
+                elements.append(Spacer(1, 12))
+                table = Table([["Student Number", "First Name", "Middle Name", "Last Name", "Email"]] + inserted_students)
+                table.setStyle(TableStyle([
+                    ('GRID', (0,0), (-1,-1), 1, colors.black),
+                    ('FONTNAME', (0,0), (-1,-1), 'Helvetica'),
+                    ('FONTSIZE', (0,0), (-1,-1), 10),
+                ]))
+                elements.append(table)
+
             elements.append(Spacer(1, 12))
 
-    # Save the PDF to a temporary file
-    now = datetime.now()
-    pdf_path = f"Report_{now.strftime('%Y%m%d_%H%M%S')}.pdf"
-    doc = SimpleDocTemplate(pdf_path, pagesize=letter)
-    doc.build(elements)
+            if not_inserted_students:
+                elements.append(Paragraph(f"Number of not inserted students: {len(not_inserted_students)}"))
+                elements.append(Spacer(1, 12))
+                table = Table([["Student Number", "First Name", "Middle Name", "Last Name", "Email"]] + not_inserted_students)
+                table.setStyle(TableStyle([
+                    ('GRID', (0,0), (-1,-1), 1, colors.black),
+                    ('FONTNAME', (0,0), (-1,-1), 'Helvetica'),
+                    ('FONTSIZE', (0,0), (-1,-1), 10),
+                ]))
+                elements.append(table)
+
+    if inserted_student_count > 0 or incomplete_student_column > 0:
+        # Save the PDF to a temporary file
+        now = datetime.now()
+        pdf_name = f"Report_{now.strftime('%Y%m%d_%H%M%S')}.pdf"
+        doc = SimpleDocTemplate(pdf_name, pagesize=letter)
+        doc.build(elements)
+
+        # Upload to cloudinary
+        upload_result = cloudinary.uploader.upload(pdf_name, 
+                                            resource_type = "raw", 
+                                            public_id = f"InsertData/Reports/{pdf_name}",
+                                            tags=[pdf_name])
+        
+        # Delete the local file
+        os.remove(pdf_name)
 
     # Return the responses and a URL to download the PDF
-    return JSONResponse({
-        "responses": responses,
-        "pdf_url": f"/student/insert/data/attachment/download/{pdf_path}"
-    })
-
-@app.get("/student/insert/data/attachment/download/{filename}")
-async def download_pdf(filename: str):
-    return FileResponse(filename, media_type="application/pdf")
+        return JSONResponse({
+            "responses": responses,
+            "pdf_url": upload_result['secure_url']
+        })
+    else:
+        # Return the responses only if no PDF was generated
+        return JSONResponse({
+                    "responses": responses,
+                })
 
 #################################################################
 """ Election Table APIs """
