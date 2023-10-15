@@ -74,7 +74,7 @@ router = APIRouter(prefix="/api/v1")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=['http://localhost:8000', 'http://127.0.0.1:8000'], # Must change to appropriate frontend URL (local or production)
+    allow_origins=['http://localhost:8000', 'http://127.0.0.1:8000', 'http://127.0.0.1:7500'], # Must change to appropriate frontend URL (local or production)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
