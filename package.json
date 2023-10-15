@@ -1,0 +1,22 @@
+{
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "vite --port 7400",
+        "build": "vite build"
+    },
+    "devDependencies": {
+        "@vitejs/plugin-vue": "^4.4.0",
+        "@vue/compiler-sfc": "^3.3.4",
+        "axios": "^1.1.2",
+        "laravel-vite-plugin": "^0.8.0",
+        "vite": "^4.0.0"
+    },
+    "dependencies": {
+        "@inertiajs/vue3": "^1.0.11",
+        "@vueuse/core": "^10.5.0",
+        "nprogress": "^0.2.0",
+        "pinia": "^2.1.6",
+        "vue": "^3.2.36"
+    }
+}
