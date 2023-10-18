@@ -102,12 +102,12 @@
     }
 
     .rules-label{
-        font-size: 2em !important;
+        font-size: 1.5em !important;
         letter-spacing: 0.2em !important;
     }
 
     .guidelines-label{
-        font-size: 2em !important;
+        font-size: 1.5em !important;
         letter-spacing: 0.2em !important;
     }
 

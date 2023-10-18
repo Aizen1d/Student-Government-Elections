@@ -1,0 +1,192 @@
+<template>
+    <Navbar></Navbar>
+    <div>
+        <div class="main">
+            <div class="header my-5">
+                <h1>ANNOUNCEMENTS</h1>
+            </div>
+
+            <div class="choices-container mb-3">
+                <Link href="/announcements?type=all"
+                    class="choice" :class="{ 'active': $inertia.page.url === '/announcements?type=all' || $inertia.page.url === '/announcements' }">ALL</Link>
+                <Link href="/announcements?type=elections" 
+                    class="choice" :class="{ 'active': $inertia.page.url === '/announcements?type=elections' }">ELECTIONS</Link>
+                <Link href="/announcements?type=debates" 
+                    class="choice" :class="{ 'active': $inertia.page.url === '/announcements?type=debates' }">DEBATES</Link>
+                <Link href="/announcements?type=open_forums" 
+                    class="choice" :class="{ 'active': $inertia.page.url === '/announcements?type=open_forums' }">OPEN FORUMS</Link>
+                <Link href="/announcements?type=educational_programs" 
+                    class="choice" :class="{ 'active': $inertia.page.url === '/announcements?type=educational_programs' }">EDUCATIONAL PROGRAMS</Link>
+                <Link href="/announcements?type=results" 
+                    class="choice" :class="{ 'active': $inertia.page.url === '/announcements?type=results' }">RESULTS</Link>
+            </div>
+        </div>
+
+        <SkeletonLoader :loading="loading" :itemCount="3">
+            <div class="list">
+                <div class="announcement" v-for="(announcement, index) in announcements" :key="index">
+                    <div class="pic">
+                        <img v-if="announcement.images.length > 0" :src="announcement.images[0].url" alt="">
+                        <img v-else src="" alt="">
+                    </div>
+                    <div class="info">
+                        <p>{{ announcement.announcement_type.toUpperCase() }}</p>
+                        <h1>{{ announcement.title }}</h1>
+                    </div>
+                </div>
+            </div>
+        </SkeletonLoader>
+
+    </div>
+</template>
+
+<script>
+    import Standards from '../Shared/Standards.vue'
+    import Navbar from '../Shared/Navbar.vue'
+    import SkeletonLoader from '../Skeletons/AnnouncementsSkeleton.vue'
+
+    import axios from 'axios'
+    import { Link } from '@inertiajs/vue3'
+    import { ref } from 'vue'
+    import { useAnnouncementStore } from '../Stores/AnnouncementStore'
+
+    export default{
+        setup(props) {
+            const type = props.type;
+            const announcements = ref([]);
+            const store = useAnnouncementStore();
+
+            // for skeleton loader
+            const loading = ref(true);
+
+            return {
+                type,
+                announcements,
+                store,
+                loading,
+            }
+        },
+        components:{
+            Standards,
+            Navbar,
+            Link,
+            SkeletonLoader,
+        },
+        props:{
+            type: String,
+        },
+        created(){
+            this.fetchAnnouncement(this.type);
+        },
+        methods:{
+            fetchAnnouncement(type) {
+                // Check if announcements of the given type are already in the store
+                // If yes, use the announcements (cache) in the store
+                if (this.store[type].length > 0) {
+                    this.announcements = this.store[type];
+                    this.loading = false;   
+                    return;
+                }
+
+                this.loading = true;
+                axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/announcement/${type}`, {
+                        params: {
+                            include_images: true
+                        }
+                    })
+                    .then(response => {
+                    console.log(`Get all announcements (${type}) successful. Duration: ${response.duration}ms`)
+
+                    const announcements = response.data.announcements.map(announcement => ({
+                        id: announcement.AnnouncementId,
+                        title: announcement.AnnouncementTitle,
+                        body: announcement.AnnouncementBody,
+                        announcement_type: announcement.AnnouncementType,
+                        attachment_type: announcement.AttachmentType,
+                        images: announcement.images,
+                    }));
+
+                    this.announcements = announcements;
+                    this.store[type] = announcements;
+
+                    this.loading = false;
+                });
+            }
+        }
+    }
+</script>
+
+<style scoped>
+.main, .list{
+    margin: 0% 5%;
+}
+
+.header h1{
+    font-size: 20px;
+    letter-spacing: 3px;
+    font-weight: 800;
+}
+
+.choices-container{
+    font-family: 'Source Sans Pro', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    padding: 1% 3%;
+    background-color: #B90321;
+}
+
+.active{
+    color: #eace2c !important;
+}
+
+.choice{
+    color: lightgray;
+    text-decoration: none;
+}
+
+.choice:hover{
+    color: #eace2c;
+}
+
+.announcement{
+    width: 31.5%;
+    margin-top: 2em;
+    margin-bottom: 2em;
+}
+
+.pic img{
+    width: 100%;
+    height: 33vh;
+    object-fit: cover;
+    transition: transform 250ms ease-out;
+}
+
+.pic img:hover{
+    transform: scale(1.025);
+    cursor: pointer;
+}
+
+.info{
+    margin: 0% 2%;
+}
+
+.info p{
+    font-size: 16px;
+    margin-top: 2%;
+}
+
+.info h1{
+    margin-top: -1.5%;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.list{
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+</style>

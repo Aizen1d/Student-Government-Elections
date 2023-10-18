@@ -6,16 +6,28 @@
             <div class="collapse navbar-collapse sections">
                 <ul class="navbar-nav">
                     <li class="nav-item">
-                        <Link class="nav-link content mx-5" aria-current="page" href="/home">HOME</Link>
+                        <Link href="/home" 
+                            :class="{ 'active': $inertia.page.url.startsWith('/home') }" 
+                            class="nav-link content mx-5" 
+                            aria-current="page">HOME
+                        </Link>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link content mx-5" href="#">ANNOUNCEMENTS</a>
+                        <Link href="/announcements?type=all" 
+                            class="nav-link content mx-5"
+                            :class="{ 'active': $inertia.page.url.startsWith('/announcements') }" 
+                            >ANNOUNCEMENTS
+                        </Link>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link content mx-5" href="#">DIRECTORY</a>
                     </li>
                     <li class="nav-item">
-                        <Link class="nav-link content mx-5" href="/rules-and-guidelines">RULES & GUIDELINES</Link>
+                        <Link href="/rules-and-guidelines" 
+                            class="nav-link content mx-5" 
+                            :class="{ 'active': $inertia.page.url.startsWith('/rules-and-guidelines')  }" 
+                            >RULES & GUIDELINES
+                        </Link>
                     </li>
                 </ul>
             </div>
@@ -40,6 +52,9 @@
 </script>
 
 <style scoped>
+    .active{
+        color: #eace2c !important;
+    }
     .nav{
         background-color: #B90321;
         padding: 1% 0 1% 0;
