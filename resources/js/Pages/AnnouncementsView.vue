@@ -3,37 +3,8 @@
     <div>
         <div class="main">
             <h3 class="return" @click="returnPage">Return to lists</h3>
-
-            <div id="carouselExampleIndicators" class="carousel slide">
-                <div class="carousel-indicators">
-                    <button type="button" 
-                            v-for="(image, index) in images" 
-                            data-bs-target="#carouselExampleIndicators" 
-                            :data-bs-slide-to="index" 
-                            :class="{ active: index === currentIndex }" 
-                            :key="index"
-                            :aria-label="'Slide ' + (index + 1)">
-                    </button>
-                </div>
-
-                <div class="carousel-inner">
-                    <div class="carousel-item" :class="{ active: index === 0 }" v-for="(image, index) in images" :key="index">
-                        <img :src="image.url" class="d-block w-100" alt="...">
-                    </div>
-                </div>
-                <template v-if="images.length > 1">
-                    <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="prev" 
-                        @click="prevSlide">
-                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                        <span class="visually-hidden">Previous</span>
-                    </button>
-                    <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="next" 
-                        @click="nextSlide">
-                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                        <span class="visually-hidden">Next</span>
-                    </button>
-                </template>
-            </div>
+            
+            <Carousel :images="images" :interval="5000"></Carousel>
         </div>
         <div class="info">
             <p class="type">{{ announcement_type.toUpperCase() }}</p>
@@ -46,11 +17,12 @@
 <script>
     import Standards from '../Shared/Standards.vue'
     import Navbar from '../Shared/Navbar.vue'
+    import Carousel from '../Shared/Carousel.vue'
 
     import { ref } from 'vue'
     import { useAnnouncementStore } from '../Stores/AnnouncementStore'
     import axios from 'axios'
-import { router } from '@inertiajs/vue3'
+    import { router } from '@inertiajs/vue3'
 
     export default{
         setup(props){
@@ -79,6 +51,7 @@ import { router } from '@inertiajs/vue3'
         components:{
             Standards,
             Navbar,
+            Carousel,
         },
         created() {
             this.fetchAnnouncement();

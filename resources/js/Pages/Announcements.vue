@@ -175,11 +175,12 @@
     width: 100%;
     height: 33vh;
     object-fit: cover;
-    transition: transform 250ms ease-out;
+    transition: transform .25s ease-out;
+    border-radius: 1%;
 }
 
 .pic img:hover{
-    transform: scale(1.025);
+    transform: scale(1.030);
     cursor: pointer;
 }
 
