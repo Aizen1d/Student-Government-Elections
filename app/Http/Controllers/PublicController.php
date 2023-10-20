@@ -12,6 +12,10 @@ class PublicController extends Controller
         return inertia('Home');
     }
 
+    public function elections() {
+        return inertia('Elections');
+    }
+
     public function announcements(Request $request) {
         $type = $request->query('type', 'none');
     
