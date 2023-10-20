@@ -8,7 +8,7 @@
                 <h2>Rules & Guidelines</h2>
             </div>
             <div class="col-6 new">
-                <ActionButton :disabled="new_button_disabled" @click="newButtonSelected" class="new-btn">New</ActionButton>
+                <ActionButton :disabled="new_button_disabled || !can_save" @click="newButtonSelected" class="new-btn">New</ActionButton>
             </div>      
         </div>   
         
@@ -26,7 +26,7 @@
                     </div>
                     <div class="col-8">
                         <label class="form-label" for="title">Title</label>
-                        <input class="form-control" type="title" name="title" v-model="title_input">
+                        <input class="form-control" type="title" name="title" v-model="title_input" :disabled="!can_save">
                     </div>
                     <div class="col-2">
                         <label class="form-label" for="id">ID</label>
@@ -37,16 +37,16 @@
                 <div>
                     <div class="form-group">
                         <label for="body" class="form-label">Body</label>
-                        <textarea class="form-control body" type="text" name="selected-body" v-model="body_input"></textarea>
+                        <textarea class="form-control body" type="text" name="selected-body" v-model="body_input" :disabled="!can_save"></textarea>
                     </div>
                 </div>
 
                 <div class="row">
                     <div class="col-6">
-                        <button :disabled="!selectedItem" class="delete-btn" @click.prevent="deleteItem">Delete</button>
+                        <button :disabled="!selectedItem || !can_save" class="delete-btn" @click.prevent="deleteItem">Delete</button>
                     </div>
                     <div class="col-6 save">
-                        <ActionButton @submit.prevent="save" class="save-btn">{{ saveButtonText }}</ActionButton>
+                        <ActionButton @submit.prevent="save" class="save-btn" :disabled="!can_save">{{ saveButtonText }}</ActionButton>
                     </div>
                 </div>
             </form>
@@ -295,6 +295,7 @@
                             this.resetAfter();
                         })
                         .finally(() => {
+                            this.can_save = true;
                             this.fetchTableData(); 
                         });   
                 }
@@ -314,6 +315,7 @@
                             this.resetAfter();
                         })
                         .finally(() => {
+                            this.can_save = true;
                             this.fetchTableData(); 
                         })
                 }

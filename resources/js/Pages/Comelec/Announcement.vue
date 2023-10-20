@@ -20,10 +20,10 @@
                         <input type="hidden" name="announcement-type">
                         <select class="form-select" aria-label="Default select example" v-model="type_select" :disabled="selectedItem || saving || updating">
                             <option value="" disabled hidden selected>Select Type</option>
-                            <option value="election">Election</option>
-                            <option value="debate">Debate</option>
-                            <option value="open-forum">Open Forum</option>
-                            <option value="educational-program">Educational Program</option>
+                            <option value="elections">Elections</option>
+                            <option value="debates">Debates</option>
+                            <option value="open-forums">Open Forums</option>
+                            <option value="educational-programs">Educational Programs</option>
                             <option value="results">Results</option>
                         </select>
                     </div>
