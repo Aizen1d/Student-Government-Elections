@@ -4,6 +4,8 @@ import { router } from '@inertiajs/vue3'
 import { createPinia } from 'pinia';
 import NProgress from 'nprogress'
 import axios from 'axios';
+import { VueQueryPlugin } from '@tanstack/vue-query';
+import 'bootstrap';
 
 router.on('start', () => NProgress.start())
 router.on('finish', () => NProgress.done())
@@ -30,6 +32,7 @@ createInertiaApp({
     const pinia = createPinia();
     app.use(pinia);
     app.use(plugin);
+    app.use(VueQueryPlugin);
     app.mount(el);
   },
   progress: {
