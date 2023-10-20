@@ -4,6 +4,8 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import Column, Integer, Float, String, Date, DateTime, Boolean, Text, ForeignKey
 from sqlalchemy.sql import func
 
+from cloudinary.api import resources_by_tag
+
 Session = sessionmaker(bind=engine)
 session = Session()
 
@@ -161,8 +163,8 @@ class Announcement(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    def to_dict(self, row=None):
-        return {
+    def to_dict(self, row=None, include_images=False):
+        data = {
             "AnnouncementId": self.AnnouncementId,
             "count": row,
             "type": "announcement",
@@ -174,6 +176,15 @@ class Announcement(Base):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }
+
+        tag_name = self.AttachmentImage
+        if tag_name and include_images:
+            response = resources_by_tag(tag_name)
+            data['images'] = [{"url": resource['secure_url'], "name": resource['public_id'].split('/')[-1]} for resource in response['resources']]
+        else:
+            data['images'] = []
+
+        return data
 
 
 class Rule(Base):

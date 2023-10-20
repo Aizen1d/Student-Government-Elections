@@ -585,12 +585,32 @@ class AnnouncementDeleteData(BaseModel):
 """ ** GET Methods: Announcement Table APIs ** """
 
 @router.get("/announcement/all", tags=["Announcement"])
-def get_All_Announcement(db: Session = Depends(get_db)):
+def get_All_Announcement(include_images: Optional[bool] = False, db: Session = Depends(get_db)):
     try:
         announcements = db.query(Announcement).order_by(Announcement.AnnouncementId).all() 
-        return {"announcements": [announcement.to_dict(i+1) for i, announcement in enumerate(announcements)]} # Return the row number as well
+        return {"announcements": [announcement.to_dict(i+1, include_images=include_images) for i, announcement in enumerate(announcements)]} # Return the row number as well
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while fetching all announcements from the database"})
+    
+@router.get("/announcement/{type}", tags=["Announcement"])
+def get_Announcement_By_Type(type: str, include_images: Optional[bool] = False, db: Session = Depends(get_db)):
+    try:
+        announcements = db.query(Announcement).filter(Announcement.AnnouncementType == type).order_by(Announcement.AnnouncementId).all()
+        return {"announcements": [announcement.to_dict(i+1, include_images=include_images) for i, announcement in enumerate(announcements)]}
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while fetching announcements from the database"})
+    
+@router.get("/announcement/get/{id}", tags=["Announcement"])
+def get_Announcement_By_Id(id: int, include_images: Optional[bool] = False, db: Session = Depends(get_db)):
+    try:
+        announcement = db.query(Announcement).get(id)
+
+        if not announcement:
+            return JSONResponse(status_code=404, content={"detail": "Announcement not found"})
+
+        return {"announcement": announcement.to_dict(include_images=include_images)}
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while fetching announcement from the database"})
     
 @router.get("/announcement/get/attachment/{id}", tags=["Announcement"])
 def get_Announcement_Attachment_By_Id(id: int, db: Session = Depends(get_db)):
