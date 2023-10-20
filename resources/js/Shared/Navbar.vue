@@ -13,6 +13,13 @@
                         </Link>
                     </li>
                     <li class="nav-item">
+                        <Link href="/elections" 
+                            :class="{ 'active': $inertia.page.url.startsWith('/elections') }" 
+                            class="nav-link content mx-5" 
+                            aria-current="page">ELECTIONS
+                        </Link>
+                    </li>
+                    <li class="nav-item">
                         <Link href="/announcements?type=all" 
                             class="nav-link content mx-5"
                             :class="{ 'active': $inertia.page.url.startsWith('/announcements') }" 
