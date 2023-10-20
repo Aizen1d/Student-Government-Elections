@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use App\Models\Announcements;
 
 class PublicController extends Controller
 {
@@ -25,7 +26,23 @@ class PublicController extends Controller
             'type' => $type
         ]);
     }
-    
+
+    public function announcementsView(Request $request) {
+        $id = $request->id;
+        $announcement = Announcements::where('AnnouncementId', $id)->first();
+
+        if (!$announcement) {
+            return redirect()->route('announcements', ['type' => 'all']);
+        }
+
+        if (!$id) {
+            return redirect()->route('announcements', ['type' => 'all']);
+        }
+
+        return Inertia::render('AnnouncementsView', [
+            'id' => $id
+        ]);
+    }
 
     public function rulesAndGuidelines() {
         return inertia('RulesAndGuidelines');
