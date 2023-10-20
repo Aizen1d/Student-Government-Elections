@@ -24,14 +24,18 @@
 
         <SkeletonLoader :loading="loading" :itemCount="3">
             <div class="list">
-                <div class="announcement" v-for="(announcement, index) in announcements" :key="index">
-                    <div class="pic">
-                        <img v-if="announcement.images.length > 0" :src="announcement.images[0].url" alt="">
-                        <img v-else src="" alt="">
-                    </div>
-                    <div class="info">
-                        <p>{{ announcement.announcement_type.toUpperCase() }}</p>
-                        <h1>{{ announcement.title }}</h1>
+                <div class="row" v-for="(announcement, index) in announcements" :key="index">
+                    <div class="col-11 column-list">
+                        <div class="announcement">
+                            <div class="pic">
+                                <img @click.prevent="onAnnouncementClick(announcement)" v-if="announcement.images.length > 0" :src="announcement.images[0].url" alt="">
+                                <img v-else src="" alt="">
+                            </div>
+                            <div class="info">
+                                <p>{{ announcement.announcement_type.toUpperCase() }}</p>
+                                <h1>{{ announcement.title }}</h1>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -46,6 +50,7 @@
     import SkeletonLoader from '../Skeletons/AnnouncementsSkeleton.vue'
 
     import axios from 'axios'
+    import { router } from '@inertiajs/vue3'
     import { Link } from '@inertiajs/vue3'
     import { ref } from 'vue'
     import { useAnnouncementStore } from '../Stores/AnnouncementStore'
@@ -57,7 +62,7 @@
             const store = useAnnouncementStore();
 
             // for skeleton loader
-            const loading = ref(true);
+            const loading = ref(false);
 
             return {
                 type,
@@ -111,6 +116,15 @@
 
                     this.loading = false;
                 });
+            },
+            onAnnouncementClick(item) {
+                this.store.selectAnnouncement(item); // Store the selected announcement in the store
+
+                router.visit(`/announcements/view`, { 
+                    data: { 
+                            id: item.id 
+                        }
+                });
             }
         }
     }
@@ -152,7 +166,7 @@
 }
 
 .announcement{
-    width: 31.5%;
+    width: 100%;
     margin-top: 2em;
     margin-bottom: 2em;
 }
@@ -186,7 +200,11 @@
 
 .list{
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     flex-wrap: wrap;
+}
+
+.column-list{
+    margin-left: 5.5%;
 }
 </style>

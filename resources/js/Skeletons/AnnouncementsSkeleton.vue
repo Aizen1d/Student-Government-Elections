@@ -17,7 +17,7 @@ export default {
     props: {
         loading: {
             type: Boolean,
-            required: true
+            required: true,
         },
         itemCount: {
             type: Number,
