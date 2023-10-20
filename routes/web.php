@@ -24,5 +24,8 @@ Route::get('/home', [PublicController::class, 'home'])
 Route::get('/announcements', [PublicController::class, 'announcements'])
 ->name('announcements');
 
+Route::get('/announcements/view', [PublicController::class, 'announcementsView'])
+->name('announcements.view');
+
 Route::get('/rules-and-guidelines', [PublicController::class, 'rulesAndGuidelines'])
 ->name('rules.and.guidelines');
