@@ -21,6 +21,9 @@ Route::get('/', function () {
 Route::get('/home', [PublicController::class, 'home'])
 ->name('home');
 
+Route::get('/elections', [PublicController::class, 'elections'])
+->name('elections');
+
 Route::get('/announcements', [PublicController::class, 'announcements'])
 ->name('announcements');
 
