@@ -93,7 +93,7 @@
                     :columns="['ID', 'Type', 'Title']" 
                     :tableHeight="'auto'"
                     :maxTableHeight="'280px'">
-                <tr v-for="(item, index) in items" :key="index" @click="selectItem(item)" 
+                <tr v-for="(item, index) in announcementData" v-if="isAnnouncementSuccess" :key="index" @click="selectItem(item)" 
                     v-bind:class="{ 'active-row': selectedItem && selectedItem.id === item.id && selectedItem.announcement_type === item.announcement_type }">
                     <td class="my-cell">{{ item.count }}</td>
                     <td class="my-cell">{{ item.announcement_type.charAt(0).toUpperCase() + item.announcement_type.slice(1) }}</td>
@@ -114,8 +114,9 @@ import ActionButton from '../../Shared/ActionButton.vue';
 import DragAndDrop from '../../Shared/DragAndDrop.vue';
 
 import axios from 'axios';
-import { ref } from 'vue';
+import { ref, watch, watchEffect, computed } from 'vue';
 
+import { useQuery, useMutation, useQueryClient  } from "@tanstack/vue-query";
 
 export default {
     setup() {
@@ -141,6 +142,32 @@ export default {
         // Data for the table
         const items = ref([]);
 
+        const queryClient = new useQueryClient();
+
+        const fetchAnnouncementTable = async () => {
+            const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/announcement/all`);
+
+            return response.data.announcements.map(item => {
+                return {
+                    id: item.AnnouncementId,
+                    count: "Announcement #" + item.count,
+                    announcement_type: item.AnnouncementType,
+                    title: item.AnnouncementTitle,
+                    body: item.AnnouncementBody,
+                    attachment_type: item.AttachmentType,
+                }
+            });
+        }
+
+        const { data: announcementData, 
+                isLoading: isAnnouncementLoading, 
+                isSuccess: isAnnouncementSuccess, 
+                isError: isAnnouncementError } = 
+                useQuery({
+                    queryKey: ['fetchAnnouncement'],
+                    queryFn: fetchAnnouncementTable,
+                });
+
         return {
             type_select,
             title_input,
@@ -160,13 +187,14 @@ export default {
             updating,
             is_loading_attachments,
             items,
+
+            announcementData,
+            isAnnouncementLoading,
+            isAnnouncementSuccess,
+            isAnnouncementError,
         }
     },
     components: { Navbar, Sidebar, BaseTable, BaseContainer, ActionButton, DragAndDrop },
-    created() {
-        this.getLatestAnnouncementCount();
-        this.fetchTableData();
-    },
     computed: {
         SaveButtonText() {
             if (this.saving) {
@@ -187,28 +215,10 @@ export default {
             }
         }
     },
+    created() {
+        this.getLatestAnnouncementCount();
+    },
     methods: {
-        fetchTableData() {
-            axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/announcement/all`)
-                .then(response => {
-                    console.log(`Announcement table data fetched successfully. Duration: ${response.duration}ms`)
-                    const announcements = response.data.announcements.map(item => {
-                        return {
-                            id: item.AnnouncementId,
-                            count: "Announcement #" + item.count,
-                            announcement_type: item.AnnouncementType,
-                            title: item.AnnouncementTitle,
-                            body: item.AnnouncementBody,
-                            attachment_type: item.AttachmentType,
-                        }
-                    });
-
-                    this.items = [...announcements];
-                })
-                .catch(error => {
-                    console.log(error);
-                });
-        },
         reset() {
             // Reset the selected row item to null
             this.selectedItem = null;
