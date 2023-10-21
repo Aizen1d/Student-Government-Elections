@@ -13,7 +13,7 @@
         </div>   
         
         <BaseContainer :height="'auto'" :maxHeight="'600px'">
-            <form @submit.prevent="save">
+            <form @submit.prevent="saveOrUpdate">
                 <div class="form-group row">
                     <div class="col-2">
                         <label class="form-label" for="selected">Type</label>
@@ -46,7 +46,7 @@
                         <button :disabled="!selectedItem || !can_save" class="delete-btn" @click.prevent="deleteItem">Delete</button>
                     </div>
                     <div class="col-6 save">
-                        <ActionButton @submit.prevent="save" class="save-btn" :disabled="!can_save">{{ saveButtonText }}</ActionButton>
+                        <ActionButton @submit.prevent="saveOrUpdate" class="save-btn" :disabled="!can_save">{{ saveButtonText }}</ActionButton>
                     </div>
                 </div>
             </form>
@@ -78,7 +78,8 @@
     import ActionButton from '../../Shared/ActionButton.vue';
 
     import axios from 'axios';
-    import { ref, watch } from 'vue';
+    import { ref, watch, watchEffect } from 'vue';
+    import { useQuery, useMutation, useQueryClient  } from "@tanstack/vue-query";
 
     export default {
         setup() {
@@ -94,40 +95,214 @@
             const selectedItem = ref(null);
             const items = ref([]);
 
-            // Updates the value of the count_input element for rule/guideline creation
-            // import.meta.env.VITE_FASTAPI_BASE_URL is the dynamic base URL of the FastAPI server
-            const updateIdInput = (prefix, endpoint) => () => {
-                axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}${endpoint}`)
-                    .then(response => {
-                        console.log(`Get latest ${prefix} count successful. Duration: ${response.duration}ms`)
-                        const data = response.data;
-
-                        if (data.count === 0) {
-                            count_input.value = prefix + 1;
-                        }
-                        else {
-                            count_input.value = prefix + (data.count + 1);
-                        }
-                    })
-                    .catch(error => {
-                        console.log(error);
-                    });
-            };
+            const queryClient = new useQueryClient();
 
             // Watch type_select(rule/guideline) for changes
             watch(type_select, (newValue) => {
                 // Only update count_input.value if no row is selected
                 if (!selectedItem.value) {
                     if (newValue === 'rule') {
-                        updateIdInput('Rule #', '/api/v1/rule/count/latest')();
+                        count_input.value = 'Rule #' + (ruleCount.value.count + 1);
                     }
                     else if (newValue === 'guideline') {
-                        updateIdInput('Guideline #', '/api/v1/guideline/count/latest')();
+                        count_input.value = 'Guideline #' + (guidelineCount.value.count + 1);
                     }
                 }
             });
-            
-            return {
+
+            // Reset after saving or deleting
+            const resetAfter = () => {
+                type_select.value = '';
+                id_input.value = '';
+                count_input.value = '';
+                title_input.value = '';
+                body_input.value = '';
+
+                can_save.value = true;
+            };
+
+            // Define the fetch function for rules and guidelines
+            const fetchCount = async (endpoint) => {
+                const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}${endpoint}`);
+                return response.data;
+            };
+
+            // Use Vue Query to fetch the data
+            const { data: ruleCount } = 
+                    useQuery({
+                        queryKey: ["ruleCount"],
+                        queryFn: () => fetchCount('/api/v1/rule/count/latest'),
+                    });
+            const { data: guidelineCount } = 
+                    useQuery({
+                        queryKey: ["guidelineCount"],
+                        queryFn: () => fetchCount('/api/v1/guideline/count/latest'),
+                    });
+
+            // Define the fetch function for rules and guidelines
+            const fetchRules = async () => {
+                const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/rule/all`);
+
+                return response.data.rules.map(rule => ({
+                    id: rule.RuleId,
+                    count: "Rule #" + rule.count,
+                    type: rule.type,
+                    title: rule.RuleTitle,
+                    body: rule.RuleBody
+                }));
+            };
+
+            const fetchGuidelines = async () => {
+                const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/guideline/all`);
+                
+                return response.data.guidelines.map(guideline => ({
+                    id: guideline.GuideId,
+                    count: "Guideline #" + guideline.count,
+                    type: guideline.type,
+                    title: guideline.GuidelineTitle,
+                    body: guideline.GuidelineBody
+                }));
+            };
+
+            // Use Vue Query to fetch the data
+            const { data: rulesData, isLoading: isRulesDataLoading, dataUpdatedAt: rulesUpdatedAt} = 
+                    useQuery({
+                        queryKey: ["fetchRules"],
+                        queryFn: () => fetchRules(),
+                    });
+
+            const { data: guidelinesData, isLoading: isGuidelinesDataLoading } = 
+                    useQuery({
+                        queryKey: ["fetchGuidelines"],
+                        queryFn: () => fetchGuidelines(),
+                    });
+                    
+            // Wait for both rules and guidelines data to load before setting the items
+            watchEffect(() => {
+                if (!isRulesDataLoading.value && !isGuidelinesDataLoading.value) {
+                    items.value = [...rulesData.value, ...guidelinesData.value];
+                }
+            });
+
+            // Handles saving of an item
+            const { mutate: saveMutation, isSuccess: isSaveSucess, isError: isSaveError, isPending: isSavePending } = 
+                    useMutation({
+                        mutationFn: (item) => axios.post(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/${item.type}/save`, item),
+                    });
+
+             const saveOrUpdate = () => {
+                if (selectedItem.value) { // If a row is selected, then update instead
+                    return update();
+                }
+               
+                // Validations
+                if (type_select.value.trim().length < 1) {
+                    return alert('Please select a type');
+                }
+                else if (title_input.value.trim().length < 1) {
+                    return alert('Please input a title');
+                }
+                else if (title_input.value.trim().length > 255) {
+                    return alert('Title is too long, 255 charactres only');
+                }
+                else if (body_input.value.trim().length < 1) {
+                    return alert('Please input a body');
+                }
+
+                // If validation passed, check if can save
+                if (can_save.value === false) {
+                    return;
+                }
+                
+                // Saving state, set to false for a while to avoid multiple save
+                can_save.value = false;
+
+                saveMutation({
+                    type: type_select.value,
+                    title: title_input.value,
+                    body: body_input.value
+                }, {
+                    onSuccess: async () => {
+                        alert('Item saved successfully');
+                        resetAfter();
+
+                        queryClient.invalidateQueries('fetchRules');
+                        queryClient.invalidateQueries('fetchGuidelines');
+                    },
+                    onError: (error) => {
+                        console.error(error);
+                        resetAfter();
+                    },
+                    onSettled: () => {
+                        can_save.value = true;
+                    }
+                });
+            };
+
+            // Handles updating of an item
+            const { mutate: updateMutation, isSuccess: isUpdateSucess, isPending: isUpdatePending, isError: isUpdateError } = 
+                    useMutation({
+                        mutationFn: (item) => axios.put(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/${item.type}/update`, item)
+                    });
+
+            const update = () => {
+                updateMutation({
+                    id: id_input.value,
+                    type: type_select.value,
+                    title: title_input.value,
+                    body: body_input.value
+                }, {
+                    onSuccess: () => {
+                        alert('Item updated successfully');
+
+                        queryClient.invalidateQueries('fetchRules');
+                        queryClient.invalidateQueries('fetchGuidelines');
+                    },
+                    onError: (error) => {
+                        console.error(error);
+                    },
+                    onSettled: () => {
+                        can_save.value = true;
+                    }
+                });
+            };
+
+            // Handles deletion of an item
+            const { mutate: deleteMutation, isSuccess: isDeleteSuccess, isPending: isDeletePending, isError: isDeleteError } = 
+                    useMutation({
+                        mutationFn: (id) => axios.delete(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/${type_select.value}/delete`,
+                            {
+                                data: { id: id }
+                            })
+                    });
+
+            const deleteItem = () => {
+                if (selectedItem.value === null) {
+                    return alert('Please select an item to delete');
+                }
+
+                const confirmDelete = confirm('Are you sure you want to delete this item?');
+                if (!confirmDelete) {
+                    return;
+                }
+                
+                deleteMutation(selectedItem.value.id, {
+                    onSuccess: () => {
+                        alert('Item deleted successfully');
+                        resetAfter();
+                        new_button_disabled.value = true;
+                        selectedItem.value = null;
+
+                        queryClient.invalidateQueries('fetchRules');
+                        queryClient.invalidateQueries('fetchGuidelines');
+                    },
+                    onError: (error) => {
+                        console.error(error);
+                    }
+                });
+            };
+
+            return { 
                 type_select, 
                 title_input,
                 id_input,
@@ -137,10 +312,11 @@
                 selectedItem,
                 items,
                 can_save,
-            }
-        },
-        created() {
-            this.fetchTableData();
+                saveOrUpdate,
+                update,
+                deleteItem,
+                resetAfter
+            };
         },
         computed: {
             saveButtonText() {
@@ -174,210 +350,6 @@
                 this.id_input = item.id; 
                 this.count_input = item.count;
                 this.body_input = item.body;
-            },
-            deleteItem() {
-                // Delete the selected row item
-                if (this.selectedItem === null) {
-                    return alert('Please select an item to delete');
-                }
-
-                const confirmDelete = confirm('Are you sure you want to delete this item?');
-                if (!confirmDelete) {
-                    return;
-                }
-                
-                let id = this.selectedItem.id;
-                let type = this.selectedItem.type;
-
-                axios.delete(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/${type}/delete`, {
-                    data: { id: id }
-                })
-                .then(response => {
-                    console.log(`Item with id ${id} was deleted successfully. Duration ${response.duration}ms`)
-                    alert('Item deleted successfully');
-                })
-                .catch(error => {
-                    console.error(error);
-                })
-                .finally(() => {
-                    this.fetchTableData();
-                    this.resetAfter();
-                    this.new_button_disabled = true;
-                    this.selectedItem = null;
-                })
-            },
-            resetAfter() {
-                // Reset after saving
-                this.type_select = '';
-                this.id_input = '';
-                this.count_input = '';
-                this.title_input = '';
-                this.body_input = '';
-
-                this.can_save = true;
-            },
-            fetchTableData() {
-                // Fetches all rules
-                axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/rule/all`)
-                .then(response => {
-                    console.log(`Get all rules successful. Duration: ${response.duration}ms`)
-                    const rules = response.data.rules.map(rule => ({
-                        id: rule.RuleId,
-                        count: "Rule #" + rule.count,
-                        type: rule.type,
-                        title: rule.RuleTitle,
-                        body: rule.RuleBody
-                    }));
-
-                    // Fetches all guidelines
-                    axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/guideline/all`)
-                    .then(response => {
-                        console.log(`Get all guidelines successful. Duration: ${response.duration}ms`)
-                        const guidelines = response.data.guidelines.map(guideline => ({
-                            id: guideline.GuideId,
-                            count: "Guideline #" + guideline.count,
-                            type: guideline.type,
-                            title: guideline.GuidelineTitle,
-                            body: guideline.GuidelineBody
-                        }));
-
-                        this.items = [...rules, ...guidelines];
-
-                    })
-                    .catch(error => {
-                        console.log(error);
-                    });
-                })
-                .catch(error => {
-                    console.log(error);
-                });
-            },
-            save() {
-                if (this.selectedItem) { // If a row is selected, then update instead
-                    return this.update();
-                }
-               
-                // Validations
-                if (this.type_select.trim().length < 1) {
-                    return alert('Please select a type');
-                }
-                else if (this.title_input.trim().length < 1) {
-                    return alert('Please input a title');
-                }
-                else if (this.title_input.trim().length > 255) {
-                    return alert('Title is too long, 255 charactres only');
-                }
-                else if (this.body_input.trim().length < 1) {
-                    return alert('Please input a body');
-                }
-
-                // If validation passed, check if can save
-                if (this.can_save === false) {
-                    return;
-                }
-                
-                // Saving state, set to false for a while to avoid multiple save
-                this.can_save = false;
-
-                if (this.type_select === 'rule') {
-                    axios.post(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/rule/save`, 
-                        { 
-                            title: this.title_input, 
-                            body: this.body_input 
-                        })
-                        .then(response => {
-                            console.log(`Rule saved successfully. Duration: ${response.duration}ms`)
-                            alert('Rule saved successfully');
-                            this.resetAfter();
-                        })
-                        .catch(error => {
-                            console.error(error);
-                            this.resetAfter();
-                        })
-                        .finally(() => {
-                            this.can_save = true;
-                            this.fetchTableData(); 
-                        });   
-                }
-                else if (this.type_select === 'guideline') {
-                    axios.post(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/guideline/save`, 
-                        { 
-                            title: this.title_input, 
-                            body: this.body_input 
-                        })
-                        .then(response => {
-                            console.log(`Guideline saved successfully. Duration: ${response.duration}ms`)
-                            alert('Guideline saved successfully');
-                            this.resetAfter();
-                        })
-                        .catch(error => {
-                            console.error(error);
-                            this.resetAfter();
-                        })
-                        .finally(() => {
-                            this.can_save = true;
-                            this.fetchTableData(); 
-                        })
-                }
-            },
-            update() {
-                // Validations
-                if (this.title_input.trim().length < 1) {
-                    return alert('Please input a title');
-                }
-                else if (this.title_input.trim().length > 255) {
-                    return alert('Title is too long, 255 characters only');
-                }
-                else if (this.body_input.trim().length < 1) {
-                    return alert('Please input a body');
-                }
-
-                // If validation passed, check if can update
-                if (this.can_save === false) {
-                    return;
-                }
-                
-                // Saving state, set to false for a while to avoid multiple save
-                this.can_save = false;
-
-                if (this.type_select === 'rule') {
-                    axios.put(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/rule/update`, 
-                        { 
-                            id: this.id_input,
-                            title: this.title_input, 
-                            body: this.body_input 
-                        })
-                        .then(response => {
-                            console.log(`Rule updated successfully. Duration: ${response.duration}ms`)
-                            alert('Rule updated successfully');
-                        })
-                        .catch(error => {
-                            console.error(error);
-                        })
-                        .finally(() => {
-                            this.can_save = true;
-                            this.fetchTableData(); 
-                        });   
-                }
-                else if (this.type_select === 'guideline') {
-                    axios.put(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/guideline/update`, 
-                        { 
-                            id: this.id_input,
-                            title: this.title_input, 
-                            body: this.body_input 
-                        })
-                        .then(response => {
-                            console.log(`Guideline updated successfully. Duration: ${response.duration}ms`)
-                            alert('Guideline updated successfully');
-                        })
-                        .catch(error => {
-                            console.error(error);
-                        })
-                        .finally(() => {
-                            this.can_save = true;
-                            this.fetchTableData(); 
-                        })
-                }
             },
         },
     }
