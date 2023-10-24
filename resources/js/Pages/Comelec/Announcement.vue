@@ -188,6 +188,7 @@ export default {
             is_loading_attachments,
             items,
 
+            fetchAnnouncementTable,
             announcementData,
             isAnnouncementLoading,
             isAnnouncementSuccess,
@@ -369,7 +370,7 @@ export default {
                 console.error(error);
             })
             .finally(() => {
-                this.fetchTableData();
+                this.fetchAnnouncementTable();
                 this.reset();
             })
         },
@@ -438,7 +439,7 @@ export default {
                 })
                 .finally(() => {
                     this.saving = false;
-                    this.fetchTableData();
+                    this.fetchAnnouncementTable();
                 });
         },
         update() {
@@ -550,7 +551,7 @@ export default {
                 })
                 .finally(() => {
                     this.updating = false;
-                    this.fetchTableData();
+                    this.fetchAnnouncementTable();
                 });
         },
     },
