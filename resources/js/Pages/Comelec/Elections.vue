@@ -12,7 +12,7 @@
             </div>      
         </div>   
         
-        <BaseContainer :height="'auto'" :maxHeight="'400px'">
+        <BaseContainer :height="'auto'" :maxHeight="'760px'">
             <div class="utilities">
                <SearchBarAndFilter :options="options"></SearchBarAndFilter>
             </div>
@@ -22,11 +22,11 @@
                 :columnWidths=columnWidths
                 :tableHeight="'auto'"
                 :maxTableHeight="'300px'">
-                <tr v-for="(item, index) in items" :key="index" @click="selectItem(item)">
-                    <td v-for="(value, key, i) in itemsWithoutId[0]" 
-                        :key="key" 
+                <tr v-for="(item, index) in items.value" :key="index" @click="selectItem(item)">
+                    <td v-for="(value, key, i) in itemsWithoutId[index]"
+                        :key="key"
                         :style="{ width: columnWidths[i] }" 
-                        class="my-cell">{{ item[key] }}
+                        class="my-cell">{{ value }}
                     </td>
                 </tr>
 
@@ -38,7 +38,7 @@
 <script>
     import { useUserStore } from '../../Stores/UserStore';
     import { router } from '@inertiajs/vue3'
-    import { ref } from 'vue';
+    import { ref, watchEffect, computed } from 'vue';
 
     import Navbar from '../../Shared/Navbar.vue';
     import Sidebar from '../../Shared/Sidebar.vue';
@@ -48,6 +48,8 @@
     import BaseTable from '../../Shared/BaseTable.vue';
 
     import axios from 'axios';
+
+    import { useQuery, useMutation, useQueryClient  } from "@tanstack/vue-query";
 
     export default {
         setup(props) {
@@ -68,17 +70,55 @@
 
             const items = ref([]);
             const columnWidths = ['10%', '20%', '20%', '20%', '20%', '20%', '20%'];
+            
+            const fetchElectionsTable = async () => {
+                const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/election/all`);
+                console.log(`Elections table fetched successfully. Duration: ${response.duration}`)
+
+                const elections = response.data.elections.map(item => {
+                    let date_created = new Date(item.created_at);
+                    let formattedDate = date_created.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+                    return {
+                        id: item.ElectionId,
+                        count: item.count,
+                        name: item.ElectionName,
+                        type: item.ElectionType,
+                        school_year: item.SchoolYear,
+                        created_by_name: item.CreatedByName,
+                        date_created: formattedDate,
+                        status: item.ElectionStatus,
+                    }
+                });
+
+                return elections;
+            }
+
+            const { data: electionsData, isLoading, isSuccess, isError, dataUpdatedAt } = 
+                useQuery({
+                    queryKey: ['fetchElections'],
+                    queryFn: fetchElectionsTable,
+                });
+
+            watchEffect(() => {
+                if (isSuccess) {
+                    items.value = electionsData;
+                }
+            });
 
             return {options, 
                     items,
-                    columnWidths,}
-        },
-        created() {
-            this.fetchTableData();
+                    columnWidths,
+                    
+                    electionsData,
+                    isLoading,
+                    isSuccess,
+                    isError,
+                }
         },
         computed: {
             itemsWithoutId() {
-                return this.items.map(item => {
+                return this.electionsData.map(item => {
                     let newItem = { ...item };
                     delete newItem.id;
                     return newItem;
@@ -95,32 +135,6 @@
         methods: {
             createElectionRedirect(){
                 router.visit('/comelec/elections/create');
-            },
-            fetchTableData() {
-                axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/election/all`)
-                    .then(response => {
-                        console.log(`Elections table fetched successfully. Duration: ${response.duration}`)
-                        const elections = response.data.elections.map(item => {
-                            let date_created = new Date(item.created_at);
-                            let formattedDate = date_created.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-
-                            return {
-                                id: item.ElectionId,
-                                count: item.count,
-                                name: item.ElectionName,
-                                type: item.ElectionType,
-                                school_year: item.SchoolYear,
-                                created_by_name: item.CreatedByName,
-                                date_created: formattedDate,
-                                status: item.ElectionStatus,
-                            }
-                        });
-
-                        this.items = [...elections];
-                    })
-                    .catch(error => {
-                        console.log(error);
-                    });
             },
             selectItem(item) {
                 router.visit(`/comelec/elections/view`, {

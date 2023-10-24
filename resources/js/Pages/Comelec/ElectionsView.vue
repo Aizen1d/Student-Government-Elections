@@ -5,7 +5,7 @@
     <div class="components">
         <div class="row utilities">
             <div class="col-6">
-                <h2 class="my-1">
+                <h2 class="my-1" v-if="!isLoading">
                     <span class="return" @click="returnPage">Elections</span> / View / {{ election_name_input  }}
                 </h2>
             </div>
@@ -151,7 +151,7 @@
 
 <script>
     import { router } from '@inertiajs/vue3'
-    import { ref } from 'vue';
+    import { ref, watch, watchEffect } from 'vue';
 
     import Navbar from '../../Shared/Navbar.vue';
     import Sidebar from '../../Shared/Sidebar.vue';
@@ -159,29 +159,70 @@
     import BaseContainer from '../../Shared/BaseContainer.vue';
     import BaseTable from '../../Shared/BaseTable.vue';
 
+    import { useQuery, useMutation, useQueryClient  } from "@tanstack/vue-query";
     import axios from 'axios';
 
     export default {
         setup(props) {
             const election_id = props.id;
 
-            const election_name_input = ref('');
-            const election_type_input = ref('');
-            const election_school_year_input = ref('');
-            const election_semester_input = ref('');
-            const election_start_input = ref('');
-            const election_end_input = ref('');
-            const election_filing_coc_start_input = ref('');
-            const election_filing_coc_end_input = ref('');
-            const election_campaign_start_input = ref('');
-            const election_campaign_end_input = ref('');
-            const election_voting_start_input = ref('');
-            const election_voting_end_input = ref('');
-            const election_appeal_start_input = ref('');
-            const election_appeal_end_input = ref('');
+            let election_name_input = ref('');
+            let election_type_input = ref('');
+            let election_school_year_input = ref('');
+            let election_semester_input = ref('');
+            let election_start_input = ref('');
+            let election_end_input = ref('');
+            let election_filing_coc_start_input = ref('');
+            let election_filing_coc_end_input = ref('');
+            let election_campaign_start_input = ref('');
+            let election_campaign_end_input = ref('');
+            let election_voting_start_input = ref('');
+            let election_voting_end_input = ref('');
+            let election_appeal_start_input = ref('');
+            let election_appeal_end_input = ref('');
 
             const position_count = ref(1);
             const position_list = ref([]); // The list of positions for this election
+
+            const fetchElectionData = async () => {
+                const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/election/view/${election_id}`)
+
+                return response.data
+            }
+
+            const { data, isLoading, isSuccess, isError, dataUpdatedAt } = 
+                useQuery({
+                    queryKey: [`fetchElectionData-${election_id}`],
+                    queryFn: fetchElectionData,
+                });
+
+            watchEffect(() => {
+                if (isSuccess && data.value) {
+                    election_name_input.value = data.value.election.ElectionName;
+                    election_type_input.value = data.value.election.ElectionType;
+                    election_school_year_input.value = data.value.election.SchoolYear;
+                    election_semester_input.value = data.value.election.Semester;
+                    election_start_input.value = data.value.election.ElectionStart;
+                    election_end_input.value = data.value.election.ElectionEnd;
+                    election_filing_coc_start_input.value = data.value.election.CoCFilingStart;
+                    election_filing_coc_end_input.value = data.value.election.CoCFilingEnd;
+                    election_campaign_start_input.value = data.value.election.CampaignStart;
+                    election_campaign_end_input.value = data.value.election.CampaignEnd;
+                    election_voting_start_input.value = data.value.election.VotingStart;
+                    election_voting_end_input.value = data.value.election.VotingEnd;
+                    election_appeal_start_input.value = data.value.election.AppealStart;
+                    election_appeal_end_input.value = data.value.election.AppealEnd;
+                    
+                    position_list.value = data.value.positions.map((item) => {
+                        return {
+                            count: position_count.value++,
+                            name: item.PositionName,
+                            value: item.PositionName,
+                            quantity: item.PositionQuantity,
+                        }
+                    });
+                }
+            })
 
             return {
                 election_name_input,
@@ -201,10 +242,10 @@
                 position_count,
                 position_list,
                 election_id,
+
+                isLoading,
+                isSuccess
             }
-        },
-        created() {
-            this.fetchElectionData();
         },
         components: { Navbar, Sidebar, ActionButton, BaseContainer, BaseTable },
         props: {
@@ -213,42 +254,6 @@
         methods: {
             returnPage() {
                 router.visit('/comelec/elections');
-            },
-            fetchElectionData() {
-                axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/election/view/${this.election_id}`)
-                    .then((response) => {
-                        const election = response.data.election;
-                        const position = response.data.positions;
-                        
-                        console.log(`Election view ${election.ElectionName} fetched successfully. Duration: ${response.duration}`);
-
-                        this.election_name_input = election.ElectionName;
-                        this.election_type_input = election.ElectionType;
-                        this.election_school_year_input = election.SchoolYear;
-                        this.election_semester_input = election.Semester;
-                        this.election_start_input = election.ElectionStart;
-                        this.election_end_input = election.ElectionEnd;
-                        this.election_filing_coc_start_input = election.CoCFilingStart;
-                        this.election_filing_coc_end_input = election.CoCFilingEnd;
-                        this.election_campaign_start_input = election.CampaignStart;
-                        this.election_campaign_end_input = election.CampaignEnd;
-                        this.election_voting_start_input = election.VotingStart;
-                        this.election_voting_end_input = election.VotingEnd;
-                        this.election_appeal_start_input = election.AppealStart;
-                        this.election_appeal_end_input = election.AppealEnd;
-                        
-                        this.position_list = position.map((item) => {
-                            return {
-                                count: this.position_count++,
-                                name: item.PositionName,
-                                value: item.PositionName,
-                                quantity: item.PositionQuantity,
-                            }
-                        });
-                    })
-                    .catch((error) => {
-                        console.log(error);
-                    });
             },
             deleteElection() {
                 const confirmDelete = confirm('Are you sure you want to delete this election?');
