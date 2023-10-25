@@ -3,7 +3,7 @@
 
     <div>
         <div class="main">
-            <img src="../../images/Home/comelec.jpg" class="main-ann" alt="">
+            <img src="../../images/Home/comelec2.jpg" class="main-ann" alt="">
         </div>
 
         <div class="ongoing-elections">
@@ -63,8 +63,17 @@
                 </div>
             </div>
 
-            <div class="announcements">
-                <div class="row" v-for="(recent, index) in recent_announcements" :key="index">
+            <ImageSkeleton v-if="isRecentLoading" 
+                            :loading="isRecentLoading" 
+                            :itemCount="3" 
+                            :borderRadius="'10px'"
+                            :imageWidth="'27vw'" 
+                            :imageHeight="'40vh'"
+                            :containerMargin="'0% 1.7%'"
+                            :itemMargin="'1em'">
+            </ImageSkeleton>
+            <div v-else class="announcements">
+                <div class="row" v-for="(recent, index) in recentData" :key="index">
                     <div class="col-11 mx-4">
                         <div class="announcement" style="cursor: pointer;" @click.prevent="displaySelectedRecentAnnouncement(recent.id)">
                             <a style="text-decoration: none;">
@@ -82,6 +91,7 @@
                     </div>
                 </div>
             </div>
+
         </div>
 
         <div class="coc">
@@ -137,11 +147,14 @@
     import Standards from '../Shared/Standards.vue'
     import Navbar from '../Shared/Navbar.vue'
     import Carousel from '../Shared/Carousel.vue'
+    import ImageSkeleton from '../Skeletons/ImageSkeleton.vue'
     import { Link, router } from '@inertiajs/vue3'
 
     import { ref } from 'vue'
-    import axios from 'axios'
+    import { useQuery } from "@tanstack/vue-query";
     import { useAnnouncementStore } from '../Stores/AnnouncementStore'
+
+    import axios from 'axios'
 
     export default {
         setup() {
@@ -150,10 +163,45 @@
 
             const store = useAnnouncementStore()
 
+            const fetchRecentAnnouncements = async () => {
+                const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/announcement/all`, {
+                    params: {
+                        include_images: true
+                    }
+                })
+
+                console.log(`Get all recent announcements successful. Duration: ${response.duration}ms`)
+
+                const announcements = response.data.announcements.map(announcement => ({
+                    id: announcement.AnnouncementId,
+                    title: announcement.AnnouncementTitle,
+                    body: announcement.AnnouncementBody,
+                    announcement_type: announcement.AnnouncementType,
+                    attachment_type: announcement.AttachmentType,
+                    images: announcement.images,
+                }))
+
+                return announcements.slice(0, 3)
+            }
+
+            const { data: recentData, 
+                    isLoading: isRecentLoading, 
+                    isSuccess: isRecentSucess, 
+                    isError: isRecentError, } = 
+                    useQuery({
+                        queryKey: ['recentAnnouncements'],
+                        queryFn: fetchRecentAnnouncements,
+                    })
+
             return {
                 images,
                 recent_announcements,
                 store,
+
+                recentData,
+                isRecentLoading,
+                isRecentSucess,
+                isRecentError,
             }
         },
         components: {
@@ -161,32 +209,9 @@
             Navbar,
             Carousel,
             Link,
-        },
-        created() {
-            this.fetchRecentAnnouncements()
+            ImageSkeleton
         },
         methods: {
-            fetchRecentAnnouncements() {
-                axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/announcement/all`, {
-                        params: {
-                            include_images: true
-                        }
-                    })
-                    .then(response => {
-                    console.log(`Get all announcements successful. Duration: ${response.duration}ms`)
-
-                    const announcements = response.data.announcements.map(announcement => ({
-                        id: announcement.AnnouncementId,
-                        title: announcement.AnnouncementTitle,
-                        body: announcement.AnnouncementBody,
-                        announcement_type: announcement.AnnouncementType,
-                        attachment_type: announcement.AttachmentType,
-                        images: announcement.images,
-                    }));
-
-                    this.recent_announcements = announcements.slice(0, 3);
-                });
-            },
             displaySelectedRecentAnnouncement(id) {
                 this.store.resetSelectedAnnouncement();
                 router.visit(`/announcements/view?id=${id}`);
@@ -198,7 +223,7 @@
 
 <style scoped>
     .main{
-        height: 700px;
+        height: 850px;
     }
 
     .main-ann{
@@ -207,8 +232,7 @@
     }
 
     .ongoing-elections{
-        margin-top: -10% !important;
-
+        margin-top: -12% !important;
         margin: 0% 3%;
     }
 
