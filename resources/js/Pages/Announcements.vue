@@ -22,9 +22,9 @@
             </div>
         </div>
 
-        <SkeletonLoader :loading="loading" :itemCount="3">
+        <AnnouncementsSkeleton :loading="isAnnouncementLoading" :itemCount="3">
             <div class="list">
-                <div class="row" v-for="(announcement, index) in announcements" :key="index">
+                <div class="row" v-for="(announcement, index) in announcementData" :key="index">
                     <div class="col-11 column-list">
                         <div class="announcement">
                             <div class="pic">
@@ -39,7 +39,7 @@
                     </div>
                 </div>
             </div>
-        </SkeletonLoader>
+        </AnnouncementsSkeleton>
 
     </div>
 </template>
@@ -47,13 +47,14 @@
 <script>
     import Standards from '../Shared/Standards.vue'
     import Navbar from '../Shared/Navbar.vue'
-    import SkeletonLoader from '../Skeletons/AnnouncementsSkeleton.vue'
+    import AnnouncementsSkeleton from '../Skeletons/AnnouncementsSkeleton.vue'
 
     import axios from 'axios'
     import { router } from '@inertiajs/vue3'
     import { Link } from '@inertiajs/vue3'
     import { ref } from 'vue'
     import { useAnnouncementStore } from '../Stores/AnnouncementStore'
+    import { useQuery } from "@tanstack/vue-query";
 
     export default{
         setup(props) {
@@ -61,62 +62,72 @@
             const announcements = ref([]);
             const store = useAnnouncementStore();
 
-            // for skeleton loader
-            const loading = ref(false);
+            const fetchAnnouncementType = async () => {
+                const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/announcement/${type}`, {
+                    params: {
+                        include_images: true
+                    }
+                });
+                console.log(`Get all announcements (${type}) successful. Duration: ${response.duration}ms`)
+
+                const announcements = await Promise.all(
+                    response.data.announcements.map(async (announcement) => {
+                        let images = announcement.images;
+                        if (images.length > 0) {
+                            await new Promise((resolve, reject) => {
+                                let img = new Image();
+                                img.src = images[0].url;
+                                img.onload = resolve;
+                                img.onerror = () => {
+                                    images[0].url = '?'; // Set the URL to image placeholder for nonexistent images
+                                    resolve();
+                                };
+                            });
+                        }
+                        return {
+                            id: announcement.AnnouncementId,
+                            title: announcement.AnnouncementTitle,
+                            body: announcement.AnnouncementBody,
+                            announcement_type: announcement.AnnouncementType,
+                            attachment_type: announcement.AttachmentType,
+                            images,
+                        };
+                    })
+                );
+
+                return announcements;
+            }
+
+            const { data: announcementData,
+                    isLoading: isAnnouncementLoading,
+                    isSuccess: isAnnouncementSuccess,
+                    isError: isAnnouncementError, } =
+                    useQuery({
+                        queryKey: [`announcement-${type}`],
+                        queryFn: fetchAnnouncementType,
+                    })
 
             return {
                 type,
                 announcements,
                 store,
-                loading,
+
+                announcementData,
+                isAnnouncementLoading,
+                isAnnouncementSuccess,
+                isAnnouncementError,
             }
         },
         components:{
             Standards,
             Navbar,
             Link,
-            SkeletonLoader,
+            AnnouncementsSkeleton,
         },
         props:{
             type: String,
         },
-        created(){
-            this.fetchAnnouncement(this.type);
-        },
         methods:{
-            fetchAnnouncement(type) {
-                // Check if announcements of the given type are already in the store
-                // If yes, use the announcements (cache) in the store
-                if (this.store[type].length > 0) {
-                    this.announcements = this.store[type];
-                    this.loading = false;   
-                    return;
-                }
-
-                this.loading = true;
-                axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/announcement/${type}`, {
-                        params: {
-                            include_images: true
-                        }
-                    })
-                    .then(response => {
-                    console.log(`Get all announcements (${type}) successful. Duration: ${response.duration}ms`)
-
-                    const announcements = response.data.announcements.map(announcement => ({
-                        id: announcement.AnnouncementId,
-                        title: announcement.AnnouncementTitle,
-                        body: announcement.AnnouncementBody,
-                        announcement_type: announcement.AnnouncementType,
-                        attachment_type: announcement.AttachmentType,
-                        images: announcement.images,
-                    }));
-
-                    this.announcements = announcements;
-                    this.store[type] = announcements;
-
-                    this.loading = false;
-                });
-            },
             onAnnouncementClick(item) {
                 this.store.selectAnnouncement(item); // Store the selected announcement in the store
 
