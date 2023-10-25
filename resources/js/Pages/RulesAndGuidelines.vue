@@ -6,7 +6,7 @@
             <h1 class="my-4 rules-label">RULES</h1>
             
             <div class="details" v-if="isRuleSucess" v-for="(rule, index) in rulesData.rules" :key="index">
-                <span>{{ rule.count }} {{ rule.RuleTitle }}</span>
+                <span>Rule #{{ rule.count }} {{ rule.RuleTitle }}</span>
                 <p class="my-2">{{ rule.RuleBody }}</p>
             </div>
         </div>
@@ -15,7 +15,7 @@
             <h1 class="my-4 guidelines-label">GUIDELINES</h1>
 
             <div class="details" v-if="isGuidelineSucess" v-for="(guideline, index) in guidelinesData.guidelines" :key="index">
-                <span>{{ guideline.count }} {{ guideline.GuidelineTitle }}</span>
+                <span>Guideline #{{ guideline.count }} {{ guideline.GuidelineTitle }}</span>
                 <p class="my-2">{{ guideline.GuidelineBody }}</p>
             </div>
         </div>
@@ -30,27 +30,27 @@
     import { ref } from "vue";
     import axios from "axios";
 
-    const fetchRules = async () => {
-        const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/rule/all`);
-        return response.data;
-    };
-
-    const fetchGuidelines = async () => {
-        const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/guideline/all`);
-        return response.data;
-    };
-
     export default {
         setup() {
+            const fetchRules = async () => {
+                const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/rule/all`);
+                return response.data;
+            };
+
+            const fetchGuidelines = async () => {
+                const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/guideline/all`);
+                return response.data;
+            };
+
             const page = ref(1);
             const { data: rulesData, 
                     isLoading: isRuleLoading, 
                     isSuccess: isRuleSucess,
-                    isError: isRuleError, } = 
+                    isError: isRuleError,
+                    isStale: isRuleStale, } = 
                     useQuery({
-                        queryKey: ["rules", page],
+                        queryKey: ["rules"],
                         queryFn: fetchRules,
-                        staleTime: 1000 * 60 * 5, // data becomes stale after 5 minutes
                     });
 
             const { data: guidelinesData, 
@@ -58,11 +58,10 @@
                     isSuccess: isGuidelineSucess, 
                     isError: isGuidelineError, } = 
                     useQuery({
-                        queryKey: ["guidelines", page],
+                        queryKey: ["guidelines"],
                         queryFn: fetchGuidelines,
-                        staleTime: 1000 * 60 * 5, // data becomes stale after 5 minutes
                     });
-
+                    
             return { 
                 rulesData,
                 isRuleLoading,
