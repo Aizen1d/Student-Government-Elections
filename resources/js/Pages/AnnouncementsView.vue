@@ -4,7 +4,16 @@
         <div class="main">
             <h3 class="return" @click="returnPage">Return to lists</h3>
             
-            <Carousel :images="images" :interval="5000"></Carousel>
+            <ImageSkeleton v-if="isAnnouncementLoading" 
+                            :loading="isAnnouncementLoading" 
+                            :itemCount="1" 
+                            :borderRadius="'10px'"
+                            :imageWidth="'88vw'" 
+                            :imageHeight="'70vh'"
+                            :containerMargin="'3% 0%'"
+                            :itemMargin="'1em'">
+            </ImageSkeleton>
+            <Carousel v-else :images="images" :interval="5000"></Carousel>
         </div>
         <div class="info">
             <p class="type">{{ announcement_type.toUpperCase() }}</p>
@@ -18,11 +27,14 @@
     import Standards from '../Shared/Standards.vue'
     import Navbar from '../Shared/Navbar.vue'
     import Carousel from '../Shared/Carousel.vue'
+    import ImageSkeleton from '../Skeletons/ImageSkeleton.vue'
 
-    import { ref } from 'vue'
+    import { ref, watchEffect } from 'vue'
     import { useAnnouncementStore } from '../Stores/AnnouncementStore'
-    import axios from 'axios'
     import { router } from '@inertiajs/vue3'
+    import { useQuery } from "@tanstack/vue-query";
+
+    import axios from 'axios'
 
     export default{
         setup(props){
@@ -36,6 +48,38 @@
             const images = ref([]);
 
             const currentIndex = ref(0);
+
+            const fetchAnnouncement = async () => {
+                const id = Number(announcement_id.value);
+
+                const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/announcement/get/${id}`, {
+                    params: {
+                        include_images: true
+                    }
+                });
+                console.log(`Get announcement (${id}) successful. Duration: ${response.duration}ms`)
+
+                return response.data.announcement;
+            }
+
+            const { data: announcementData,
+                    isLoading: isAnnouncementLoading,
+                    isSuccess: isAnnouncementSuccess,
+                    isError: isAnnouncementError, } =
+                    useQuery({
+                        queryKey: [`announcement-${announcement_id.value}`],
+                        queryFn: fetchAnnouncement,
+                    })
+
+            watchEffect(() => {
+                if (isAnnouncementSuccess.value) {
+                    announcement_type.value = announcementData.value.AnnouncementType;
+                    attachment_type.value = announcementData.value.AttachmentType;
+                    title.value = announcementData.value.AnnouncementTitle;
+                    body.value = announcementData.value.AnnouncementBody;
+                    images.value = announcementData.value.images;
+                }
+            });
             
             return{
                 store,
@@ -46,15 +90,18 @@
                 body,
                 images,
                 currentIndex,
+
+                announcementData,
+                isAnnouncementLoading,
+                isAnnouncementSuccess,
+                isAnnouncementError,
             }
         },
         components:{
             Standards,
             Navbar,
             Carousel,
-        },
-        created() {
-            this.fetchAnnouncement();
+            ImageSkeleton,
         },
         props: {
             id: '',
@@ -79,49 +126,6 @@
                     this.currentIndex = 0;
                 }
             },
-            fetchAnnouncement(){
-                const id = Number(this.announcement_id);
-
-                if (Object.keys(this.store.selectedAnnouncement).length > 0) { // Check if the store has an announcement
-                    // Use the announcement in the store/cache if it exists
-                    const announcement = this.store.selectedAnnouncement;
-
-                    this.announcement_type = announcement.announcement_type;
-                    this.attachment_type = announcement.attachment_type;
-                    this.title = announcement.title;
-                    this.body = announcement.body;
-                    this.images = announcement.images;
-
-                    return;
-                }
-
-                axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/announcement/get/${id}`, {
-                        params: {
-                            include_images: true
-                        }
-                    })
-                    .then(response => {
-                    console.log(`Get announcement (${this.announcement_id}) successful. Duration: ${response.duration}ms`)
-
-                    const announcement = response.data.announcement;
-                    const data = {
-                        id: this.announcement_id,
-                        title: announcement.AnnouncementTitle,
-                        body: announcement.AnnouncementBody,
-                        announcement_type: announcement.AnnouncementType,
-                        attachment_type: announcement.AttachmentType,
-                        images: announcement.images,
-                    };
-
-                    this.store.selectAnnouncement(data);
-
-                    this.announcement_type = data.announcement_type;
-                    this.attachment_type = data.attachment_type;
-                    this.title = data.title;
-                    this.body = data.body;
-                    this.images = data.images;
-                });
-            }
         },
     }
 </script>
