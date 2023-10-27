@@ -77,6 +77,7 @@
     .content{
         color: white;
         font-size: 18px;
+        font-family: 'Source Sans Pro Black', sans-serif;
     }
 
     .content:active,
