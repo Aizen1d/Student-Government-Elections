@@ -24,6 +24,15 @@ Route::get('/home', [PublicController::class, 'home'])
 Route::get('/elections', [PublicController::class, 'elections'])
 ->name('elections');
 
+Route::get('/elections/view', [PublicController::class, 'electionsView'])
+->name('elections.view');
+
+Route::get('/elections/view/file-coc', [PublicController::class, 'electionsViewFileCoc'])
+->name('elections.view.file.coc');
+
+Route::get('/elections/view/register-party', [PublicController::class, 'electionsViewRegisterParty'])
+->name('elections.view.register.party');
+
 Route::get('/announcements', [PublicController::class, 'announcements'])
 ->name('announcements');
 
