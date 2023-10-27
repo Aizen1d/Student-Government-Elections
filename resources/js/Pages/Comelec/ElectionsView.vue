@@ -6,7 +6,7 @@
         <div class="row utilities">
             <div class="col-6">
                 <h2 class="my-1" v-if="!isLoading">
-                    <span class="return" @click="returnPage">Elections</span> / View / {{ election_name_input  }}
+                    <span class="return" @click="returnPage">Elections</span> > View > {{ election_name_input  }}
                 </h2>
             </div>
             <div class="col-6" style="text-align: end;">
