@@ -213,7 +213,6 @@
         },
         methods: {
             displaySelectedRecentAnnouncement(id) {
-                this.store.resetSelectedAnnouncement();
                 router.visit(`/announcements/view?id=${id}`);
             }
         }
@@ -371,6 +370,7 @@
 
     .announcement:hover .pic img {
         transform: scale(1.035) !important;
+        box-shadow: 1px 2px 2px 0 rgba(200, 200, 200, 0.78), 0 6px 18px 0 rgba(246, 246, 246, 0.78);  
     }
 
     .announcement a::before {
