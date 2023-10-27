@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Announcements;
+use App\Models\Elections;
 
 class PublicController extends Controller
 {
@@ -14,6 +15,61 @@ class PublicController extends Controller
 
     public function elections() {
         return inertia('Elections');
+    }
+
+    public function electionsView(Request $request) {
+        $id = $request->id;
+        $election = Elections::where('ElectionId', $id)->first();
+
+        if (!$election) {
+            return redirect()->route('elections');
+        }
+
+        if (!$id) {
+            return redirect()->route('elections');
+        }
+
+        return Inertia::render('ElectionsView', [
+            'id' => $id
+        ]);
+    }
+
+    public function electionsViewFileCoc(Request $request) {
+        $id = $request->id;
+        $election = Elections::where('ElectionId', $id)->first();
+        $electionName = $election->ElectionName;
+
+        if (!$election) {
+            return redirect()->route('elections');
+        }
+
+        if (!$id) {
+            return redirect()->route('elections');
+        }
+
+        return Inertia::render('CoC', [
+            'id' => $id,
+            'electionName' => $electionName
+        ]);
+    }
+
+    public function electionsViewRegisterParty(Request $request) {
+        $id = $request->id;
+        $election = Elections::where('ElectionId', $id)->first();
+        $electionName = $election->ElectionName;
+
+        if (!$election) {
+            return redirect()->route('elections');
+        }
+
+        if (!$id) {
+            return redirect()->route('elections');
+        }
+
+        return Inertia::render('RegisterParty', [
+            'id' => $id,
+            'electionName' => $electionName
+        ]);
     }
 
     public function announcements(Request $request) {
