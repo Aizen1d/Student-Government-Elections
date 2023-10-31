@@ -15,20 +15,22 @@ from database import engine, SessionLocal, Base
 
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Union
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 
 from dotenv import load_dotenv # for .env file
 load_dotenv()
 
 import pandas as pd
 import time
+import string
+import random
 import os
 import requests
 import cloudinary
 import cloudinary.uploader
 from cloudinary.api import resources_by_tag, delete_resources_by_tag, delete_folder
 
-from models import Student, Organization, Announcement, Rule, Guideline, AzureToken, Election, SavedPosition, CreatedElectionPosition
+from models import Student, Organization, Announcement, Rule, Guideline, AzureToken, Election, SavedPosition, CreatedElectionPosition, Code, StudentPassword, PartyList, CoC
 
 #################################################################
 """ Settings """
@@ -59,6 +61,14 @@ tags_metadata = [
         "name": "Organization Election",
         "description": "Manage organization elections.",
     },
+    {
+        "name": "Code",
+        "description": "Manage codes.",
+    },
+    {
+        "name": "Party List",
+        "description": "Manage party lists.",
+    }
 ]
 
 app = FastAPI(
@@ -1022,6 +1032,118 @@ def get_All_Organization_Election(org_data: OrganizationName, db: Session = Depe
 
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while fetching all elections from the database"})
+
+
+#################################################################
+## Code APIs ## 
+
+""" Code Table APIs """
+class CodeForStudent(BaseModel):
+    student_number: str
+    code_type: str
+
+""" ** POST Methods: All about Code Table APIs ** """
+@router.post("/code/generate", tags=["Code"])
+def generate_Code(code_for_student:CodeForStudent, db: Session = Depends(get_db)):
+    # Check if the student exists in the database
+    student = db.query(Student).filter(Student.StudentNumber == code_for_student.student_number).first()
+    if not student:
+        return JSONResponse(status_code=404, content={"error": "Student number does not exist"})
+
+    # Check if a code already exists for this student
+    existing_code = db.query(Code).filter(Code.StudentNumber == code_for_student.student_number).first()
+
+    # Generate a random code
+    code_value = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
+
+    if existing_code:
+        # If a code already exists for this student, update it
+        existing_code.CodeValue = code_value
+        existing_code.CodeExpirationDate = datetime.now() + timedelta(minutes=30)
+        existing_code.updated_at = datetime.now()
+    else:
+        # If no code exists for this student, create a new one
+        new_code = Code(StudentNumber=code_for_student.student_number, 
+                        CodeValue=code_value,
+                        CodeType=code_for_student.code_type,
+                        CodeExpirationDate=datetime.now() + timedelta(minutes=30),
+                        created_at=datetime.now(),
+                        updated_at=datetime.now())
+        db.add(new_code)
+
+    # Commit the session to save the changes in the database
+    db.commit()
+
+    # Return the new or updated code
+    return {"code": code_value}
+
+#################################################################
+## PartyList APIs ## 
+
+""" PartyList Table APIs """
+
+class PartyListData(BaseModel):
+    party_name: str
+    cellphone_number: str
+    description: str
+    mission: str
+    vision: str
+    platforms: str
+    video_attachment: str
+
+""" ** POST Methods: All about Partylist Table APIs ** """
+
+@router.post("/partylist/submit", tags=["PartyList"])
+async def save_PartyList(election_id: int = Form(...), party_name: str = Form(...), 
+                         email_address: str = Form(...), cellphone_number: str = Form(...), 
+                         description: str = Form(...), mission: str = Form(...),
+                         vision: str = Form(...), platforms: str = Form(...),
+                         image_attachment: Optional[str] = Form(None), image_file_name: Optional[str] = Form(None),
+                         video_attachment: Optional[str] = Form(None),
+                         db: Session = Depends(get_db)):
+    
+    new_partylist = PartyList(ElectionId=election_id,
+                            PartyListName=party_name, 
+                            EmailAddress=email_address,
+                            CellphoneNumber=cellphone_number, 
+                            Description=description,
+                            Mission=mission,
+                            Vision=vision,
+                            Platforms=platforms,
+                            ImageAttachment='' if image_attachment else None,  # Initialize with an empty string
+                            VideoAttachment=video_attachment,
+                            Status='Pending',
+                            created_at=datetime.now(), 
+                            updated_at=datetime.now())
+    db.add(new_partylist)
+    db.commit()
+
+    if image_attachment:
+        # Remove the prefix of the base64 string and keep only the data
+        base64_data = image_attachment.split(',')[1]
+        
+        # Use the ID of the new partylist as the subfolder name under 'Partylists'            
+        folder_name = f"Partylists/partylist_{new_partylist.PartyListId}"
+
+        # Upload file to Cloudinary with the folder name in the public ID
+        response = cloudinary.uploader.upload("data:image/jpeg;base64," + base64_data, public_id=f"{folder_name}/{image_file_name}", tags=[f'partylist_{new_partylist.PartyListId}'])
+
+        # Store the URL in the ImageAttachment column
+        new_partylist.ImageAttachment = f'partylist_{new_partylist.PartyListId}'
+        db.commit()
+
+    return {
+        "id": new_partylist.PartyListId,
+        "party_name": new_partylist.PartyListName,
+        "email_address": new_partylist.EmailAddress,
+        "cellphone_number": new_partylist.CellphoneNumber,
+        "description": new_partylist.Description,
+        "mission": new_partylist.Mission,
+        "vision": new_partylist.Vision,
+        "platforms": new_partylist.Platforms,
+        "image_attachment": new_partylist.ImageAttachment,
+        "video_attachment": new_partylist.VideoAttachment,
+    }
 
 
 #################################################################
