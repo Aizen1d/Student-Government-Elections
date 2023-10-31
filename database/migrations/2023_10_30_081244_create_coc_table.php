@@ -30,6 +30,7 @@ return new class extends Migration
             $table->string('SelectedPositionName');
             $table->string('DisplayPhoto');
             $table->string('CertificationOfGrades');
+            $table->string('Status');
 
             $table->timestamps();
         });

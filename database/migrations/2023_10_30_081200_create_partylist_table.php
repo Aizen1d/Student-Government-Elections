@@ -17,16 +17,15 @@ return new class extends Migration
             $table->unsignedBigInteger('ElectionId');
             $table->foreign('ElectionId')->references('ElectionId')->on('Election');
 
-            $table->string('StudentNumber', 15)->unique();
-            $table->foreign('StudentNumber')->references('StudentNumber')->on('Student');
-
             $table->string('PartyListName');
-            $table->string('Description');
-            $table->string('Platforms');
+            $table->text('Description');
+            $table->text('Platforms');
+            $table->string('EmailAddress');
             $table->string('CellphoneNumber');
-            $table->string('Vision');
-            $table->string('Mission');
-            $table->string('Attachments');
+            $table->text('Vision');
+            $table->text('Mission');
+            $table->string('ImageAttachment')->nullable();
+            $table->string('VideoAttachment')->nullable();
             $table->string('Status');
 
             $table->timestamps();
