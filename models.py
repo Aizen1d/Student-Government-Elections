@@ -1,5 +1,5 @@
 from database import engine, Base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, relationship
 
 from sqlalchemy import Column, Integer, Float, String, Date, DateTime, Boolean, Text, ForeignKey
 from sqlalchemy.sql import func
@@ -243,4 +243,116 @@ class AzureToken(Base):
             "refresh_token": self.refresh_token,
             "expires_at": self.expires_at,
             "token_updates": self.token_updates  # Include the new column in the dictionary
+        }
+
+class Code(Base):
+    __tablename__ = "Code"
+
+    CodeId = Column(Integer, primary_key=True)
+    StudentNumber = Column(String(15), ForeignKey('Student.StudentNumber'), unique=True)
+    CodeValue = Column(Text)
+    CodeType = Column(String)
+    CodeExpirationDate = Column(DateTime)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    def to_dict(self):
+        return {
+            "CodeId": self.CodeId,
+            "StudentNumber": self.StudentNumber,
+            "CodeValue": self.CodeValue,
+            "CodeType": self.CodeType,
+            "CodeExpirationDate": self.CodeExpirationDate.isoformat() if self.CodeExpirationDate else None,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None
+        }
+    
+class StudentPassword(Base):
+    __tablename__ = "StudentPassword"
+
+    StudentPasswordId = Column(Integer, primary_key=True)
+    StudentNumber = Column(String(15), ForeignKey('Student.StudentNumber'), unique=True)
+    Password = Column(String)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    def to_dict(self):
+        return {
+            "StudentPasswordId": self.StudentPasswordId,
+            "StudentNumber": self.StudentNumber,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None
+        }
+    
+#########################################################
+""" Comelec Portal Table Models """
+
+class CoC(Base):
+    __tablename__ = "CoC"
+
+    CoCId = Column(Integer, primary_key=True)
+    ElectionId = Column(Integer, ForeignKey('Election.ElectionId'))
+    StudentNumber = Column(String(15), ForeignKey('Student.StudentNumber'), unique=True)
+    VerificationCode = Column(String)
+    Address = Column(Text)
+    PoliticalAffiliation = Column(String)
+    PartyListId = Column(Integer, ForeignKey('PartyList.PartyListId'), nullable=True)
+    SelectedPositionName = Column(String)
+    DisplayPhoto = Column(String)
+    CertificationOfGrades = Column(String)
+    Status = Column(String)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    def to_dict(self):
+        return {
+            "CoCId": self.CoCId,
+            "ElectionId": self.ElectionId,
+            "StudentNumber": self.StudentNumber,
+            "VerificationCode": self.VerificationCode,
+            "Address": self.Address,
+            "PoliticalAffiliation": self.PoliticalAffiliation,
+            "PartyListId": self.PartyListId,
+            "SelectedPositionName": self.SelectedPositionName,
+            "DisplayPhoto": self.DisplayPhoto,
+            "CertificationOfGrades": self.CertificationOfGrades,
+            "Status": self.Status,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None
+        }
+
+class PartyList(Base):
+    __tablename__ = "PartyList"
+
+    PartyListId = Column(Integer, primary_key=True)
+    ElectionId = Column(Integer, ForeignKey('Election.ElectionId'))
+    PartyListName = Column(String)
+    Description = Column(String)
+    Platforms = Column(String)
+    EmailAddress = Column(String)
+    CellphoneNumber = Column(String)
+    Vision = Column(String)
+    Mission = Column(String)
+    ImageAttachment = Column(String)
+    VideoAttachment = Column(String)
+    Status = Column(String)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    def to_dict(self):
+        return {
+            "PartyListId": self.PartyListId,
+            "ElectionId": self.ElectionId,
+            "PartyListName": self.PartyListName,
+            "Description": self.Description,
+            "Platforms": self.Platforms,
+            "EmailAddress": self.EmailAddress,
+            "CellphoneNumber": self.CellphoneNumber,
+            "Vision": self.Vision,
+            "Mission": self.Mission,
+            "ImageAttachment": self.ImageAttachment,
+            "VideoAttachment": self.VideoAttachment,
+            "Status": self.Status,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }
