@@ -190,7 +190,6 @@
 
 .pic img:hover{
     transform: scale(1.030);
-    box-shadow: 1px 0px 2px 0 rgba(200, 200, 200, 0.78), 0 2px 20px 0 rgba(246, 246, 246, 0.78);  
     cursor: pointer;
 }
 
@@ -204,7 +203,7 @@
 }
 
 .info h1{
-    margin-top: -1.5%;
+    margin-top: -2.5%;
     font-size: 20px;
     font-weight: bold;
 }
