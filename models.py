@@ -304,9 +304,10 @@ class CoC(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    def to_dict(self):
+    def to_dict(self, row=None):
         return {
             "CoCId": self.CoCId,
+            "count": row,
             "ElectionId": self.ElectionId,
             "StudentNumber": self.StudentNumber,
             "VerificationCode": self.VerificationCode,
@@ -339,9 +340,10 @@ class PartyList(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    def to_dict(self):
+    def to_dict(self, row=None):
         return {
             "PartyListId": self.PartyListId,
+            "count": row,
             "ElectionId": self.ElectionId,
             "PartyListName": self.PartyListName,
             "Description": self.Description,
