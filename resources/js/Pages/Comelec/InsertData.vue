@@ -337,7 +337,7 @@
 
 <style scoped>
 .components{
-    margin-left: 18%;
+    margin-left: 17.3%;
     margin-top: 2%;
     font-family: 'Source Sans', sans-serif;
     margin-right: 3.2%;
