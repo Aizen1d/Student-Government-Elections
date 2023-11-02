@@ -325,7 +325,7 @@
 
     .note{
         margin-top: 1.5%;
-        background-color: #c2eba7;
+        background-color: #eec865;
         box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.14), 0 6px 20px 0 rgba(0, 0, 0, 0.08);
         padding: 2%;
     }
@@ -336,7 +336,7 @@
 
     .note-timeline{
         margin-top: 1.5%;
-        background-color: #c2eba7;
+        background-color: #eec865;
         padding: 1.1%;
     }
 
@@ -347,6 +347,8 @@
     .box{
         background-color: white;
         box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.14), 0 6px 20px 0 rgba(0, 0, 0, 0.08);
+        width: 100%;
+        height: 72%;
         padding: 3%;
     }
 
