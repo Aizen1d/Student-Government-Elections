@@ -28,7 +28,9 @@ import os
 import requests
 import cloudinary
 import cloudinary.uploader
+
 from cloudinary.api import resources_by_tag, delete_resources_by_tag, delete_folder
+from services import send_email
 
 from models import Student, Organization, Announcement, Rule, Guideline, AzureToken, Election, SavedPosition, CreatedElectionPosition, Code, StudentPassword, PartyList, CoC
 
@@ -60,6 +62,10 @@ tags_metadata = [
     {
         "name": "Organization Election",
         "description": "Manage organization elections.",
+    },
+    {
+        "name": "CoC",
+        "description": "Manage CoCs."
     },
     {
         "name": "Code",
@@ -628,7 +634,7 @@ def get_Announcement_Attachment_By_Id(id: int, db: Session = Depends(get_db)):
         announcement = db.query(Announcement).get(id)
 
         if not announcement:
-            raise HTTPException(status_code=404, detail="Announcement not found")
+            return JSONResponse(status_code=404, content={"detail": "Announcement not found"})
 
         tag_name = announcement.AttachmentImage
 
@@ -1033,6 +1039,171 @@ def get_All_Organization_Election(org_data: OrganizationName, db: Session = Depe
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while fetching all elections from the database"})
 
+#################################################################
+## CoC APIs ## 
+
+""" CoC Table APIs """
+
+""" ** GET Methods: CoC Table APIs ** """
+@router.get("/coc/all", tags=["CoC"])
+def get_All_CoC(db: Session = Depends(get_db)):
+    try:
+        coc = db.query(CoC).order_by(CoC.CoCId).all()
+        return {"coc": [coc.to_dict(i+1) for i, coc in enumerate(coc)]}
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while fetching all CoCs from the database"})
+    
+@router.get("/coc/{id}", tags=["CoC"])
+def get_CoC_By_Id(id: int, db: Session = Depends(get_db)):
+    try:
+        coc = db.query(CoC).get(id)
+
+        if not coc:
+            return JSONResponse(status_code=404, content={"detail": "CoC not found"})
+        
+        # Get the student from the Student table using the student number in the CoC table
+        student = db.query(Student).filter(Student.StudentNumber == coc.StudentNumber).first()
+       
+        # Include student details in the CoC dictionary
+        coc_dict = coc.to_dict()
+
+        # Include image URLs in the CoC dictionary from cloudinary
+        if coc.DisplayPhoto:
+            response = resources_by_tag(coc.DisplayPhoto)
+            coc_dict["DisplayPhoto"] = response['resources'][0]['secure_url']
+
+        if coc.CertificationOfGrades:
+            response = resources_by_tag(coc.CertificationOfGrades)
+            coc_dict["CertificationOfGrades"] = response['resources'][0]['secure_url']
+
+        coc_dict["Student"] = student.to_dict() if student else None
+
+        return {"coc": coc_dict}
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while fetching CoC from the database"})
+
+""" ** POST Methods: All about CoC Table APIs ** """
+@router.post("/coc/submit", tags=["CoC"])
+async def save_CoC(election_id: int = Form(...), student_number: str = Form(...),
+                   verification_code: str = Form(...), address: str = Form(...),
+                   political_affiliation: str = Form(...), party_list: Optional[str] = Form(None),
+                   position: str = Form(...), display_photo: str = Form(...),
+                   display_photo_file_name : str = Form(...), certification_of_grades_file_name: str = Form(...),
+                   certification_of_grades: str = Form(...), db: Session = Depends(get_db)):
+    
+    # Check if the student exists in the database
+    student = db.query(Student).filter(Student.StudentNumber == student_number).first()
+    if not student:
+        return JSONResponse(status_code=404, content={"error": "Student number does not exist"})
+    
+    # Check if verification code is correct in code table and is not expired
+    code = db.query(Code).filter(Code.StudentNumber == student_number, Code.CodeValue == verification_code, Code.CodeExpirationDate > datetime.now()).first()
+    if not code:
+        return JSONResponse(status_code=400, content={"error": "Verification code is invalid or has expired"})
+    
+    # Check if the student has already filed a CoC for this position and is still pending or approved
+    existing_coc = db.query(CoC).filter(CoC.ElectionId == election_id, CoC.StudentNumber == student_number, CoC.SelectedPositionName == position, CoC.Status.in_(['Pending', 'Approved'])).first()
+    if existing_coc:
+        return JSONResponse(status_code=400, content={"error": "You have already filed a CoC for this position"})
+    
+    # Get the partylist id if the student is running under a partylist base on the partylist name
+    get_party_list = db.query(PartyList).filter(PartyList.PartyListName == party_list).first()
+
+    if get_party_list:
+        party_list = get_party_list.PartyListId
+    
+    new_coc = CoC(ElectionId=election_id,
+                    StudentNumber=student_number,
+                    VerificationCode=verification_code,
+                    Address=address,
+                    PoliticalAffiliation=political_affiliation,
+                    PartyListId=party_list,
+                    SelectedPositionName=position,
+                    DisplayPhoto='',
+                    CertificationOfGrades='',
+                    Status='Pending',
+                    created_at=datetime.now(),
+                    updated_at=datetime.now())
+    db.add(new_coc)
+    db.flush() # Flush the session to get the ID of the new CoC
+
+    if display_photo:
+        # Remove the prefix of the base64 string and keep only the data
+        base64_data = display_photo.split(',')[1]
+        
+        # Use the ID of the new CoC as the subfolder name under 'CoCs'            
+        folder_name = f"CoCs/coc_{new_coc.CoCId}"
+        tag_name = f'coc_display_photo_{new_coc.CoCId}'
+
+        # Upload file to Cloudinary with the folder name in the public ID
+        response = cloudinary.uploader.upload("data:image/jpeg;base64," + base64_data, public_id=f"{folder_name}/display_photo/{display_photo_file_name}", tags=[tag_name])
+
+        # Store the tag in the DisplayPhoto column
+        new_coc.DisplayPhoto = tag_name
+
+    if certification_of_grades:
+        # Remove the prefix of the base64 string and keep only the data
+        base64_data = certification_of_grades.split(',')[1]
+        
+        # Use the ID of the new CoC as the subfolder name under 'CoCs'            
+        folder_name = f"CoCs/coc_{new_coc.CoCId}"
+        tag_name = f'coc_cert_grades_{new_coc.CoCId}'
+
+        # Upload file to Cloudinary with the folder name in the public ID
+        response = cloudinary.uploader.upload("data:image/jpeg;base64," + base64_data, public_id=f"{folder_name}/cert_grades/{certification_of_grades_file_name}", tags=[tag_name])
+
+        # Store the tag in the CertificationOfGrades column
+        new_coc.CertificationOfGrades = tag_name
+
+    db.commit()
+
+    return {
+        "id": new_coc.CoCId,
+        "election_id": new_coc.ElectionId,
+        "student_number": new_coc.StudentNumber,
+        "verification_code": new_coc.VerificationCode,
+        "address": new_coc.Address,
+        "political_affiliation": new_coc.PoliticalAffiliation,
+        "party_list_id": new_coc.PartyListId,
+        "position": new_coc.SelectedPositionName,
+        "display_photo": new_coc.DisplayPhoto,
+        "certification_of_grades": new_coc.CertificationOfGrades,
+    }
+    
+@router.put("/coc/{id}/accept", tags=["CoC"])
+def accept_CoC(id: int, db: Session = Depends(get_db)):
+    try:
+        coc = db.query(CoC).get(id)
+
+        if not coc:
+            return JSONResponse(status_code=404, content={"detail": "CoC not found"})
+
+        coc.Status = 'Approved'
+        coc.updated_at = datetime.now()
+
+        db.commit()
+
+        return {"detail": "CoC id " + str(id) + " was successfully approved"}
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while approving CoC in the table CoC"})
+    
+@router.put("/coc/{id}/reject", tags=["CoC"])
+def reject_CoC(id: int, db: Session = Depends(get_db)):
+    try:
+        coc = db.query(CoC).get(id)
+
+        if not coc:
+            return JSONResponse(status_code=404, content={"detail": "CoC not found"})
+
+        coc.Status = 'Rejected'
+        coc.updated_at = datetime.now()
+
+        db.commit()
+
+        return {"detail": "CoC id " + str(id) + " was successfully rejected"}
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while rejecting CoC in the table CoC"})
+
 
 #################################################################
 ## Code APIs ## 
@@ -1050,17 +1221,17 @@ def generate_Code(code_for_student:CodeForStudent, db: Session = Depends(get_db)
     if not student:
         return JSONResponse(status_code=404, content={"error": "Student number does not exist"})
 
-    # Check if a code already exists for this student
-    existing_code = db.query(Code).filter(Code.StudentNumber == code_for_student.student_number).first()
+    # Check if a code already exists with same code type for this student
+    existing_code_type = db.query(Code).filter(Code.StudentNumber == code_for_student.student_number, Code.CodeType == code_for_student.code_type).first()
 
     # Generate a random code
     code_value = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
 
-    if existing_code:
+    if existing_code_type:
         # If a code already exists for this student, update it
-        existing_code.CodeValue = code_value
-        existing_code.CodeExpirationDate = datetime.now() + timedelta(minutes=30)
-        existing_code.updated_at = datetime.now()
+        existing_code_type.CodeValue = code_value
+        existing_code_type.CodeExpirationDate = datetime.now() + timedelta(minutes=30)
+        existing_code_type.updated_at = datetime.now()
     else:
         # If no code exists for this student, create a new one
         new_code = Code(StudentNumber=code_for_student.student_number, 
@@ -1074,6 +1245,8 @@ def generate_Code(code_for_student:CodeForStudent, db: Session = Depends(get_db)
     # Commit the session to save the changes in the database
     db.commit()
 
+    send_email(student.StudentNumber, student.EmailAddress, code_value)
+
     # Return the new or updated code
     return {"code": code_value}
 
@@ -1082,18 +1255,35 @@ def generate_Code(code_for_student:CodeForStudent, db: Session = Depends(get_db)
 
 """ PartyList Table APIs """
 
-class PartyListData(BaseModel):
-    party_name: str
-    cellphone_number: str
-    description: str
-    mission: str
-    vision: str
-    platforms: str
-    video_attachment: str
+""" ** GET Methods: Partylist Table APIs ** """
+@router.get("/partylist/all", tags=["Party List"])
+def get_All_PartyList(db: Session = Depends(get_db)):
+    try:
+        partylists = db.query(PartyList).order_by(PartyList.PartyListId).all()
+        return {"partylists": [partylist.to_dict(i+1) for i, partylist in enumerate(partylists)]}
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while fetching all partylists from the database"})
+    
+@router.get("/partylist/{id}", tags=["Party List"])
+def get_PartyList_By_Id(id: int, db: Session = Depends(get_db)):
+    try:
+        partylist = db.query(PartyList).get(id)
+
+        if not partylist:
+            return JSONResponse(status_code=404, content={"detail": "Partylist not found"})
+        
+        # Include image URL from cloudinary
+        if partylist.ImageAttachment:
+            response = resources_by_tag(partylist.ImageAttachment)
+            partylist.ImageAttachment = response['resources'][0]['secure_url']
+
+        return {"partylist": partylist.to_dict()}
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while fetching partylist from the database"})
 
 """ ** POST Methods: All about Partylist Table APIs ** """
 
-@router.post("/partylist/submit", tags=["PartyList"])
+@router.post("/partylist/submit", tags=["Party List"])
 async def save_PartyList(election_id: int = Form(...), party_name: str = Form(...), 
                          email_address: str = Form(...), cellphone_number: str = Form(...), 
                          description: str = Form(...), mission: str = Form(...),
@@ -1128,7 +1318,7 @@ async def save_PartyList(election_id: int = Form(...), party_name: str = Form(..
         # Upload file to Cloudinary with the folder name in the public ID
         response = cloudinary.uploader.upload("data:image/jpeg;base64," + base64_data, public_id=f"{folder_name}/{image_file_name}", tags=[f'partylist_{new_partylist.PartyListId}'])
 
-        # Store the URL in the ImageAttachment column
+        # Store the tag in the ImageAttachment column
         new_partylist.ImageAttachment = f'partylist_{new_partylist.PartyListId}'
         db.commit()
 
@@ -1145,6 +1335,39 @@ async def save_PartyList(election_id: int = Form(...), party_name: str = Form(..
         "video_attachment": new_partylist.VideoAttachment,
     }
 
+@router.put("/partylist/{id}/accept", tags=["Party List"])
+def accept_PartyList(id: int, db: Session = Depends(get_db)):
+    try:
+        partylist = db.query(PartyList).get(id)
+
+        if not partylist:
+            return JSONResponse(status_code=404, content={"detail": "Partylist not found"})
+
+        partylist.Status = 'Approved'
+        partylist.updated_at = datetime.now()
+
+        db.commit()
+
+        return {"detail": "Partylist id " + str(id) + " was successfully approved"}
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while approving partylist in the table PartyList"})
+    
+@router.put("/partylist/{id}/reject", tags=["Party List"])
+def reject_PartyList(id: int, db: Session = Depends(get_db)):
+    try:
+        partylist = db.query(PartyList).get(id)
+
+        if not partylist:
+            return JSONResponse(status_code=404, content={"detail": "Partylist not found"})
+
+        partylist.Status = 'Rejected'
+        partylist.updated_at = datetime.now()
+
+        db.commit()
+
+        return {"detail": "Partylist id " + str(id) + " was successfully rejected"}
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while rejecting partylist in the table PartyList"})
 
 #################################################################
 app.include_router(router)
