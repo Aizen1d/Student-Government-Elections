@@ -7,6 +7,8 @@ use Inertia\Inertia;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Models\Comelec;
 use App\Models\Election;
+use App\Models\CoC;
+use App\Models\PartyList;
 
 class ComelecController extends Controller
 {   
@@ -71,6 +73,55 @@ class ComelecController extends Controller
     public function insertData() 
     { 
         return inertia('Comelec/InsertData');
+    }
+
+    public function approvals() 
+    { 
+        return inertia('Comelec/Approvals');
+    }
+
+    public function approvalsView(Request $request) 
+    { 
+        $type = $request->type;
+        $id = $request->id;
+
+        if ($type === 'coc') {
+            $checkIfExisting = CoC::where('CoCId', $id)->first();
+        }
+        else if ($type === 'party-list') {
+            $checkIfExisting = PartyList::where('PartyListId', $id)->first();
+        }
+        else {
+            // Implement a return a message feature here soon
+            return redirect()->route('comelec.approvals');
+        }
+
+        if (!$id) {
+            // Implement a return a message feature here soon
+            return redirect()->route('comelec.approvals');
+        }
+
+        if (!$checkIfExisting) {
+            // Implement a return a message feature here soon
+            return redirect()->route('comelec.approvals');
+        }
+
+        if ($type === 'coc') {
+            return inertia('Comelec/ApprovalsViewCoC', [
+                'type' => $type,
+                'id' => $id,
+            ]);
+        }
+        else if ($type === 'party-list') {
+            return inertia('Comelec/ApprovalsViewParty', [
+                'type' => $type,
+                'id' => $id,
+            ]);
+        }
+        else {
+            // Implement a return a message feature here soon
+            return redirect()->route('comelec.approvals');
+        }
     }
 
     public function announcements() 
