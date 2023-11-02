@@ -62,10 +62,12 @@ export default {
                     <span>Insert Data</span>
                 </Link>
 
-                <a href="" class="main list-group-item py-2"  aria-expanded="true">
+                <Link href="/comelec/approvals" 
+                    :class="{ 'active': $inertia.page.url.startsWith('/comelec/approvals') }" 
+                    class="main list-group-item py-2"  aria-expanded="true">
                     <img class="side-icon" src="../../images/icons/approval.svg" alt="Icon" height="35" width="35">
                     <span>Approvals</span>
-                </a>
+                </Link>
 
                 <Link href="/comelec/announcements" 
                     :class="{ 'active': $inertia.page.url === '/comelec/announcements' }" 
