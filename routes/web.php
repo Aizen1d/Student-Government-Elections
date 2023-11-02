@@ -72,6 +72,12 @@ Route::group(['middleware' => 'check.auth.comelec'], function () {
     Route::get('/comelec/insert-data', [ComelecController::class, 'insertData'])
         ->name('comelec.insert.data');
 
+    Route::get('/comelec/approvals', [ComelecController::class, 'approvals'])
+        ->name('comelec.approvals');
+
+    Route::get('/comelec/approvals/view', [ComelecController::class, 'approvalsView'])
+        ->name('comelec.approvals.view');
+
     Route::get('/comelec/announcements', [ComelecController::class, 'announcements'])
         ->name('comelec.announcements');
 
