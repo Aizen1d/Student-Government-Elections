@@ -103,6 +103,21 @@
                         </div>
 
                         <div class="margin">
+                            <label class="form-label" for="type">Political Affiliation</label>
+                            <input class="form-control" type="text" name="name" v-model="CoCData.PoliticalAffiliation" :disabled="true">
+                        </div>
+
+                        <div v-if="CoCData.PoliticalAffiliation !== 'Independent'" class="margin">
+                            <label class="form-label" for="type">Party List</label>
+                            <input class="form-control" type="text" name="name" v-model="CoCData.PartyListId" :disabled="true">
+                        </div>
+
+                        <div class="margin">
+                            <label class="form-label" for="type">Position Selected</label>
+                            <input class="form-control" type="text" name="name" v-model="CoCData.SelectedPositionName" :disabled="true">
+                        </div>
+
+                        <div class="margin">
                             <label class="form-label" for="type">Address</label>
                             <input class="form-control" type="text" name="name" v-model="CoCData.Address" :disabled="true">
                         </div>
