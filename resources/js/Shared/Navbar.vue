@@ -19,6 +19,7 @@
     import axios from 'axios';
     import { useUserStore } from '../Stores/UserStore.js'
     import { ref } from 'vue';
+    import { useLocalStorage } from '@vueuse/core';
 
     export default {
         setup() {
@@ -41,6 +42,7 @@
             logout(){
                 axios.post('/logout')
                     .then(response => {
+                        localStorage.setItem('approvalsFilterType', '')
                         useUserStore().reset(); // Reset the user store 
                         location.reload(); // trick the system to logout and prevent backing 
                                          // (Reloading to check for cookie token and throw back to login page)
