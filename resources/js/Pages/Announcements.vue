@@ -22,7 +22,7 @@
             </div>
         </div>
 
-        <AnnouncementsSkeleton :loading="isAnnouncementLoading" :itemCount="3">
+        <AnnouncementsSkeleton v-if="hasFetchedAnnouncements" :loading="isAnnouncementLoading" :itemCount="3">
             <div class="list">
                 <div class="row" v-for="(announcement, index) in announcementData" :key="index">
                     <div class="col-11 column-list">
@@ -55,12 +55,15 @@
     import { ref } from 'vue'
     import { useAnnouncementStore } from '../Stores/AnnouncementStore'
     import { useQuery } from "@tanstack/vue-query";
+    import { useLocalStorage } from '@vueuse/core';
 
     export default{
         setup(props) {
             const type = props.type;
             const announcements = ref([]);
             const store = useAnnouncementStore();
+
+            const hasFetchedAnnouncements = useLocalStorage('hasFetchedAnnouncements', false)
 
             const fetchAnnouncementType = async () => {
                 const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/announcement/${type}`, {
@@ -69,6 +72,13 @@
                     }
                 });
                 console.log(`Get all announcements (${type}) successful. Duration: ${response.duration}ms`)
+
+                if (response.data.announcements.length === 0) {
+                    hasFetchedAnnouncements.value = false;
+                }
+                else {
+                    hasFetchedAnnouncements.value = true;
+                }
 
                 const announcements = await Promise.all(
                     response.data.announcements.map(async (announcement) => {
@@ -111,6 +121,7 @@
                 type,
                 announcements,
                 store,
+                hasFetchedAnnouncements,
 
                 announcementData,
                 isAnnouncementLoading,
