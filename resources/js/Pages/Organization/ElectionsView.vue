@@ -1,4 +1,5 @@
 <template>
+    <title>Elections View - EMS</title>
     <Sidebar></Sidebar>
     <Navbar></Navbar>
 

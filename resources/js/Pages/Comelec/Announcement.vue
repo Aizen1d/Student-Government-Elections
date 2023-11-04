@@ -1,4 +1,5 @@
 <template>
+    <title>Announcements - EMS</title>
     <Sidebar></Sidebar>
     <Navbar></Navbar>
 

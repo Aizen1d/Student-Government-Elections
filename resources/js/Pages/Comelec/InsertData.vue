@@ -1,4 +1,5 @@
 <template>
+    <title>Insert Data - EMS</title>
     <Sidebar></Sidebar>
     <Navbar></Navbar>
 

@@ -1,4 +1,5 @@
 <template>
+    <title>Approvals - EMS</title>
     <Sidebar></Sidebar>
     <Navbar></Navbar>
 

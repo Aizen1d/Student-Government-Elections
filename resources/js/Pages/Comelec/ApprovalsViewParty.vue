@@ -1,4 +1,5 @@
 <template>
+    <title>Approvals View Party - EMS</title>
     <Sidebar></Sidebar>
     <Navbar></Navbar>
 

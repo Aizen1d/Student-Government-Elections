@@ -1,4 +1,5 @@
 <template>
+    <title>Approvals View CoC - EMS</title>
     <Sidebar></Sidebar>
     <Navbar></Navbar>
 

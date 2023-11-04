@@ -1,4 +1,5 @@
 <template>
+    <title>Rules & Guidelines - EMS</title>
     <Sidebar></Sidebar>
     <Navbar></Navbar>
 
