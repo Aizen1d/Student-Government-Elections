@@ -53,6 +53,15 @@
                 if (this.loggingIn) {
                     return;
                 }
+                if (this.form.StudentNumber === '') {
+                    this.invalid = 'Please enter your student number.';
+                    return;
+                }
+                if (this.form.Password === '') {
+                    this.invalid = 'Please enter your password.';
+                    return;
+                }
+
                 this.loggingIn = true;
                 this.login_text = 'Logging in...';
                 axios.post('/login/auth', this.form)
