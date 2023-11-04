@@ -73,8 +73,17 @@
                     <h6>Video Attachment <span style="font-weight: lighter; font-size: 17px;">(Optional)</span></h6>
                     
                     <div class="" v-if="video !== '' && video.startsWith('https://www.youtube.com/watch?v=')">
-                        <iframe style="margin-left: 10%; margin-top: 1%; margin-bottom: 1%;" width="80%" height="350px" :src="getEmbedUrl(video)" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                        <iframe v-show="!videoLoadingState" @load="videoLoaded" style="margin-left: 10%; margin-top: 1%; margin-bottom: 1%;" width="80%" height="350px" :src="getEmbedUrl(video)" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
                     </div>
+                    <ImageSkeleton v-if="videoLoadingState && video.startsWith('https://www.youtube.com/watch?v=')" 
+                            :loading="videoLoadingState" 
+                            :itemCount="1" 
+                            :borderRadius="'0px'"
+                            :imageWidth="'32vw'" 
+                            :imageHeight="'37vh'"
+                            :containerMargin="'1% 10%'"
+                            :itemMargin="'0em'">
+                    </ImageSkeleton>
 
                     <label class="form-label" for="youtube-link">Youtube Link (must be embeddable)</label>
                     <input class="form-control margin" type="text" name="youtube-link" placeholder="Enter youtube video link" :disabled="is_submitting" v-model="video">
@@ -99,6 +108,7 @@
     import { ref, watch } from 'vue'
     import { router } from '@inertiajs/vue3';
     import { useLocalStorage } from '@vueuse/core';
+    import ImageSkeleton from '../Skeletons/ImageSkeleton.vue';
     import axios from 'axios'
 
     export default {
@@ -118,6 +128,7 @@
             const image_file = ref(null)
             const image_file_name = useLocalStorage(`party_list_image_file_name_${id.value}`, '')
             const video = useLocalStorage(`party_list_video_${id.value}`, '')
+            const videoLoadingState = ref(true)
 
             const is_submitting = ref(false)
 
@@ -163,6 +174,13 @@
                         img.src = reader.result;
                     };
                     reader.readAsDataURL(newValue);
+                }
+            });
+
+            // watch for changes in the video link then set the video loading state to true
+            watch(video, (newValue, oldValue) => {
+                if (newValue !== oldValue) {
+                    videoLoadingState.value = true;
                 }
             });
 
@@ -213,6 +231,7 @@
                 image_file,
                 image_file_name,
                 video,
+                videoLoadingState,
                 is_submitting,
 
                 cellphone_number_filter,
@@ -227,7 +246,8 @@
             Navbar,
             Standards,
             ActionButton,
-            ActionButton
+            ActionButton,
+            ImageSkeleton,
         },
         methods: {
             returnPage(){
@@ -237,6 +257,9 @@
                 let videoId = url.split('v=')[1];
                 
                 return 'https://www.youtube.com/embed/' + videoId;
+            },
+            videoLoaded(){
+                this.videoLoadingState = false;
             },
             clearImageAttachment() {
                 this.image_base_64 = '';
