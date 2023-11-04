@@ -110,7 +110,7 @@
                                 Your COC is your ticket to the adventure – seize it now and let the campus transformation begin!
                             </p>
 
-                            <button>Ready, Set, COC: Transform the Campus!</button>
+                            <button @click.prevent="redirectToElection">Ready, Set, COC: Transform the Campus!</button>
                         </div>
                     </div>
                 </div>
@@ -129,7 +129,7 @@
                                 Register now!
                             </p>
 
-                            <button>Ignite Now: Register Your Party!</button>
+                            <button @click.prevent="redirectToElection">Ignite Now: Register Your Party!</button>
                         </div>
                     </div>
                     <div class="col-6">
@@ -214,7 +214,10 @@
         methods: {
             displaySelectedRecentAnnouncement(id) {
                 router.visit(`/announcements/view?id=${id}`);
-            }
+            },
+            redirectToElection() {
+                router.visit('/elections');
+            },
         }
     }
 
