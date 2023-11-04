@@ -320,7 +320,8 @@
 
     .note{
         margin-top: 1.5%;
-        background-color: #c2eba7;
+        /* background-color: #c2eba7; */
+        background-color: #f7da90;
         box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.14), 0 6px 20px 0 rgba(0, 0, 0, 0.08);
         padding: 2%;
     }
@@ -331,7 +332,8 @@
 
     .note-timeline{
         margin-top: 1.5%;
-        background-color: #c2eba7;
+        /* background-color: #c2eba7; */
+        background-color: #f7da90;
         padding: 1.1%;
     }
 
@@ -352,7 +354,7 @@
     .position-box{
         background-color: white;
         box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.14), 0 6px 20px 0 rgba(0, 0, 0, 0.08);
-        padding: 3% 3% 2% 3%;
+        padding: 1.5% 3% 2% 3%;
     }
 
     .margin{
