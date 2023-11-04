@@ -28,23 +28,44 @@
                     <div class="note-timeline">
                         <h6 class="mx-3">Basic Information</h6>
                     </div>
-                    <div class="box">
-                    </div>
+                    <ImageSkeleton v-if="isCoCLoading" 
+                            :loading="isCoCLoading" 
+                            :itemCount="1" 
+                            :borderRadius="'0px'"
+                            :imageWidth="'38vw'" 
+                            :imageHeight="'45vh'"
+                            :containerMargin="'0% -0%'"
+                            :itemMargin="'0em'">
+                    </ImageSkeleton>
 
                     <div class="note-timeline">
                         <h6 class="mx-3">School Information</h6>
                     </div>
 
-                    <div class="box">
-                    </div>
+                    <ImageSkeleton v-if="isCoCLoading" 
+                            :loading="isCoCLoading" 
+                            :itemCount="1" 
+                            :borderRadius="'0px'"
+                            :imageWidth="'38vw'" 
+                            :imageHeight="'45vh'"
+                            :containerMargin="'0% -0%'"
+                            :itemMargin="'0em'">
+                    </ImageSkeleton>
                 </div>
 
                 <div class="col-6">
                     <div class="note-timeline">
                         <h6 class="mx-3">Attachments</h6>
                     </div>
-                    <div class="box">
-                    </div>
+                    <ImageSkeleton v-if="isCoCLoading" 
+                            :loading="isCoCLoading" 
+                            :itemCount="1" 
+                            :borderRadius="'0px'"
+                            :imageWidth="'38vw'" 
+                            :imageHeight="'55vh'"
+                            :containerMargin="'0% -0%'"
+                            :itemMargin="'0em'">
+                    </ImageSkeleton>
                 </div>
             </div>
         </div>
@@ -162,6 +183,7 @@
     import ActionButton from '../../Shared/ActionButton.vue';
     import BaseContainer from '../../Shared/BaseContainer.vue';
     import BaseTable from '../../Shared/BaseTable.vue';
+    import ImageSkeleton from '../../Skeletons/ImageSkeleton.vue';
 
     import { useQuery, useMutation, useQueryClient  } from "@tanstack/vue-query";
     import axios from 'axios';
@@ -206,7 +228,7 @@
                 CoCError,
             }
         },
-        components: { Navbar, Sidebar, ActionButton, BaseContainer, BaseTable, ActionButton },
+        components: { Navbar, Sidebar, ActionButton, BaseContainer, BaseTable, ActionButton, ImageSkeleton },
         props: {
             type: '',
             id: '',

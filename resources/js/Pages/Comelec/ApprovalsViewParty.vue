@@ -22,6 +22,42 @@
             </template>
         </div>
 
+        <div v-if="isPartylistLoading">
+            <div class="row">
+                <div class="col-6">
+                    <div class="note-timeline">
+                        <h6 class="mx-3">Basic Information</h6>
+                    </div>
+                    <ImageSkeleton v-if="isPartylistLoading" 
+                            :loading="isPartylistLoading" 
+                            :itemCount="1" 
+                            :borderRadius="'0px'"
+                            :imageWidth="'38vw'" 
+                            :imageHeight="'60vh'"
+                            :containerMargin="'0% -0%'"
+                            :itemMargin="'0em'">
+                    </ImageSkeleton>
+
+                </div>
+
+                <div class="col-6">
+                    <div class="note-timeline">
+                        <h6 class="mx-3">Attachments</h6>
+                    </div>
+                    <ImageSkeleton v-if="isPartylistLoading" 
+                            :loading="isPartylistLoading" 
+                            :itemCount="1" 
+                            :borderRadius="'0px'"
+                            :imageWidth="'38vw'" 
+                            :imageHeight="'60vh'"
+                            :containerMargin="'0% -0%'"
+                            :itemMargin="'0em'">
+                    </ImageSkeleton>
+                    
+                </div>
+            </div>
+        </div>
+
         <div v-if="!isPartylistLoading">
             <div class="row">
                 <div class="col-6">
@@ -103,6 +139,7 @@
     import ActionButton from '../../Shared/ActionButton.vue';
     import BaseContainer from '../../Shared/BaseContainer.vue';
     import BaseTable from '../../Shared/BaseTable.vue';
+    import ImageSkeleton from '../../Skeletons/ImageSkeleton.vue';
 
     import { useQuery, useMutation, useQueryClient  } from "@tanstack/vue-query";
     import axios from 'axios';
@@ -147,7 +184,7 @@
                 partylistError,
             }
         },
-        components: { Navbar, Sidebar, ActionButton, BaseContainer, BaseTable, ActionButton },
+        components: { Navbar, Sidebar, ActionButton, BaseContainer, BaseTable, ActionButton, ImageSkeleton },
         props: {
             type: '',
             id: '',
