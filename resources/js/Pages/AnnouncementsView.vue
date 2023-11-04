@@ -1,4 +1,5 @@
 <template>
+    <title>Announcements View - COMELEC Portal</title>
     <Navbar></Navbar>
     <div>
         <div class="main">

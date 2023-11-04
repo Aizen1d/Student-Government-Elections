@@ -1,4 +1,5 @@
 <template>
+    <title>Register Party - COMELEC Portal</title>
     <Navbar></Navbar>
 
     <div class="main">

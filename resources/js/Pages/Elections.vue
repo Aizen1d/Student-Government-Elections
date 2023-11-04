@@ -1,4 +1,5 @@
 <template>
+    <title>Elections - COMELEC Portal</title>
     <Navbar></Navbar>
     <div class="parent">
         <BaseContainer class="item-container" :height="'300px'" :maxHeight="'335px'">

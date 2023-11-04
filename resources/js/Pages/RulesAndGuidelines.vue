@@ -1,4 +1,5 @@
 <template>
+    <title>Rules & Guidelines - COMELEC Portal</title>
     <Navbar></Navbar>
 
     <div class="container-fluid main">

@@ -1,4 +1,5 @@
 <template>
+        <title>File CoC - COMELEC Portal</title>
     <Navbar></Navbar>
 
     <div class="main">

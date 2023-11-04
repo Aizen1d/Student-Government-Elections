@@ -1,4 +1,5 @@
 <template>
+    <title>Home - COMELEC Portal</title>
     <Navbar></Navbar>
 
     <div>

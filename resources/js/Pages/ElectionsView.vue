@@ -1,4 +1,5 @@
 <template>
+    <title>Elections View - COMELEC Portal</title>
     <Navbar></Navbar>
     <div v-if="isElectionLoading"></div>
     <div v-else class="main">
