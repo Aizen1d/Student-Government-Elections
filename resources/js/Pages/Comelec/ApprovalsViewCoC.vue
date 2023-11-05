@@ -103,21 +103,6 @@
                         </div>
 
                         <div class="margin">
-                            <label class="form-label" for="type">Political Affiliation</label>
-                            <input class="form-control" type="text" name="name" v-model="CoCData.PoliticalAffiliation" :disabled="true">
-                        </div>
-
-                        <div v-if="CoCData.PoliticalAffiliation !== 'Independent'" class="margin">
-                            <label class="form-label" for="type">Party List</label>
-                            <input class="form-control" type="text" name="name" v-model="CoCData.PartyListId" :disabled="true">
-                        </div>
-
-                        <div class="margin">
-                            <label class="form-label" for="type">Position Selected</label>
-                            <input class="form-control" type="text" name="name" v-model="CoCData.SelectedPositionName" :disabled="true">
-                        </div>
-
-                        <div class="margin">
                             <label class="form-label" for="type">Address</label>
                             <input class="form-control" type="text" name="name" v-model="CoCData.Address" :disabled="true">
                         </div>
@@ -134,29 +119,60 @@
                     </div>
 
                     <div class="note-timeline">
-                        <h6 class="mx-3">School Information</h6>
+                        <h6 class="mx-3">Political Information</h6>
                     </div>
 
                     <div class="box">
                         <div class="first-info">
-                            <label class="form-label" for="type">Course</label>
-                            <input class="form-control" type="text" name="name" v-model="CoCData.Student.Course" :disabled="true">
+                            <label class="form-label" for="type">Political Affiliation</label>
+                            <input class="form-control" type="text" name="name" v-model="CoCData.PoliticalAffiliation" :disabled="true">
+                        </div>
+
+                        <div v-if="CoCData.PoliticalAffiliation !== 'Independent'" class="margin">
+                            <label class="form-label" for="type">Party List</label>
+                            <input class="form-control" type="text" name="name" v-model="CoCData.PartyListId" :disabled="true">
                         </div>
 
                         <div class="margin">
-                            <label class="form-label" for="type">Current Semester Enrolled</label>
-                            <input class="form-control" type="text" name="name" v-model="CoCData.Student.CurrentSemesterEnrolled" :disabled="true">
+                            <label class="form-label" for="type">Position Selected</label>
+                            <input class="form-control" type="text" name="name" v-model="CoCData.SelectedPositionName" :disabled="true">
+                        </div>       
+                    </div>
+
+                    <div class="note-timeline">
+                        <h6 class="mx-3">School Information</h6>
+                    </div>
+
+                    <div class="box">
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="first-info">
+                                    <label class="form-label" for="type">Course</label>
+                                    <input class="form-control" type="text" name="name" v-model="CoCData.Student.Course" :disabled="true">
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="first-info">
+                                    <label class="form-label" for="type">Current Semester Enrolled</label>
+                                    <input class="form-control" type="text" name="name" v-model="CoCData.Student.CurrentSemesterEnrolled" :disabled="true">
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="margin">
-                            <label class="form-label" for="type">Year Enrolled</label>
-                            <input class="form-control" type="text" name="name" v-model="CoCData.Student.YearEnrolled" :disabled="true">
-                        </div>
-
-                        <div class="margin">
-                            <label class="form-label" for="type">Is Officer</label>
-                            <input class="form-control" type="text" name="name" v-model="isOfficer" :disabled="true">
-                        </div>
+                        <div class="row my-2">
+                            <div class="col-6">
+                                <div class="margin">
+                                    <label class="form-label" for="type">Year Enrolled</label>
+                                    <input class="form-control" type="text" name="name" v-model="CoCData.Student.YearEnrolled" :disabled="true">
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="margin">
+                                    <label class="form-label" for="type">Is Officer</label>
+                                    <input class="form-control" type="text" name="name" v-model="isOfficer" :disabled="true">
+                                </div>
+                            </div>
+                        </div>            
                     </div>
                 </div>
 
