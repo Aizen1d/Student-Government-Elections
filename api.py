@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException, Depends, APIRouter, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse
 
-from sqlalchemy import inspect
+from sqlalchemy import inspect, func
 from sqlalchemy.orm import Session
 
 from reportlab.lib.pagesizes import letter
@@ -28,11 +28,12 @@ import os
 import requests
 import cloudinary
 import cloudinary.uploader
+import asyncio
 
 from cloudinary.api import resources_by_tag, delete_resources_by_tag, delete_folder
-from services import send_email
+from services import send_verification_code_email, send_pass_code_queue_email, send_pass_code_manual_email
 
-from models import Student, Organization, Announcement, Rule, Guideline, AzureToken, Election, SavedPosition, CreatedElectionPosition, Code, StudentPassword, PartyList, CoC
+from models import Student, Organization, Announcement, Rule, Guideline, AzureToken, Election, SavedPosition, CreatedElectionPosition, Code, StudentPassword, PartyList, CoC, InsertDataQueues
 
 #################################################################
 """ Settings """
@@ -246,6 +247,37 @@ def get_All_Students(db: Session = Depends(get_db)):
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while fetching all students from the database"})
     
+@router.get("/student/insert/data/queues/all", tags=["Student"])
+def get_All_Insert_Data_Queues(db: Session = Depends(get_db)):
+    try:
+        queues = db.query(InsertDataQueues).order_by(InsertDataQueues.QueueId).all()
+        return {"queues": [queue.to_dict() for queue in queues]}
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while fetching all queues from the database"})
+
+    
+""" ** POST Methods: All about students APIs ** """
+# Create a queue
+queue = asyncio.Queue()
+
+# Define a worker function
+async def insert_data_email_worker():
+    while True:
+        db = SessionLocal()
+
+        # Get a task from the queue
+        task = await queue.get()
+
+        # Process the task
+        queue_id, student_number, student_email, pass_code = task
+        send_pass_code_queue_email(student_number, student_email, pass_code, queue_id)
+
+        # Indicate that the task is done
+        queue.task_done()
+
+# Start the worker in the background
+asyncio.create_task(insert_data_email_worker())
+    
 @router.post("/student/insert/data/manual", tags=["Student"])
 def student_Insert_Data_Manual(data: SaveStudentData, db: Session = Depends(get_db)):
     # Check if a student with the given StudentNumber already exists
@@ -257,7 +289,7 @@ def student_Insert_Data_Manual(data: SaveStudentData, db: Session = Depends(get_
     
     if existing_email:
         return {"error": f"Student with email address {data.email} already exists."}
-
+    
     # Insert the data into the database
     student = Student(
         StudentNumber=data.student_number,
@@ -273,6 +305,26 @@ def student_Insert_Data_Manual(data: SaveStudentData, db: Session = Depends(get_
     )
     db.add(student)
     db.commit()
+
+    # Generate a unique code and add it to the database
+    while True:
+        # Generate a random code
+        pass_value = ''.join(random.choices(string.ascii_uppercase + string.digits, k=16))
+
+        # Check if the code already exists in the database
+        existing_code = db.query(StudentPassword).filter(StudentPassword.Password == pass_value).first()
+
+        # If the code doesn't exist in the database, insert it and break the loop
+        if not existing_code:
+            new_pass = StudentPassword(StudentNumber=data.student_number, 
+                            Password=pass_value,
+                            created_at=datetime.now(),
+                            updated_at=datetime.now())
+            db.add(new_pass)
+            db.commit()
+
+            send_pass_code_manual_email(data.student_number, data.email, pass_value)
+            break
 
     return {"message": f"Student {data.student_number} was inserted successfully."}
 
@@ -313,6 +365,18 @@ async def student_Insert_Data_Attachment(files: List[UploadFile] = File(...), db
         inserted_students = []
         not_inserted_students_due_to_uniqueness = []  # List to store students not inserted
         incomplete_student_column = []
+
+        # Create a new queue in the InsertDataQueues table
+        new_queue = InsertDataQueues(QueueName=file.filename, 
+                                   ToEmailTotal=0, 
+                                   EmailSent=0, 
+                                   EmailFailed=0,
+                                   Status="Pending",
+                                   created_at=datetime.now(),
+                                   updated_at=datetime.now())
+        db.add(new_queue)
+        db.flush() # Flush the session to get the QueueId
+
         for index, row in df.iterrows():
            
             # If the student number and email do not exist and all fields are not empty
@@ -332,6 +396,28 @@ async def student_Insert_Data_Attachment(files: List[UploadFile] = File(...), db
                 inserted_student_count += 1
                 db.add(student)
                 inserted_students.append([row['StudentNumber'], row['FirstName'], row.get('MiddleName', ''), row['LastName'], row['EmailAddress']])
+
+                # Generate a unique code and add it to the database
+                while True:
+                    # Generate a random code
+                    pass_value = ''.join(random.choices(string.ascii_uppercase + string.digits, k=16))
+
+                    # Check if the code already exists in the database
+                    existing_code = db.query(StudentPassword).filter(StudentPassword.Password == pass_value).first()
+
+                    # If the code doesn't exist in the database, insert it and break the loop
+                    if not existing_code:
+                        new_pass = StudentPassword(StudentNumber=row['StudentNumber'], 
+                                        Password=pass_value,
+                                        created_at=datetime.now(),
+                                        updated_at=datetime.now())
+                        db.add(new_pass)
+                        db.commit()
+
+                        # Add the email task to the queue
+                        new_queue.ToEmailTotal += 1
+                        await queue.put((new_queue.QueueId, row['StudentNumber'], row['EmailAddress'], pass_value))
+                        break
 
                 # Commit every 100 students
                 if inserted_student_count % 100 == 0:
@@ -433,7 +519,7 @@ async def student_Insert_Data_Attachment(files: List[UploadFile] = File(...), db
         return JSONResponse({
                     "responses": responses,
                 })
-
+    
 #################################################################
 """ Election Table APIs """
 
@@ -1245,10 +1331,15 @@ def generate_Code(code_for_student:CodeForStudent, db: Session = Depends(get_db)
     # Commit the session to save the changes in the database
     db.commit()
 
-    send_email(student.StudentNumber, student.EmailAddress, code_value)
+    send_verification_code_email(student.StudentNumber, student.EmailAddress, code_value)
 
-    # Return the new or updated code
-    return {"code": code_value}
+    # Return the new or updated code including the email address of the student
+    return {
+        "student_number": student.StudentNumber,
+        "email_address": student.EmailAddress,
+        "code_value": code_value,
+        "code_type": code_for_student.code_type,
+    }
 
 #################################################################
 ## PartyList APIs ## 
@@ -1263,6 +1354,14 @@ def get_All_PartyList(db: Session = Depends(get_db)):
         return {"partylists": [partylist.to_dict(i+1) for i, partylist in enumerate(partylists)]}
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while fetching all partylists from the database"})
+    
+@router.get("/partylist/approved/all", tags=["Party List"])
+def get_All_Approved_PartyList(db: Session = Depends(get_db)):
+    try:
+        partylists = db.query(PartyList).filter(PartyList.Status == 'Approved').order_by(PartyList.PartyListId).all()
+        return {"partylists": [partylist.to_dict(i+1) for i, partylist in enumerate(partylists)]}
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while fetching all approved partylists from the database"})
     
 @router.get("/partylist/{id}", tags=["Party List"])
 def get_PartyList_By_Id(id: int, db: Session = Depends(get_db)):
@@ -1280,6 +1379,21 @@ def get_PartyList_By_Id(id: int, db: Session = Depends(get_db)):
         return {"partylist": partylist.to_dict()}
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while fetching partylist from the database"})
+    
+# check if partylist is not yet claimed by name
+@router.get("/partylist/is-taken/{name}", tags=["Party List"])
+def get_PartyList_By_Name(name: str, db: Session = Depends(get_db)):
+    try:
+        # Ignore case
+        partylist = db.query(PartyList).filter(func.lower(PartyList.PartyListName) == func.lower(name)).first()
+
+        if not partylist:
+            return False
+
+        return True
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while fetching partylist from the database"})
+
 
 """ ** POST Methods: All about Partylist Table APIs ** """
 
