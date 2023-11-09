@@ -56,7 +56,7 @@ export default {
 
             <template v-if="user_role === 'comelec'">
                 <Link href="/comelec/insert-data" 
-                    :class="{ 'active': $inertia.page.url === '/comelec/insert-data' }" 
+                    :class="{ 'active': $inertia.page.url.startsWith('/comelec/insert-data') }" 
                     class="main list-group-item py-2">
                     <img class="side-icon" src="../../images/icons/insert_data.svg" alt="Icon" height="35" width="35">
                     <span>Insert Data</span>

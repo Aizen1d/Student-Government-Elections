@@ -75,6 +75,11 @@ class ComelecController extends Controller
         return inertia('Comelec/InsertData');
     }
 
+    public function insertDataQueues() 
+    { 
+        return inertia('Comelec/InsertDataQueues');
+    }
+
     public function approvals() 
     { 
         return inertia('Comelec/Approvals');
