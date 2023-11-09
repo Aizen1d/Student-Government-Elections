@@ -4,8 +4,15 @@
     <Navbar></Navbar>
 
     <div class="components mb-4">
-        <h2>Insert Data</h2>
-        
+        <div class="row">
+            <div class="col-6">
+                <h2 class="mx-3">Insert Data</h2>
+            </div>
+            <div class="col-6" style="text-align: end;">
+                <ActionButton class="task-button" @click.prevent="redirectToTasks">Queues</ActionButton>
+            </div>
+        </div>
+            
         <form action="">
             <div class="row g-4">
                 <div class="col-6">
@@ -23,13 +30,13 @@
                                 <input type="hidden" name="course">
                                 <select class="form-select" aria-label="Default select example" v-model="course">
                                     <option value="" disabled hidden selected>Select</option>
-                                    <option value="1">BBTLEDHE</option>
-                                    <option value="2">BSBAHRM</option>
-                                    <option value="3">BSBA-MM</option>
-                                    <option value="4">BSENTREP</option>
-                                    <option value="5">BSIT</option>
-                                    <option value="6">BPAPFM</option>
-                                    <option value="7">DOMTMOM</option>
+                                    <option value="BBTLEDHE">BBTLEDHE</option>
+                                    <option value="BSBAHRM">BSBAHRM</option>
+                                    <option value="BSBA-MM">BSBA-MM</option>
+                                    <option value="BSENTREP">BSENTREP</option>
+                                    <option value="BSIT">BSIT</option>
+                                    <option value="BPAPFM">BPAPFM</option>
+                                    <option value="DOMTMOM">DOMTMOM</option>
                                 </select>
                             </div>
                         </div>
@@ -69,10 +76,10 @@
                         <div>
                             <div class="row mt-3">
                                 <div class="col">
-                                    <ActionButton class="clear" @click.prevent="clearAll">Clear All</ActionButton>
+                                    <ActionButton class="clear" :disabled="saving" @click.prevent="clearAll">Clear All</ActionButton>
                                 </div>
                                 <div class="col">
-                                    <ActionButton class="insert" @click.prevent="manualInsert">Insert</ActionButton>
+                                    <ActionButton class="insert" :disabled="saving" @click.prevent="manualInsert">Insert</ActionButton>
                                 </div>
                             </div>
                         </div>
@@ -169,6 +176,9 @@
             },
         },
         methods: {
+            redirectToTasks() {
+                router.visit('/comelec/insert-data/queues');
+            },
             getYears() {
                 const startYear = 2020;
                 const endYear = new Date().getFullYear() + 2;
@@ -316,7 +326,7 @@
                         }
                         else {
                             console.log(`File successfully uploaded. Duration: ${response.duration}`)
-                            alert(`File: ${fileResponse.file}, Message: ${fileResponse.message}`);
+                            alert(`File: ${fileResponse.file}, Message: ${fileResponse.message} Emailing queues started`);
                         }
                     });
 
@@ -337,6 +347,10 @@
 </script>
 
 <style scoped>
+
+.task-button{
+    margin-bottom: 2%;
+}
 .components{
     margin-left: 17.3%;
     margin-top: 2%;
