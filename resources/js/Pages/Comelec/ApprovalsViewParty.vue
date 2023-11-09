@@ -112,7 +112,7 @@
 
                         <div class="image">
                             <h3 v-if="!partylistData.ImageAttachment || partylistData.ImageAttachment === '' ">No image attached</h3>
-                            <img v-else :src="partylistData.ImageAttachment" style="width: 80%; height: 50%; margin-left: 0%; margin-top: 1%;" >
+                            <img v-else :src="partylistData.ImageAttachment" @click="viewImage(partylistData.ImageAttachment)" style="width: 80%; height: 50%; margin-left: 0%; margin-top: 1%; cursor: pointer;" >
                         </div>
 
                         <hr class="my-4">

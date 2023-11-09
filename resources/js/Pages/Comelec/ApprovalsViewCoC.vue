@@ -178,7 +178,7 @@
 
                 <div class="col-6">
                     <div class="note-timeline">
-                        <h6 class="mx-3">Attachments</h6>
+                        <h6 class="mx-3">Attachments (Click to view in fullsize)</h6>
 
                     </div>
                     <div class="box">

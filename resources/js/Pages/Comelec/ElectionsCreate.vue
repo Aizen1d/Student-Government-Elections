@@ -7,7 +7,7 @@
         <div class="row utilities">
             <div class="col-5">
                 <h2 class="my-1">
-                    <span class="return" @click="returnPage">Elections</span> / Create Election
+                    <span class="return" @click="returnPage">Elections</span> > Create Election
                 </h2>
             </div>
         </div>
