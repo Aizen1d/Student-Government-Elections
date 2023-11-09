@@ -284,6 +284,30 @@ class StudentPassword(Base):
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }
     
+class InsertDataQueues(Base):
+    __tablename__ = "InsertDataQueues"
+
+    QueueId = Column(Integer, primary_key=True)
+    QueueName = Column(String)
+    ToEmailTotal = Column(Integer)
+    EmailSent = Column(Integer)
+    EmailFailed = Column(Integer)
+    Status = Column(String)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    def to_dict(self):
+        return {
+            "QueueId": self.QueueId,
+            "QueueName": self.QueueName,
+            "ToEmailTotal": self.ToEmailTotal,
+            "EmailSent": self.EmailSent,
+            "EmailFailed": self.EmailFailed,
+            "Status": self.Status,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None
+        }
+    
 #########################################################
 """ Comelec Portal Table Models """
 
