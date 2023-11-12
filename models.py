@@ -18,7 +18,7 @@ class Student(Base):
     MiddleName = Column(String, nullable=True)
     LastName = Column(String)
     EmailAddress = Column(String, unique=True)
-    BirthDate = Column(Date)
+    Year = Column(String)
     Course = Column(String)
     CurrentSemesterEnrolled = Column(String)
     YearEnrolled = Column(String)
@@ -34,7 +34,7 @@ class Student(Base):
             "MiddleName": self.MiddleName,
             "LastName": self.LastName,
             "EmailAddress": self.EmailAddress,
-            "BirthDate": self.BirthDate.isoformat() if self.BirthDate else None,
+            "Year": self.Year,
             "Course": self.Course,
             "CurrentSemesterEnrolled": self.CurrentSemesterEnrolled,
             "YearEnrolled": self.YearEnrolled,
@@ -318,7 +318,7 @@ class CoC(Base):
     ElectionId = Column(Integer, ForeignKey('Election.ElectionId'))
     StudentNumber = Column(String(15), ForeignKey('Student.StudentNumber'), unique=True)
     VerificationCode = Column(String)
-    Address = Column(Text)
+    Motto = Column(String)
     PoliticalAffiliation = Column(String)
     PartyListId = Column(Integer, ForeignKey('PartyList.PartyListId'), nullable=True)
     SelectedPositionName = Column(String)
@@ -335,7 +335,7 @@ class CoC(Base):
             "ElectionId": self.ElectionId,
             "StudentNumber": self.StudentNumber,
             "VerificationCode": self.VerificationCode,
-            "Address": self.Address,
+            "Motto": self.Motto,
             "PoliticalAffiliation": self.PoliticalAffiliation,
             "PartyListId": self.PartyListId,
             "SelectedPositionName": self.SelectedPositionName,
