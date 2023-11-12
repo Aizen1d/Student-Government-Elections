@@ -27,7 +27,11 @@
                         </Link>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link content mx-5" href="#">DIRECTORY</a>
+                        <Link href="/directory" 
+                            class="nav-link content mx-5"
+                            :class="{ 'active': $inertia.page.url.startsWith('/directory') }" 
+                            >DIRECTORY
+                        </Link>
                     </li>
                     <li class="nav-item">
                         <Link href="/rules-and-guidelines" 
