@@ -1,18 +1,31 @@
 <template>
     <title>Elections - COMELEC Portal</title>
     <Navbar></Navbar>
+    
+    <div class="main">
+        <img src="../../images/Home/comelec.jpg" alt="" class="main-ann">
+    </div>
+    
+    <div class="header row">
+        <div class="col">
+            <h1 class="eligible">
+                ELECTIONS
+            </h1>
+        </div>
+    </div>
+
     <div class="parent">
-        <BaseContainer class="item-container" :height="'300px'" :maxHeight="'335px'">
-            <BaseTable class="item-table" 
-                    :columns="['Election Name', 'Election Type']" 
-                    :tableHeight="'auto'"
-                    :maxTableHeight="'235px'">
-                <tr v-for="(election, index) in electionsData" :key="index" @click="selectItem(election)">
-                    <td class="my-cell">{{ election.name }}</td>
-                    <td class="my-cell">{{ election.type }}</td>
-                </tr>
-            </BaseTable>
-        </BaseContainer>
+        <BaseTable class="item-table" 
+                :columns="['Election Type', 'Election Name', 'Status']" 
+                :columnWidths="['30%', '50%', '20%']"
+                :tableHeight="'auto'"
+                :maxTableHeight="'235px'">
+            <tr v-for="(election, index) in electionsData" :key="index" @click="selectItem(election)">
+                <td style="width: 30%;" class="my-cell">{{ election.type }}</td>
+                <td style="width: 50%;" class="my-cell">{{ election.name }}</td>
+                <td style="width: 20%;" class="my-cell">Status</td>
+            </tr>
+        </BaseTable>
     </div>
 </template>
 
@@ -79,6 +92,19 @@
 </script>
 
 <style scoped>
+    .eligible{
+        font-size: 35px;
+        font-weight: 800;
+        letter-spacing: 2px;
+    }
+
+    .header{
+        margin-top: -8.5%;
+        margin-bottom: 1%;
+        margin-left: 14.3%;
+        width: 78%;
+    }
+
     .parent{
         display: flex;
         justify-content: center;
@@ -87,5 +113,19 @@
     .item-container{
         width: 70%;
         margin-top: 2%;
+    }
+
+    .main{
+        height: 500px;
+    }
+
+    .main-ann{
+        width: 100%;
+        height: 60%;
+        object-fit: cover;
+    }
+
+    .item-table{
+        width: 70%;
     }
 </style>
