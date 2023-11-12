@@ -39,5 +39,14 @@ Route::get('/announcements', [PublicController::class, 'announcements'])
 Route::get('/announcements/view', [PublicController::class, 'announcementsView'])
 ->name('announcements.view');
 
+Route::get('/directory', [PublicController::class, 'directory'])
+->name('directory');
+
+Route::get('/directory/voters', [PublicController::class, 'directoryVoters'])
+->name('directory.voters');
+
+Route::get('/directory/candidates', [PublicController::class, 'directoryCandidates'])
+->name('directory.candidates');
+
 Route::get('/rules-and-guidelines', [PublicController::class, 'rulesAndGuidelines'])
 ->name('rules.and.guidelines');

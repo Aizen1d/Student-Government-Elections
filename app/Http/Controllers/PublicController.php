@@ -104,6 +104,18 @@ class PublicController extends Controller
         ]);
     }
 
+    public function directory() {
+        return inertia('DirectoryList');
+    }
+
+    public function directoryVoters() {
+        return inertia('DirectoryVoters');
+    }
+
+    public function directoryCandidates() {
+        return inertia('DirectoryCandidates');
+    }
+
     public function rulesAndGuidelines() {
         return inertia('RulesAndGuidelines');
     }
