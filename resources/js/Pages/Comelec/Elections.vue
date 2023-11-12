@@ -19,7 +19,7 @@
             </div>
 
             <BaseTable class="item-table" 
-                :columns="['ID', 'Name', 'Type', 'School Year', 'Created By', 'Date Created', 'Status']" 
+                :columns="['ID', 'Title', 'Organization', 'School Year', 'Created By', 'Start of Election', 'Date Created', 'Status']" 
                 :columnWidths=columnWidths
                 :tableHeight="'auto'"
                 :maxTableHeight="'300px'">
@@ -70,7 +70,7 @@
             ];
 
             const items = ref([]);
-            const columnWidths = ['10%', '20%', '20%', '20%', '20%', '20%', '20%'];
+            const columnWidths = ['10%', '20%', '20%', '20%', '20%', '20%', '20%', '10%'];
             
             const fetchElectionsTable = async () => {
                 const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/election/all`);
@@ -87,6 +87,7 @@
                         type: item.ElectionType,
                         school_year: item.SchoolYear,
                         created_by_name: item.CreatedByName,
+                        election_start: new Date(item.ElectionStart).toLocaleString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }),
                         date_created: formattedDate,
                         status: item.ElectionStatus,
                     }
@@ -136,6 +137,10 @@
         methods: {
             createElectionRedirect(){
                 router.visit('/comelec/elections/create');
+            },
+            formatDate(date) {
+                let options = { year: 'numeric', month: 'long', day: 'numeric' };
+                return new Date(date).toLocaleDateString(undefined, options);
             },
             selectItem(item) {
                 router.visit(`/comelec/elections/view`, {
