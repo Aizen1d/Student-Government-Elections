@@ -212,7 +212,7 @@ class SaveStudentData(BaseModel):
     middle_name: str
     last_name: str
     email: str
-    birth_date: date
+    year: str
     semester: str
     year_enrolled: str
 
@@ -223,19 +223,30 @@ def validate_columns(df, expected_columns):
     return True, {}
 
 def process_data(df):
+    # Make a copy of the DataFrame before removing duplicates
+    df_before = df.copy()
+
     # Convert 'YearEnrolled' to string
     df['YearEnrolled'] = df['YearEnrolled'].apply(lambda x: str(int(x)) if pd.notnull(x) else x)
 
-    # Clean the data: trim leading/trailing whitespace
-    df = df.apply(lambda col: col.str.strip() if col.dtype == 'object' else col)
+    # Remove duplicate entries based on 'EmailAddress'
+    df.sort_values(by=['EmailAddress'], inplace=True)
+    df.drop_duplicates(subset=['EmailAddress'], keep='first', inplace=True)
 
     # Remove duplicate entries based on 'StudentNumber'
+    df.sort_values(by=['StudentNumber'], inplace=True)
     df.drop_duplicates(subset=['StudentNumber'], keep='first', inplace=True)
 
     # Replace 'nan' with an empty string
     df.fillna('', inplace=True)
     
-    return df
+    # Get the removed duplicates by finding rows in df_before that aren't in df
+    removed_duplicates = df_before.loc[df_before.index.difference(df.index)]
+
+    # Drop additional columns from removed_duplicates
+    removed_duplicates = removed_duplicates[['StudentNumber', 'FirstName', 'MiddleName', 'LastName', 'EmailAddress']]
+
+    return df, removed_duplicates
 
 """ ** GET Methods: All about students APIs ** """
 
@@ -243,6 +254,16 @@ def process_data(df):
 def get_All_Students(db: Session = Depends(get_db)):
     try:
         students = db.query(Student).order_by(Student.StudentId).all()
+        return {"students": [student.to_dict() for student in students]}
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while fetching all students from the database"})
+    
+@router.get("/student/all/arranged", tags=["Student"])
+def get_All_Students_Arranged(db: Session = Depends(get_db)):
+    try:
+        # Arrange by course, last name, first name, middle name
+        students = db.query(Student).order_by(Student.Course, Student.LastName, Student.FirstName, Student.MiddleName).all()
+
         return {"students": [student.to_dict() for student in students]}
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while fetching all students from the database"})
@@ -297,7 +318,7 @@ def student_Insert_Data_Manual(data: SaveStudentData, db: Session = Depends(get_
         MiddleName=data.middle_name,
         LastName=data.last_name,
         EmailAddress=data.email,
-        BirthDate=data.birth_date,
+        Year=data.year,
         Course=data.course,
         CurrentSemesterEnrolled=data.semester,
         YearEnrolled=data.year_enrolled,
@@ -345,7 +366,7 @@ async def student_Insert_Data_Attachment(files: List[UploadFile] = File(...), db
 
         # Define the expected columns
         expected_columns = ['StudentNumber', 'FirstName', 'MiddleName', 'LastName', 'EmailAddress', 
-                            'BirthDate', 'Course', 'CurrentSemesterEnrolled', 'YearEnrolled', 'IsOfficer']
+                            'Year', 'Course', 'CurrentSemesterEnrolled', 'YearEnrolled', 'IsOfficer']
 
         # Check if all expected columns exist in the DataFrame
         valid, response = validate_columns(df, expected_columns)
@@ -354,7 +375,7 @@ async def student_Insert_Data_Attachment(files: List[UploadFile] = File(...), db
             continue
 
         # Process the data
-        df = process_data(df)
+        df, removed_duplicates = process_data(df)
 
         existing_students = {student.StudentNumber for student in db.query(Student).all()}
         existing_emails = {student.EmailAddress for student in db.query(Student).all()}
@@ -380,14 +401,14 @@ async def student_Insert_Data_Attachment(files: List[UploadFile] = File(...), db
         for index, row in df.iterrows():
            
             # If the student number and email do not exist and all fields are not empty
-            if str(row['StudentNumber']) not in existing_students and str(row['EmailAddress']) not in existing_emails and all(row[field] != '' for field in ['FirstName', 'LastName', 'EmailAddress', 'BirthDate', 'Course', 'CurrentSemesterEnrolled', 'YearEnrolled', 'IsOfficer']):
+            if str(row['StudentNumber']) not in existing_students and str(row['EmailAddress']) not in existing_emails and all(row[field] != '' for field in ['FirstName', 'LastName', 'EmailAddress', 'Year', 'Course', 'CurrentSemesterEnrolled', 'YearEnrolled', 'IsOfficer']):
                 student = Student(
                     StudentNumber=row['StudentNumber'],
                     FirstName=row['FirstName'],
                     MiddleName=row.get('MiddleName', ''),  # Use .get() to make MiddleName optional
                     LastName=row['LastName'],
                     EmailAddress=row['EmailAddress'],
-                    BirthDate=row['BirthDate'],
+                    Year=row['Year'],
                     Course=row['Course'],
                     CurrentSemesterEnrolled=row['CurrentSemesterEnrolled'],
                     YearEnrolled=row['YearEnrolled'],
@@ -492,6 +513,17 @@ async def student_Insert_Data_Attachment(files: List[UploadFile] = File(...), db
                 elements.append(table)
 
             elements.append(Spacer(1, 12))
+
+            if not removed_duplicates.empty:
+                elements.append(Paragraph(f"Number of removed duplicates: {len(removed_duplicates.values.tolist())}"))
+                elements.append(Spacer(1, 12))
+                table = Table([["Student Number", "First Name", "Middle Name", "Last Name", "Email"]] + removed_duplicates.values.tolist())
+                table.setStyle(TableStyle([
+                    ('GRID', (0,0), (-1,-1), 1, colors.black),
+                    ('FONTNAME', (0,0), (-1,-1), 'Helvetica'),
+                    ('FONTSIZE', (0,0), (-1,-1), 10),
+                ]))
+                elements.append(table)
 
     if inserted_student_count > 0 or incomplete_student_column_count > 0:
         # Save the PDF to a temporary file
@@ -667,6 +699,22 @@ def delete_Election(data: ElectionDelete, db: Session = Depends(get_db)):
 
     if not election:
         return {"error": "Election not found"}
+    
+    # delete all coc with the election id
+    cocs = db.query(CoC).filter(CoC.ElectionId == data.id).all()
+
+    # delete all partylist with the election id
+    partylists = db.query(PartyList).filter(PartyList.ElectionId == data.id).all()
+
+    if cocs:
+        for coc in cocs:
+            db.delete(coc)
+            db.commit()
+
+    if partylists:
+        for partylist in partylists:
+            db.delete(partylist)
+            db.commit()
 
     for position in positions:
         if position:
@@ -1153,6 +1201,11 @@ def get_CoC_By_Id(id: int, db: Session = Depends(get_db)):
         # Include student details in the CoC dictionary
         coc_dict = coc.to_dict()
 
+        # Include the party list name using the party list id in the CoC dictionary
+        if coc.PartyListId:
+            party_list = db.query(PartyList).filter(PartyList.PartyListId == coc.PartyListId).first()
+            coc_dict["PartyListName"] = party_list.PartyListName if party_list else None
+
         # Include image URLs in the CoC dictionary from cloudinary
         if coc.DisplayPhoto:
             response = resources_by_tag(coc.DisplayPhoto)
@@ -1171,7 +1224,7 @@ def get_CoC_By_Id(id: int, db: Session = Depends(get_db)):
 """ ** POST Methods: All about CoC Table APIs ** """
 @router.post("/coc/submit", tags=["CoC"])
 async def save_CoC(election_id: int = Form(...), student_number: str = Form(...),
-                   verification_code: str = Form(...), address: str = Form(...),
+                   verification_code: str = Form(...), motto: Optional[str] = Form(None),
                    political_affiliation: str = Form(...), party_list: Optional[str] = Form(None),
                    position: str = Form(...), display_photo: str = Form(...),
                    display_photo_file_name : str = Form(...), certification_of_grades_file_name: str = Form(...),
@@ -1183,7 +1236,7 @@ async def save_CoC(election_id: int = Form(...), student_number: str = Form(...)
         return JSONResponse(status_code=404, content={"error": "Student number does not exist"})
     
     # Check if verification code is correct in code table and is not expired
-    code = db.query(Code).filter(Code.StudentNumber == student_number, Code.CodeValue == verification_code, Code.CodeExpirationDate > datetime.now()).first()
+    code = db.query(Code).filter(Code.StudentNumber == student_number, Code.CodeType == 'Verification', Code.CodeValue == verification_code, Code.CodeExpirationDate > datetime.now()).first()
     if not code:
         return JSONResponse(status_code=400, content={"error": "Verification code is invalid or has expired"})
     
@@ -1201,7 +1254,7 @@ async def save_CoC(election_id: int = Form(...), student_number: str = Form(...)
     new_coc = CoC(ElectionId=election_id,
                     StudentNumber=student_number,
                     VerificationCode=verification_code,
-                    Address=address,
+                    Motto=motto,
                     PoliticalAffiliation=political_affiliation,
                     PartyListId=party_list,
                     SelectedPositionName=position,
@@ -1248,7 +1301,7 @@ async def save_CoC(election_id: int = Form(...), student_number: str = Form(...)
         "election_id": new_coc.ElectionId,
         "student_number": new_coc.StudentNumber,
         "verification_code": new_coc.VerificationCode,
-        "address": new_coc.Address,
+        "motto": new_coc.Motto,
         "political_affiliation": new_coc.PoliticalAffiliation,
         "party_list_id": new_coc.PartyListId,
         "position": new_coc.SelectedPositionName,
