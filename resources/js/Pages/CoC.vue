@@ -32,8 +32,8 @@
                                                         padding: 0px 0px 0px 0px !important;">{{ buttonText }}</ActionButton>
                                 </div>
 
-                                <label class="form-label">Address</label>
-                                <input type="text" class="form-control margin" placeholder="Enter your address" :disabled="is_submitting" v-model="address">
+                                <label class="form-label">Motto (Optional)</label>
+                                <input type="text" class="form-control margin" placeholder="Enter your motto" :disabled="is_submitting" v-model="motto">
                             </div>
                         </div>
     
@@ -54,6 +54,7 @@
                                     <label class="form-label">Select Party List</label>
                                     <select class="form-select margin" aria-label="Default select example" :disabled="is_submitting" v-model="party_list">
                                         <option value="" hidden selected>Select</option>
+                                        <option v-for="(party, index) in partyListsData" :key="index" :value="party.PartyListName">{{ party.PartyListName }}</option>
                                     </select>
                                 </div>
 
@@ -148,7 +149,7 @@
             const countdown = useLocalStorage('countdown', 0);
             const intervalId = useLocalStorage('interval_id', null);
 
-            const address = useLocalStorage(`coc_address_${id.value}`, '')
+            const motto = useLocalStorage(`coc_motto_${id.value}`, '')
             const political_affiliation = useLocalStorage(`coc_political_affiliation_${id.value}`, '')
             const party_list = useLocalStorage(`coc_party_list_${id.value}`, '')
             const selected_position = useLocalStorage(`coc_selected_position_${id.value}`, '')
@@ -168,7 +169,7 @@
                 if (newId !== oldId) {
                     localStorage.setItem(`coc_student_number_${newId}`, student_number.value);
                     localStorage.setItem(`coc_verification_code_${newId}`, verification_code.value);
-                    localStorage.setItem(`coc_address_${newId}`, address.value);
+                    localStorage.setItem(`coc_motto_${newId}`, motto.value);
                     localStorage.setItem(`coc_political_affiliation_${newId}`, political_affiliation.value);
                     localStorage.setItem(`coc_party_list_${newId}`, party_list.value);
                     localStorage.setItem(`coc_selected_position_${newId}`, selected_position.value);
@@ -186,6 +187,7 @@
             watch(political_affiliation, (newValue, oldValue) => {
                 if (newValue !== oldValue) {
                     selected_position.value = '';
+                    party_list.value = '';
                 }
             });
 
@@ -285,6 +287,22 @@
                 certification_of_grades_file.value = file;
             };
 
+            // Fetch party lists for the dropdown
+            const fetchPartyLists = async () => {
+                const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/partylist/approved/all`)
+
+                return response.data.partylists;
+            }
+
+            const { data: partyListsData,
+                    isLoading: isPartyListsLoading,
+                    isSuccess: isPartyListsSuccess,
+                    isError: isPartyListsError, } =
+                    useQuery({
+                        queryKey: [`PartyLists-${id.value}`],
+                        queryFn: fetchPartyLists,
+                    })
+
             // Fetch positions for the dropdown
             const fetchPositions = async () => {
                 const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/election/view/${id.value}`)
@@ -310,7 +328,7 @@
                 isSent,
                 countdown,
                 intervalId,
-                address,
+                motto,
                 political_affiliation,
                 party_list,
                 selected_position,
@@ -326,6 +344,11 @@
 
                 handleDisplayPhotoFile,
                 handleCertificationFile,
+
+                partyListsData,
+                isPartyListsLoading,
+                isPartyListsSuccess,
+                isPartyListsError,
 
                 positionsData,
                 isPositionsLoading,
@@ -381,20 +404,20 @@
                 router.visit(`/elections/view?id=${this.id}`)
             },
             clearLocalStorage() {
-                localStorage.removeItem(`coc_student_number_${this.id.value}`);
-                localStorage.removeItem(`coc_verification_code_${this.id.value}`);
-                localStorage.removeItem(`coc_address_${this.id.value}`);
-                localStorage.removeItem(`coc_political_affiliation_${this.id.value}`);
-                localStorage.removeItem(`coc_party_list_${this.id.value}`);
-                localStorage.removeItem(`coc_selected_position_${this.id.value}`);
+                localStorage.removeItem(`coc_student_number_${this.id}`);
+                localStorage.removeItem(`coc_verification_code_${this.id}`);
+                localStorage.removeItem(`coc_motto_${this.id}`);
+                localStorage.removeItem(`coc_political_affiliation_${this.id}`);
+                localStorage.removeItem(`coc_party_list_${this.id}`);
+                localStorage.removeItem(`coc_selected_position_${this.id}`);
 
-                localStorage.removeItem(`coc_display_photo_base_64_${this.id.value}`);
-                localStorage.removeItem(`coc_display_photo_file${this.id.value}`);
-                localStorage.removeItem(`coc_display_photo_file_name_${this.id.value}`);
+                localStorage.removeItem(`coc_display_photo_base_64_${this.id}`);
+                localStorage.removeItem(`coc_display_photo_file${this.id}`);
+                localStorage.removeItem(`coc_display_photo_file_name_${this.id}`);
 
-                localStorage.removeItem(`coc_certification_of_grades_base_64_${this.id.value}`);
-                localStorage.removeItem(`coc_certification_of_grades_${this.id.value}`);
-                localStorage.removeItem(`coc_certification_of_grades_file_name_${this.id.value}`);
+                localStorage.removeItem(`coc_certification_of_grades_base_64_${this.id}`);
+                localStorage.removeItem(`coc_certification_of_grades_${this.id}`);
+                localStorage.removeItem(`coc_certification_of_grades_file_name_${this.id}`);
             },
             sendCode() {
                 if (this.student_number === '') {
@@ -408,8 +431,8 @@
                     code_type: 'Verification'
                 })
                 .then((response) => {
-                    console.log(response)
-                    alert('The code has been sent to your email address.')
+                    // console.log(response) // commented out because code can be seen in the console
+                    alert(`Verification code sent to your email ${response.data.email_address}`)
 
                     this.isSending = false;
                     this.isSent = true;
@@ -437,11 +460,6 @@
 
                 if (this.verification_code === '') {
                     alert('Please enter your verification code.')
-                    return false
-                }
-
-                if (this.address === '') {
-                    alert('Please enter your address.')
                     return false
                 }
 
@@ -486,7 +504,7 @@
                     formData.append('election_id', Number(this.id));
                     formData.append('student_number', this.student_number);
                     formData.append('verification_code', this.verification_code);
-                    formData.append('address', this.address);
+                    formData.append('motto', this.motto);
                     formData.append('political_affiliation', this.political_affiliation);
                     formData.append('party_list', this.party_list);
                     formData.append('position', this.selected_position);
@@ -502,10 +520,13 @@
                     axios.post(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/coc/submit`, formData)
                     .then((response) => {
                         console.log(response.data)
+                        this.clearLocalStorage()
+
                         alert('Your certificate of candidacy has been submitted.')
 
-                        this.clearLocalStorage()
-                        router.visit(`/elections/view?id=${this.id}`)
+                        this.$nextTick(() => {
+                            router.visit(`/elections/view?id=${this.id}`)
+                        })
                     })
                     .catch((error) => {
                         alert(error.response.data.error)
