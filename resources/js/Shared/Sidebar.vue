@@ -55,11 +55,11 @@ export default {
             </Link>
 
             <template v-if="user_role === 'comelec'">
-                <Link href="/comelec/insert-data" 
-                    :class="{ 'active': $inertia.page.url.startsWith('/comelec/insert-data') }" 
+                <Link href="/comelec/voters-registration" 
+                    :class="{ 'active': $inertia.page.url.startsWith('/comelec/voters-registration') }" 
                     class="main list-group-item py-2">
                     <img class="side-icon" src="../../images/icons/insert_data.svg" alt="Icon" height="35" width="35">
-                    <span>Insert Data</span>
+                    <span>Voters Registration</span>
                 </Link>
 
                 <Link href="/comelec/approvals" 

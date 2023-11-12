@@ -70,14 +70,14 @@ class ComelecController extends Controller
         ]);
     }
 
-    public function insertData() 
+    public function votersRegistration() 
     { 
-        return inertia('Comelec/InsertData');
+        return inertia('Comelec/VotersRegistration');
     }
 
-    public function insertDataQueues() 
+    public function votersRegistrationQueues() 
     { 
-        return inertia('Comelec/InsertDataQueues');
+        return inertia('Comelec/VotersRegistrationQueues');
     }
 
     public function approvals() 
