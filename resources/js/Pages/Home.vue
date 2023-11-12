@@ -4,7 +4,7 @@
 
     <div>
         <div class="main">
-            <img src="../../images/Home/comelec2.jpg" class="main-ann" alt="">
+            <img src="../../images/banner.jpg" class="main-ann" alt="">
         </div>
 
         <div class="ongoing-elections">
@@ -232,6 +232,7 @@
     .main-ann{
         width: 100%;
         height: 70%;
+        object-fit: cover;
     }
 
     .ongoing-elections{
