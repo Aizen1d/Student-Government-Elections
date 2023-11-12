@@ -157,8 +157,8 @@
 }
 
 .header h1{
-    font-size: 20px;
-    letter-spacing: 3px;
+    font-size: 28px;
+    letter-spacing: 4px;
     font-weight: 800;
 }
 
