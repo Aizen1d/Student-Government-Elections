@@ -167,6 +167,7 @@ export default {
                 useQuery({
                     queryKey: ['fetchAnnouncement'],
                     queryFn: fetchAnnouncementTable,
+                    refetchInterval: 1000,
                 });
 
         return {
@@ -221,6 +222,27 @@ export default {
         this.getLatestAnnouncementCount();
     },
     methods: {
+        fetchTableData() {
+            axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/announcement/all`)
+                .then(response => {
+                    console.log(`Announcement table data fetched successfully. Duration: ${response.duration}ms`)
+                    const announcements = response.data.announcements.map(item => {
+                        return {
+                            id: item.AnnouncementId,
+                            count: "Announcement #" + item.count,
+                            announcement_type: item.AnnouncementType,
+                            title: item.AnnouncementTitle,
+                            body: item.AnnouncementBody,
+                            attachment_type: item.AttachmentType,
+                        }
+                    });
+
+                    this.items = [...announcements];
+                })
+                .catch(error => {
+                    console.log(error);
+                });
+        },
         reset() {
             // Reset the selected row item to null
             this.selectedItem = null;
@@ -371,7 +393,8 @@ export default {
                 console.error(error);
             })
             .finally(() => {
-                this.fetchAnnouncementTable();
+                //this.fetchAnnouncementTable();
+                this.fetchTableData();
                 this.reset();
             })
         },
@@ -440,7 +463,8 @@ export default {
                 })
                 .finally(() => {
                     this.saving = false;
-                    this.fetchAnnouncementTable();
+                    //this.fetchAnnouncementTable();
+                    this.fetchTableData();
                 });
         },
         update() {
@@ -552,7 +576,8 @@ export default {
                 })
                 .finally(() => {
                     this.updating = false;
-                    this.fetchAnnouncementTable();
+                    //this.fetchAnnouncementTable();
+                    this.fetchTableData();
                 });
         },
     },
