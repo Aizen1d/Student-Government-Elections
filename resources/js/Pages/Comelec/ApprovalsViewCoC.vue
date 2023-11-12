@@ -12,7 +12,7 @@
             </div>
             <template v-if="!isCoCLoading">
                 <div v-if="coc_status === 'Pending'" class="col-6" style="text-align: end;">
-                    <ActionButton @click.prevent="acceptCoC" class="accept-button" style="margin-right: 2% !important; background-color: rgb(71, 182, 43);">Accept</ActionButton>
+                    <ActionButton @click.prevent="acceptCoC" class="accept-button" style="margin-right: 2% !important; background-color: rgb(71, 182, 43);">Approve</ActionButton>
                     <ActionButton @click.prevent="rejectCoC" class="my-2">Reject</ActionButton>
                 </div>
 
@@ -103,18 +103,13 @@
                         </div>
 
                         <div class="margin">
-                            <label class="form-label" for="type">Address</label>
-                            <input class="form-control" type="text" name="name" v-model="CoCData.Address" :disabled="true">
+                            <label class="form-label" for="type">Motto</label>
+                            <textarea class="form-control text-area-input" type="text" name="name" v-model="CoCData.Motto" :disabled="true"></textarea>
                         </div>
 
                         <div class="margin">
                             <label class="form-label" for="type">Email Address</label>
                             <input class="form-control" type="text" name="name" v-model="CoCData.Student.EmailAddress" :disabled="true">
-                        </div>
-
-                        <div class="margin">
-                            <label class="form-label" for="type">Birth Date</label>
-                            <input class="form-control" type="text" name="name" v-model="formattedBirthDate" :disabled="true">
                         </div>
                     </div>
 
@@ -130,7 +125,7 @@
 
                         <div v-if="CoCData.PoliticalAffiliation !== 'Independent'" class="margin">
                             <label class="form-label" for="type">Party List</label>
-                            <input class="form-control" type="text" name="name" v-model="CoCData.PartyListId" :disabled="true">
+                            <input class="form-control" type="text" name="name" v-model="CoCData.PartyListName" :disabled="true">
                         </div>
 
                         <div class="margin">
@@ -153,8 +148,8 @@
                             </div>
                             <div class="col-6">
                                 <div class="first-info">
-                                    <label class="form-label" for="type">Current Semester Enrolled</label>
-                                    <input class="form-control" type="text" name="name" v-model="CoCData.Student.CurrentSemesterEnrolled" :disabled="true">
+                                    <label class="form-label" for="type">Year Level</label>
+                                    <input class="form-control" type="text" name="name" v-model="yearLevel" :disabled="true">
                                 </div>
                             </div>
                         </div>
@@ -168,8 +163,8 @@
                             </div>
                             <div class="col-6">
                                 <div class="margin">
-                                    <label class="form-label" for="type">Is Officer</label>
-                                    <input class="form-control" type="text" name="name" v-model="isOfficer" :disabled="true">
+                                    <label class="form-label" for="type">Current Semester Enrolled</label>
+                                    <input class="form-control" type="text" name="name" v-model="CoCData.Student.CurrentSemesterEnrolled" :disabled="true">
                                 </div>
                             </div>
                         </div>            
@@ -270,8 +265,19 @@
                 let options = { year: 'numeric', month: 'long', day: 'numeric' };
                 return new Date(this.CoCData.Student.BirthDate).toLocaleDateString(undefined, options);
             },
-            isOfficer() {
-                return this.CoCData.Student.IsOfficer ? 'Yes' : 'No';
+            yearLevel() {
+                if (this.CoCData.Student.Year === '1') {
+                    return '1st Year';
+                } 
+                else if (this.CoCData.Student.Year === '2') {
+                    return '2nd Year';
+                } 
+                else if (this.CoCData.Student.Year === '3') {
+                    return '3rd Year';
+                } 
+                else if (this.CoCData.Student.Year === '4') {
+                    return '4th Year';
+                } 
             },
         },
         methods: {
@@ -297,6 +303,7 @@
                 axios.put(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/coc/${this.id}/accept`)
                     .then((response) => {
                         console.log(response);
+                        this.coc_status = 'Approved';
                     })
                     .catch((error) => {
                         console.log(error);
@@ -309,6 +316,7 @@
                 axios.put(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/coc/${this.id}/reject`)
                     .then((response) => {
                         console.log(response);
+                        this.coc_status = 'Rejected';
                     })
                     .catch((error) => {
                         console.log(error);
@@ -409,7 +417,8 @@
     }
 
     .text-area-input{
-        height: 10rem;
+        min-height: 4rem;
+        height: fit-content;
         resize: none;
     }
 

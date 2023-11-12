@@ -12,7 +12,7 @@
             </div>
             <template v-if="!isPartylistLoading">
                 <div v-if="party_list_status === 'Pending'" class="col-6" style="text-align: end;">
-                    <ActionButton @click.prevent="acceptPartylist" class="accept-button" style="margin-right: 2% !important; background-color: rgb(71, 182, 43);">Accept</ActionButton>
+                    <ActionButton @click.prevent="acceptPartylist" class="accept-button" style="margin-right: 2% !important; background-color: rgb(71, 182, 43);">Approve</ActionButton>
                     <ActionButton @click.prevent="rejectPartylist" class="my-2">Reject</ActionButton>
                 </div>
 
@@ -213,6 +213,8 @@
                 axios.put(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/partylist/${this.id}/accept`)
                     .then((response) => {
                         console.log(response);
+
+                        this.party_list_status = 'Approved';
                     })
                     .catch((error) => {
                         console.log(error);
@@ -225,6 +227,8 @@
                 axios.put(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/partylist/${this.id}/reject`)
                     .then((response) => {
                         console.log(response);
+
+                        party_list_status.value = 'Rejected';
                     })
                     .catch((error) => {
                         console.log(error);
@@ -325,7 +329,7 @@
     }
 
     .text-area-input{
-        height: 9rem;
+        height: fit-content;
         resize: none;
     }
 
