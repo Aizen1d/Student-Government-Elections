@@ -17,8 +17,8 @@
                     <div class="info">
                         <h6>Party List Information</h6>
 
-                        <label class="form-label" for="name">Party Name</label>
-                        <input class="form-control margin" type="text" name="name" placeholder="Enter your party's name" :disabled="is_submitting" v-model="party_name">
+                        <label class="form-label" for="name">Party Name {{ party_input_status }}</label>
+                        <input class="form-control margin" type="text" name="name" placeholder="Enter your party's name" @keyup="checkIfPartyNameEligible" :disabled="is_submitting" v-model="party_name">
 
                         <label class="form-label" for="email">Email Address</label>
                         <input class="form-control margin" type="email" name="email" placeholder="Enter your party's email address" :disabled="is_submitting" v-model="email">
@@ -131,6 +131,8 @@
             const video = useLocalStorage(`party_list_video_${id.value}`, '')
             const videoLoadingState = ref(true)
 
+            const party_input_status = useLocalStorage(`party_list_party_input_status_${id.value}`, '')
+            const submittable = useLocalStorage(`party_list_submittable_${id.value}`, false)
             const is_submitting = ref(false)
 
             // watch for id changes then update the local storage by appending the new id
@@ -233,6 +235,8 @@
                 image_file_name,
                 video,
                 videoLoadingState,
+                party_input_status,
+                submittable,
                 is_submitting,
 
                 cellphone_number_filter,
@@ -280,9 +284,37 @@
 
                 localStorage.removeItem(`party_list_video_${this.id}`);
             },
+            checkIfPartyNameEligible() {
+                if (this.party_name === '') {
+                    this.party_input_status = '';
+                    this.submittable = false;
+                    return;
+                }
+
+                this.party_input_status = 'Checking eligiblity...';
+                axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/partylist/is-taken/${this.party_name}`)
+                    .then((response) => {
+                        if (response.data === true) {
+                            this.party_input_status = '(Already taken)';
+                            this.submittable = false;
+                        }
+                        else {
+                            this.party_input_status = '(Eligible)';
+                            this.submittable = true;
+                        }
+                    })
+                    .catch((error) => {
+                        console.log(error)
+                    });
+            },
             validate() {
                 if (this.party_name === '') {
                     alert('Party name is required.');
+                    return false;
+                }
+
+                if (this.submittable === false) {
+                    alert('Party name is already taken.');
                     return false;
                 }
 
