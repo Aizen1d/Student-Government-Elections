@@ -1,349 +1,139 @@
 <template>
-    <title>Directory Candidates - COMELEC Portal</title>
+    <title>Directory Candidates Selection - COMELEC Portal</title>
     <Navbar></Navbar>
-
-    <div class="scroll-up">
-        <a @click="topFunction" id="mybutton">
-            <img src="../../images/Directory/Candidates/scroll-up.svg" alt="" width="60px">
-        </a>
-    </div>
-
-    <div class="sidebar">
-        <div class="choices">
-            <h1>CANDIDATES</h1>
-            <div class="options">
-                <a href="#pos1">President</a>
-                <a href="#pos2">Vice President</a>
-            </div>
+    
+    <div class="header row">
+        <div class="col">
+            <h1 class="eligible">
+                <span class="return" @click="returnPage">Directory</span>&nbsp;>&nbsp;Election Selection
+            </h1>
         </div>
     </div>
 
-    <div class="main">
-        <div class="position row">
-            <h1 id="pos1" class="col-10">President Candidates</h1>
-            <button class="col-2 rate-button">Rate Candidates ★</button>
-
-            <hr class="my-4">
-            
-            <div class="candidate">
-                <table>
-                    <tbody>
-                        <tr>
-                            <td>
-                                <img src="../../images/dog_placeholder.jpg" class="cpic" alt="">
-                            </td>
-                            <td class="info">
-                                <div class="data">
-                                    <div class="align">
-                                        <div class="name">
-                                            <strong>David Daniel D. Reataza</strong>
-                                        </div>
-                                        <div class="rate">
-                                            <input type="radio" id="star5" name="rate" value="5" />
-                                            <label for="star5" title="text">5 stars</label>
-                                            <input type="radio" id="star4" name="rate" value="4" />
-                                            <label for="star4" title="text">4 stars</label>
-                                            <input type="radio" id="star3" name="rate" value="3" />
-                                            <label for="star3" title="text">3 stars</label>
-                                            <input type="radio" id="star2" name="rate" value="2" />
-                                            <label for="star2" title="text">2 stars</label>
-                                            <input type="radio" id="star1" name="rate" value="1" />
-                                            <label for="star1" title="text">1 star</label>
-                                        </div>
-                                    </div>
-                                   
-                                <div class="affiliation">Independent</div>
-                                </div>
-                                
-                                
-                                <div class="quote">
-                                    <em>"Believe you can and you're halfway there."</em>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <hr class="my-4">
-
-            <div class="candidate">
-                <table>
-                    <tbody>
-                        <tr>
-                            <td>
-                                <img src="../../images/dog_placeholder.jpg" class="cpic" alt="">
-                            </td>
-                            <td class="info">
-                                <div class="data">
-                                    <div class="align">
-                                        <div class="name">
-                                            <strong>David Daniel D. Reataza</strong>
-                                        </div>
-                                        <div class="rate">
-                                            <input type="radio" id="star5" name="rate" value="5" />
-                                            <label for="star5" title="text">5 stars</label>
-                                            <input type="radio" id="star4" name="rate" value="4" />
-                                            <label for="star4" title="text">4 stars</label>
-                                            <input type="radio" id="star3" name="rate" value="3" />
-                                            <label for="star3" title="text">3 stars</label>
-                                            <input type="radio" id="star2" name="rate" value="2" />
-                                            <label for="star2" title="text">2 stars</label>
-                                            <input type="radio" id="star1" name="rate" value="1" />
-                                            <label for="star1" title="text">1 star</label>
-                                        </div>
-                                    </div>
-                                   
-                                <div class="affiliation">Independent</div>
-                                </div>
-                                
-                                <div class="quote">
-                                    <em>"Success is not final, failure is not fatal: It is the courage to continue that counts."</em>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="position">
-            <h1 id="pos2">Vice President Candidates</h1>
-
-            <hr class="my-4">
-            
-            <div class="candidate">
-                <table>
-                    <tbody>
-                        <tr>
-                            <td>
-                                <img src="../../images/dog_placeholder.jpg" class="cpic" alt="">
-                            </td>
-                            <td class="info">
-                                <div class="data">
-                                    <strong>David Daniel D. Reataza <br></strong>
-                                Independent
-                                </div>
-                                
-                                <div class="quote">
-                                    <em>"Believe you can and you're halfway there."</em>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <hr class="my-4">
-
-            <div class="candidate">
-                <table>
-                    <tbody>
-                        <tr>
-                            <td>
-                                <img src="../../images/dog_placeholder.jpg" class="cpic" alt="">
-                            </td>
-                            <td class="info">
-                                <div class="data">
-                                    <strong>David Daniel D. Reataza <br></strong>
-                                Independent
-                                </div>
-                                
-                                <div class="quote">
-                                    <em>"Success is not final, failure is not fatal: It is the courage to continue that counts."</em>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+    <div class="parent">
+        <BaseTable class="item-table" 
+                :columns="['Organization', 'Election Title']" 
+                :columnWidths="['30%', '50%', '20%']"
+                :tableHeight="'auto'"
+                :maxTableHeight="'235px'">
+            <tr v-for="(election, index) in electionsData" :key="index" @click="selectItem(election)">
+                <td style="width: 30%; text-align: left; padding-left: 14.6%;" class="my-cell">{{ election.type }}</td>
+                <td style="width: 50%; text-align: left; padding-left: 27%;" class="my-cell">{{ election.name }}</td>
+            </tr>
+        </BaseTable>
     </div>
 </template>
 
 <script>
     import Standards from '../Shared/Standards.vue'
     import Navbar from '../Shared/Navbar.vue'
+    import BaseContainer from '../Shared/BaseContainer.vue'
+    import BaseTable from '../Shared/BaseTable.vue'
 
-    import { ref, onMounted, onUnmounted } from 'vue';
+    import { ref } from 'vue'
+    import axios from 'axios'
+    import { useQuery } from '@tanstack/vue-query'
+    import { router } from '@inertiajs/vue3'
 
     export default {
-        setup() {
-            /*const mybutton = ref(null);
+        setup(props){
+            const fetchElectionsTable = async () => {
+                const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/election/all`, {
+                });
+                console.log(`Get all elections successful. Duration: ${response.duration}ms`)
 
-            const topFunction = () => {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                const elections = response.data.elections.map(election => ({
+                    id: election.ElectionId,
+                    name: election.ElectionName,
+                    type: election.ElectionType,
+                    status: election.ElectionStatus,
+                }));
+
+                return elections;
             }
 
-            onMounted(() => {
-                const scrollFunction = () => {
-                    if (window.scrollY > 20) {
-                        mybutton.style.display = "block";
-                    } else {
-                        mybutton.style.display = "none";
-                    }
-                }
+            const { data: electionsData,
+                    isLoading: isElectionsLoading,
+                    isSuccess: isElectionsSuccess,
+                    isError: isElectionsError} =
+                    useQuery({
+                        queryKey: ['fetchElectionsTable'],
+                        queryFn: fetchElectionsTable,
+                    })
 
-                window.addEventListener('scroll', scrollFunction);
-            });
-
-            onUnmounted(() => {
-                window.removeEventListener('scroll', scrollFunction);
-            });
-
-            return { mybutton, topFunction };*/
+            return{
+                electionsData,
+                isElectionsLoading,
+                isElectionsSuccess,
+                isElectionsError,
+            }
         },
-        components: {
+        components:{
             Standards,
-            Navbar
+            Navbar,
+            BaseContainer,
+            BaseTable,
         },
-        methods: {
-         
-        }
+        methods:{
+            selectItem(item){
+                router.visit(`/directory/candidates/view`, { 
+                    data: { 
+                            id: item.id 
+                        }
+                });
+            },
+            returnPage(){
+                router.visit('/directory')
+            }
+        },
     }
 </script>
 
 <style scoped>
-    .sidebar{
-        height: 100%; /* Full-height: remove this if you want "auto" height */
-        width: 300px; /* Set the width of the sidebar */
-        position: fixed; /* Fixed Sidebar (stay in place on scroll) */
-        top: 1;
-        left: 0;
-        overflow-x: hidden; /* Disable horizontal scroll */
-        padding-top: 1.5%;
-        font-family: 'Source Sans Pro', sans-serif;
+    .return{
+        font-size: 28px;
+        font-weight: 800;
+        color: #B90321;
     }
 
-    .choices{
-        text-align: start;
-        margin: 0% 10%;
+    .return:hover{
+        cursor: pointer;
+        text-decoration: underline;
     }
 
-    .choices h1{
-        color: #9A000A;
-        font-size: 30px;
-        font-weight: 900;
+    .eligible{
+        font-size: 28px;
+        font-weight: 800;
     }
 
-    .options{
-        margin: 0%;
-        margin-top: 10%;
-        display: grid;
+    .header{
+        margin-top: 1%;
+        margin-bottom: 1%;
+        margin-left: 14.3%;
+        width: 78%;
     }
 
-    .options a{
-        margin: 3% 0%;
-        text-decoration: none;
-        color: black;
-        font-size: 18px;
+    .parent{
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    .item-container{
+        width: 70%;
+        margin-top: 2%;
     }
 
     .main{
-        margin-left: 300px;
-        font-family: 'Source Sans Pro', sans-serif;
-        margin-top: 5%;
+        height: 500px;
     }
 
-    .position{
-        margin: 5% 2%;
-    }
-
-    .position h1{
-        color: #9A000A;
-        font-size: 29px;   
-        font-weight: 700;
-        margin: 0%;
-    }
-
-    .rate-button{
-        border: transparent;
-        background-color: #880000;
-        color: white;
-        border-radius: 3px;
-        padding: 1% 0%;
-    }
-
-    .candidate{
+    .main-ann{
         width: 100%;
-    }
-
-    .cpic{
-        width: 320px;
-        height: 440px;
+        height: 60%;
         object-fit: cover;
     }
 
-    .info{
-        font-family: 'Source Sans Pro', sans-serif;
-        font-size: 22px;
-        width: 100%;
-        padding: 0% 2%;
-    }
-
-    .align{
-        display: flex;
-        align-items: center;
-    }
-
-    .quote{
-        text-align: center;
-        margin-top: 50px;
-    }
-
-    .candidate:hover{
-        color: #CA2B00;
-    }
-
-    .candidate td {
-        vertical-align: top;
-    }
-
-    .scroll-up{
-        display: block;
-        position: fixed; /* Fixed/sticky position */
-        bottom: 100px; /* Place the button at the bottom of the page */
-        right: 110px; /* Place the button 30px from the right */
-        z-index: 99; /* Make sure it does not overlap */
-        filter: invert(12%) sepia(37%) saturate(6821%) hue-rotate(344deg) brightness(105%) contrast(119%);
-    }
-
-    .scroll-up:hover{
-        filter: invert(86%) sepia(41%) saturate(799%) hue-rotate(354deg) brightness(93%) contrast(97%);
-    }
-
-    .rate {
-        height: 46px;
-        padding: 0 10px;
-    }
-    .rate:not(:checked) > input {
-        position:absolute;
-        top:-9999px;
-    }
-    .rate:not(:checked) > label {
-        float:right;
-        width:1em;
-        overflow:hidden;
-        white-space:nowrap;
-        cursor:pointer;
-        font-size:30px;
-        color:#ccc;
-    }
-    .rate:not(:checked) > label:before {
-        content: '★ ';
-    }
-    .rate > input:checked ~ label {
-        color: #EEB503;    
-    }
-    .rate:not(:checked) > label:hover,
-    .rate:not(:checked) > label:hover ~ label {
-        color: #dfa804;  
-    }
-    .rate > input:checked + label:hover,
-    .rate > input:checked + label:hover ~ label,
-    .rate > input:checked ~ label:hover,
-    .rate > input:checked ~ label:hover ~ label,
-    .rate > label:hover ~ input:checked ~ label {
-        color: #c59b08;
+    .item-table{
+        width: 70%;
     }
 </style>
