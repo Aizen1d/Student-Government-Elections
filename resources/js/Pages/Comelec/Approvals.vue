@@ -30,43 +30,39 @@
                 </div>
             </div>
 
-            <BaseTable class="item-table" 
-                :columns="['Student Number', 'Status', 'Date Submitted']" 
-                :columnWidths=columnWidths
-                :tableHeight="'auto'"
-                :maxTableHeight="'300px'"
-                v-if="filterType === ''">
-            </BaseTable>
+            <div v-if="filterType !== ''">
+                <BaseTable class="item-table" 
+                    :columns="['Student Number', 'Election Title', 'Organization', 'Status', 'Date Submitted']" 
+                    :columnWidths=columnWidthsCoC
+                    :tableHeight="'auto'"
+                    :maxTableHeight="'300px'"
+                    v-if="!isPartylistLoading && filterType === 'coc'">
+                    <div>
+                        <tr v-for="(item, coc_index) in CoCData" :key="coc_index" @click="selectCoCItem(item)">
+                            <td :style="{ width: columnWidthsCoC[0] }" class="my-cell">{{ item.StudentNumber }}</td>
+                            <td :style="{ width: columnWidthsCoC[1] }" class="my-cell">{{ item.ElectionName }}</td>
+                            <td :style="{ width: columnWidthsCoC[2] }" class="my-cell">{{ item.ElectionType }}</td>
+                            <td :style="{ width: columnWidthsCoC[3] }" class="my-cell">{{ item.Status }}</td>
+                            <td :style="{ width: columnWidthsCoC[4] }" class="my-cell">{{ formatDate(item.created_at) }}</td>
+                        </tr>
+                    </div>
+                </BaseTable>
 
-            <BaseTable class="item-table" 
-                :columns="['Student Number', 'Status', 'Date Submitted']" 
-                :columnWidths=columnWidths
-                :tableHeight="'auto'"
-                :maxTableHeight="'300px'"
-                v-if="!isPartylistLoading && filterType === 'coc'">
-                <div>
-                    <tr v-for="(item, coc_index) in CoCData" :key="coc_index" @click="selectCoCItem(item)">
-                        <td :style="{ width: columnWidths[0] }" class="my-cell">{{ item.StudentNumber }}</td>
-                        <td :style="{ width: columnWidths[1] }" class="my-cell">{{ item.Status }}</td>
-                        <td :style="{ width: columnWidths[2] }" class="my-cell">{{ formatDate(item.created_at) }}</td>
-                    </tr>
-                </div>
-            </BaseTable>
-
-            <BaseTable class="item-table" 
-                :columns="['Party Name', 'Status', 'Date Submitted']" 
-                :columnWidths=columnWidths
-                :tableHeight="'auto'"
-                :maxTableHeight="'300px'"
-                v-if="!isPartylistLoading && filterType === 'party-list'">
-                <div>
-                    <tr v-for="(item, index) in partylistData" :key="index" @click="selectPartyItem(item)">
-                        <td :style="{ width: columnWidths[0] }" class="my-cell">{{ item.PartyListName }}</td>
-                        <td :style="{ width: columnWidths[1] }" class="my-cell">{{ item.Status }}</td>
-                        <td :style="{ width: columnWidths[2] }" class="my-cell">{{ formatDate(item.created_at) }}</td>
-                    </tr>
-                </div>
-            </BaseTable>
+                <BaseTable class="item-table" 
+                    :columns="['Party Name', 'Status', 'Date Submitted']" 
+                    :columnWidths=columnWidthsParty
+                    :tableHeight="'auto'"
+                    :maxTableHeight="'300px'"
+                    v-if="!isPartylistLoading && filterType === 'party-list'">
+                    <div>
+                        <tr v-for="(item, index) in partylistData" :key="index" @click="selectPartyItem(item)">
+                            <td :style="{ width: columnWidthsParty[0] }" class="my-cell">{{ item.PartyListName }}</td>
+                            <td :style="{ width: columnWidthsParty[1] }" class="my-cell">{{ item.Status }}</td>
+                            <td :style="{ width: columnWidthsParty[2] }" class="my-cell">{{ formatDate(item.created_at) }}</td>
+                        </tr>
+                    </div>
+                </BaseTable>
+            </div>
 
         </BaseContainer>
     </div>
@@ -97,7 +93,8 @@
                 { text: 'Party List', value: 'party-list' },
             ];
 
-            const columnWidths = ['35%', '30%', '35%'];
+            const columnWidthsCoC = ['35%', '30%', '35%', '30%', '35%'];
+            const columnWidthsParty = ['35%', '30%', '35%'];
 
             const fetchCoCData = async () => {
                 const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/coc/all`);
@@ -134,7 +131,8 @@
             return {
                 filterType,
                 options,
-                columnWidths,
+                columnWidthsCoC,
+                columnWidthsParty,
 
                 CoCData,
                 isCoCLoading,

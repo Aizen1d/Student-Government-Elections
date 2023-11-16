@@ -228,7 +228,7 @@
                     .then((response) => {
                         console.log(response);
 
-                        party_list_status.value = 'Rejected';
+                        this.party_list_status = 'Rejected';
                     })
                     .catch((error) => {
                         console.log(error);

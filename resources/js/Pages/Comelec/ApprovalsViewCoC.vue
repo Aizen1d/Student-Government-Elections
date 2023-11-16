@@ -119,6 +119,16 @@
 
                     <div class="box">
                         <div class="first-info">
+                            <label class="form-label" for="type">Election Name Applied</label>
+                            <input class="form-control" type="text" name="name" v-model="CoCData.ElectionName" :disabled="true">
+                        </div>
+
+                        <div class="margin">
+                            <label class="form-label" for="type">Organization</label>
+                            <input class="form-control" type="text" name="name" v-model="CoCData.ElectionType" :disabled="true">
+                        </div>
+
+                        <div class="margin">
                             <label class="form-label" for="type">Political Affiliation</label>
                             <input class="form-control" type="text" name="name" v-model="CoCData.PoliticalAffiliation" :disabled="true">
                         </div>
