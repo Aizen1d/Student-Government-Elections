@@ -16,14 +16,14 @@
 
     <div class="parent">
         <BaseTable class="item-table" 
-                :columns="['Election Type', 'Election Name', 'Status']" 
-                :columnWidths="['30%', '50%', '20%']"
+                :columns="['Organization', 'Election Title', 'Status']" 
+                :columnWidths="['50%', '50%', '50%']"
                 :tableHeight="'auto'"
                 :maxTableHeight="'235px'">
             <tr v-for="(election, index) in electionsData" :key="index" @click="selectItem(election)">
-                <td style="width: 30%;" class="my-cell">{{ election.type }}</td>
-                <td style="width: 50%;" class="my-cell">{{ election.name }}</td>
-                <td style="width: 20%;" class="my-cell">Status</td>
+                <td style="width: 50%; text-align: left; padding-left: 12.5%;" class="my-cell">{{ election.type }}</td>
+                <td style="width: 50%; text-align: left; padding-left: 12.5%;" class="my-cell">{{ election.name }}</td>
+                <td style="width: 50%; text-align: left; padding-left: 14.5%;" class="my-cell">Status</td>
             </tr>
         </BaseTable>
     </div>
