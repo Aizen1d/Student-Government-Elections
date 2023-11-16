@@ -31,7 +31,7 @@ import cloudinary.uploader
 import asyncio
 
 from cloudinary.api import resources_by_tag, delete_resources_by_tag, delete_folder
-from services import send_verification_code_email, send_pass_code_queue_email, send_pass_code_manual_email
+from services import send_verification_code_email, send_pass_code_queue_email, send_pass_code_manual_email, send_coc_status_email, send_partylist_status_email
 
 from models import Student, Organization, Announcement, Rule, Guideline, AzureToken, Election, SavedPosition, CreatedElectionPosition, Code, StudentPassword, PartyList, CoC, InsertDataQueues
 
@@ -598,6 +598,10 @@ def get_All_Election(db: Session = Depends(get_db)):
             election_dict = election.to_dict(i+1)
             election_dict["CreatedByName"] = (creator.FirstName + ' ' + (creator.MiddleName + ' ' if creator.MiddleName else '') + creator.LastName) if creator else ""
             
+            # Get the CreatedElectionPositions of the election then append it to the election_dict
+            positions = db.query(CreatedElectionPosition).filter(CreatedElectionPosition.ElectionId == election.ElectionId).all()
+            election_dict["Positions"] = [position.to_dict(i+1) for i, position in enumerate(positions)]
+
             elections_with_creator.append(election_dict)
 
         return {"elections": elections_with_creator}
@@ -630,6 +634,33 @@ def get_All_Election_Position_Reusable(db: Session = Depends(get_db)):
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while fetching all positions from the database"})
 
+@router.get("/election/{id}/approved/coc/all", tags=["Election"])
+def get_All_Approved_Candidates_CoC_By_Election_Id(id: int, db: Session = Depends(get_db)):
+    try:
+        cocs = db.query(CoC).filter(CoC.ElectionId == id, CoC.Status == "Approved").order_by(CoC.CoCId).all()
+
+        # Get the student row from student table using the student number in the coc
+        cocs_with_student = []
+        for i, coc in enumerate(cocs):
+            student = db.query(Student).filter(Student.StudentNumber == coc.StudentNumber).first()
+            coc_dict = coc.to_dict(i+1)
+            coc_dict["Student"] = student.to_dict() if student else {}
+
+            # Get the party list name from partylist table using the partylist id in the coc
+            if coc.PartyListId:
+                partylist = db.query(PartyList).filter(PartyList.PartyListId == coc.PartyListId).first()
+                coc_dict["PartyListName"] = partylist.PartyListName if partylist else ""
+
+            # Get the display photo from cloudinary using the coc.displayphoto resources by tag in cloudinary
+            display_photo = resources_by_tag(coc.DisplayPhoto)
+            coc_dict["DisplayPhoto"] = display_photo["resources"][0]["secure_url"] if display_photo else ""
+            
+            cocs_with_student.append(coc_dict)
+
+        return {"cocs": cocs_with_student}
+
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while fetching all approved coc from the database"})
 
 """ ** POST Methods: All about election APIs ** """
 @router.post("/election/create", tags=["Election"])
@@ -1183,7 +1214,16 @@ def get_All_Organization_Election(org_data: OrganizationName, db: Session = Depe
 def get_All_CoC(db: Session = Depends(get_db)):
     try:
         coc = db.query(CoC).order_by(CoC.CoCId).all()
-        return {"coc": [coc.to_dict(i+1) for i, coc in enumerate(coc)]}
+        coc_dict = [coc.to_dict(i+1) for i, coc in enumerate(coc)]
+
+        # Include the election name using the election id in the CoC dictionary
+        for coc in coc_dict:
+            if coc["ElectionId"]:
+                election = db.query(Election).filter(Election.ElectionId == coc["ElectionId"]).first()
+                coc["ElectionName"] = election.ElectionName if election else None
+                coc["ElectionType"] = election.ElectionType if election else None
+
+        return {"coc": coc_dict}
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while fetching all CoCs from the database"})
     
@@ -1200,6 +1240,12 @@ def get_CoC_By_Id(id: int, db: Session = Depends(get_db)):
        
         # Include student details in the CoC dictionary
         coc_dict = coc.to_dict()
+
+        # Include the election name using the election id in the CoC dictionary
+        if coc.ElectionId:
+            election = db.query(Election).filter(Election.ElectionId == coc.ElectionId).first()
+            coc_dict["ElectionName"] = election.ElectionName if election else None
+            coc_dict["ElectionType"] = election.ElectionType if election else None
 
         # Include the party list name using the party list id in the CoC dictionary
         if coc.PartyListId:
@@ -1308,9 +1354,27 @@ async def save_CoC(election_id: int = Form(...), student_number: str = Form(...)
         "display_photo": new_coc.DisplayPhoto,
         "certification_of_grades": new_coc.CertificationOfGrades,
     }
+
+# Create a queue
+queue_email_coc_status = asyncio.Queue()
+
+# Define a worker function
+async def email_coc_status_wroker():
+    while True:
+        # Get a task from the queue
+        task = await queue_email_coc_status.get()
+
+        # Process the task
+        student_number, student_email, status, position_name, election_name = task
+        send_coc_status_email(student_number, student_email, status, position_name, election_name)
+
+        # Indicate that the task is done
+        queue_email_coc_status.task_done()
+
+asyncio.create_task(email_coc_status_wroker())
     
 @router.put("/coc/{id}/accept", tags=["CoC"])
-def accept_CoC(id: int, db: Session = Depends(get_db)):
+async def accept_CoC(id: int, db: Session = Depends(get_db)):
     try:
         coc = db.query(CoC).get(id)
 
@@ -1322,12 +1386,20 @@ def accept_CoC(id: int, db: Session = Depends(get_db)):
 
         db.commit()
 
+        # Get the student from the Student table using the student number in the CoC table
+        student = db.query(Student).filter(Student.StudentNumber == coc.StudentNumber).first()
+
+        # Get the election from the Election table using the election id in the CoC table
+        election = db.query(Election).filter(Election.ElectionId == coc.ElectionId).first()
+
+        await queue_email_coc_status.put((student.StudentNumber, student.EmailAddress, 'Approved', coc.SelectedPositionName, election.ElectionName))
+
         return {"detail": "CoC id " + str(id) + " was successfully approved"}
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while approving CoC in the table CoC"})
     
 @router.put("/coc/{id}/reject", tags=["CoC"])
-def reject_CoC(id: int, db: Session = Depends(get_db)):
+async def reject_CoC(id: int, db: Session = Depends(get_db)):
     try:
         coc = db.query(CoC).get(id)
 
@@ -1338,6 +1410,14 @@ def reject_CoC(id: int, db: Session = Depends(get_db)):
         coc.updated_at = datetime.now()
 
         db.commit()
+
+        # Get the student from the Student table using the student number in the CoC table
+        student = db.query(Student).filter(Student.StudentNumber == coc.StudentNumber).first()
+
+        # Get the election from the Election table using the election id in the CoC table
+        election = db.query(Election).filter(Election.ElectionId == coc.ElectionId).first()
+
+        await queue_email_coc_status.put((student.StudentNumber, student.EmailAddress, 'Rejected', coc.SelectedPositionName, election.ElectionName))
 
         return {"detail": "CoC id " + str(id) + " was successfully rejected"}
     except:
@@ -1404,7 +1484,19 @@ def generate_Code(code_for_student:CodeForStudent, db: Session = Depends(get_db)
 def get_All_PartyList(db: Session = Depends(get_db)):
     try:
         partylists = db.query(PartyList).order_by(PartyList.PartyListId).all()
-        return {"partylists": [partylist.to_dict(i+1) for i, partylist in enumerate(partylists)]}
+
+        # make a dictionary of partylists
+        partylists = [partylist.to_dict(i+1) for i, partylist in enumerate(partylists)]
+
+        # return the election name using the election id in the partylist dictionary
+        for partylist in partylists:
+            if partylist["ElectionId"]:
+                election = db.query(Election).filter(Election.ElectionId == partylist["ElectionId"]).first()
+                partylist["ElectionName"] = election.ElectionName if election else None
+                partylist["ElectionType"] = election.ElectionType if election else None
+
+        return {"partylists": partylists}
+        
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while fetching all partylists from the database"})
     
@@ -1415,6 +1507,40 @@ def get_All_Approved_PartyList(db: Session = Depends(get_db)):
         return {"partylists": [partylist.to_dict(i+1) for i, partylist in enumerate(partylists)]}
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while fetching all approved partylists from the database"})
+
+
+@router.get("/partylist/election/{id}/approved/all", tags=["Party List"])
+def get_All_Approved_PartyList_By_Election_Id(id: int, db: Session = Depends(get_db)):
+    try:
+        partylists = db.query(PartyList).filter(PartyList.ElectionId == id, PartyList.Status == 'Approved').order_by(PartyList.PartyListId).all()
+        return {"partylists": [partylist.to_dict(i+1) for i, partylist in enumerate(partylists)]}
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while fetching all approved partylists from the database"})
+    
+@router.get("/partylist/{id}/candidates/all", tags=["Party List"])
+def get_All_Candidates_By_PartyList_Id(id: int, db: Session = Depends(get_db)):
+    try:
+        # Get all candidates in the CoC table that are approved and are running under this partylist ordered by position
+        partylist_candidates = db.query(CoC).join(CreatedElectionPosition, CreatedElectionPosition.ElectionId == CoC.ElectionId).filter(CoC.PartyListId == id, 
+                                                                                                                                        CoC.Status == 'Approved').order_by(CreatedElectionPosition.CreatedElectionPositionId).all()
+        
+        partylist_candidates_dict = []
+        # Include the student full name in student table by student number in the CoC table
+        for i, coc in enumerate(partylist_candidates):
+            student = db.query(Student).filter(Student.StudentNumber == coc.StudentNumber).first()
+            partylist_candidates_dict.append(coc.to_dict(i+1))
+            partylist_candidates_dict[i]["Student"] = student.to_dict() if student else None
+
+        # Include the display photo URL from cloudinary in the CoC dictionary
+        for coc in partylist_candidates_dict:
+            if coc["DisplayPhoto"]:
+                response = resources_by_tag(coc["DisplayPhoto"])
+                coc["DisplayPhoto"] = response['resources'][0]['secure_url']
+
+        return {"candidates": partylist_candidates_dict}
+
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while fetching all candidates from the database"})
     
 @router.get("/partylist/{id}", tags=["Party List"])
 def get_PartyList_By_Id(id: int, db: Session = Depends(get_db)):
@@ -1502,8 +1628,26 @@ async def save_PartyList(election_id: int = Form(...), party_name: str = Form(..
         "video_attachment": new_partylist.VideoAttachment,
     }
 
+# Create a queue
+queue_email_partylist_status = asyncio.Queue()
+
+# Define a worker function
+async def email_partylist_status_wroker():
+    while True:
+        # Get a task from the queue
+        task = await queue_email_partylist_status.get()
+
+        # Process the task
+        party_email, status, partylist_name, election_name = task
+        send_partylist_status_email(party_email, status, partylist_name, election_name)
+
+        # Indicate that the task is done
+        queue_email_partylist_status.task_done()
+
+asyncio.create_task(email_partylist_status_wroker())
+
 @router.put("/partylist/{id}/accept", tags=["Party List"])
-def accept_PartyList(id: int, db: Session = Depends(get_db)):
+async def accept_PartyList(id: int, db: Session = Depends(get_db)):
     try:
         partylist = db.query(PartyList).get(id)
 
@@ -1515,12 +1659,17 @@ def accept_PartyList(id: int, db: Session = Depends(get_db)):
 
         db.commit()
 
+        # Get the election from the Election table using the election id in the CoC table
+        election = db.query(Election).filter(Election.ElectionId == partylist.ElectionId).first()
+
+        await queue_email_partylist_status.put((partylist.EmailAddress, 'Approved', partylist.PartyListName, election.ElectionName))
+
         return {"detail": "Partylist id " + str(id) + " was successfully approved"}
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while approving partylist in the table PartyList"})
     
 @router.put("/partylist/{id}/reject", tags=["Party List"])
-def reject_PartyList(id: int, db: Session = Depends(get_db)):
+async def reject_PartyList(id: int, db: Session = Depends(get_db)):
     try:
         partylist = db.query(PartyList).get(id)
 
@@ -1531,6 +1680,11 @@ def reject_PartyList(id: int, db: Session = Depends(get_db)):
         partylist.updated_at = datetime.now()
 
         db.commit()
+
+        # Get the election from the Election table using the election id in the CoC table
+        election = db.query(Election).filter(Election.ElectionId == partylist.ElectionId).first()
+
+        await queue_email_partylist_status.put((partylist.EmailAddress, 'Rejected', partylist.PartyListName, election.ElectionName))
 
         return {"detail": "Partylist id " + str(id) + " was successfully rejected"}
     except:
