@@ -12,8 +12,18 @@
             <input class="searchbar" type="text" v-model="searchQuery" placeholder="Search voters...">
         </div>
     </div>
+
+    <ImageSkeleton v-if="isVotersLoading" 
+                    :loading="isVotersLoading" 
+                    :itemCount="1" 
+                    :borderRadius="'0px'"
+                    :imageWidth="'70vw'" 
+                    :imageHeight="'70vh'"
+                    :containerMargin="'1% 15%'"
+                    :itemMargin="'0em'">
+    </ImageSkeleton>
     
-    <div class="parent">
+    <div class="parent" v-if="isVotersSuccess">
         <BaseTable class="item-table" 
                 :columns="['Student Name', 'Course']" 
                 :columnWidths="['50%', '50%']"
@@ -33,6 +43,7 @@
     import Navbar from '../Shared/Navbar.vue'
     import BaseContainer from '../Shared/BaseContainer.vue'
     import BaseTable from '../Shared/BaseTable.vue'
+    import ImageSkeleton from '../Skeletons/ImageSkeleton.vue'
 
     import { useQuery } from "@tanstack/vue-query";
     import { router } from '@inertiajs/vue3';
@@ -89,7 +100,8 @@
             Standards,
             Navbar,
             BaseContainer,
-            BaseTable
+            BaseTable,
+            ImageSkeleton
         },
         methods: {
             returnPage(){
