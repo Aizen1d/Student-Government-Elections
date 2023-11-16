@@ -26,7 +26,7 @@
                 </div>
             </div>
 
-            <div class="card">
+            <div class="card" @click.prevent="viewPartylists">
                 <img src="../../images/Directory/List/party.png" class="card-img-top" alt="">
                 <div class="card-body">
                     <h1 class="card-title">Party Lists</h1>
@@ -65,6 +65,9 @@
             },
             viewCandidates(){
                 router.visit('/directory/candidates')
+            },
+            viewPartylists(){
+                router.visit('/directory/partylists')
             },
         }
     }
