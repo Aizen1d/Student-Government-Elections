@@ -1433,8 +1433,8 @@ class CodeForStudent(BaseModel):
     code_type: str
 
 """ ** POST Methods: All about Code Table APIs ** """
-@router.post("/code/generate", tags=["Code"])
-def generate_Code(code_for_student:CodeForStudent, db: Session = Depends(get_db)):
+@router.post("/code/coc/verification/generate", tags=["Code"])
+def generate_Coc_Verification_Code(code_for_student:CodeForStudent, db: Session = Depends(get_db)):
     # Check if the student exists in the database
     student = db.query(Student).filter(Student.StudentNumber == code_for_student.student_number).first()
     if not student:
@@ -1472,6 +1472,62 @@ def generate_Code(code_for_student:CodeForStudent, db: Session = Depends(get_db)
         "email_address": student.EmailAddress,
         "code_value": code_value,
         "code_type": code_for_student.code_type,
+    }
+
+@router.post("/code/ratings/verification/generate", tags=["Code"])
+def generate_Ratings_Verification_Code(code_for_student:CodeForStudent, db: Session = Depends(get_db)):
+    # Check if the student exists in the database
+    student = db.query(Student).filter(Student.StudentNumber == code_for_student.student_number).first()
+
+    if not student:
+        return JSONResponse(status_code=404, content={"error": "Student number does not exist"})
+    
+    # Check if a code already exists with same code type for this student
+    existing_code_type = db.query(Code).filter(Code.StudentNumber == code_for_student.student_number, Code.CodeType == code_for_student.code_type).first()
+
+    # Generate a random code
+    code_value = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
+
+    if existing_code_type:
+        # If a code already exists for this student, update it
+        existing_code_type.CodeValue = code_value
+        existing_code_type.CodeExpirationDate = datetime.now() + timedelta(minutes=30)
+        existing_code_type.updated_at = datetime.now()
+
+    else:
+        # If no code exists for this student, create a new one
+        new_code = Code(StudentNumber=code_for_student.student_number, 
+                        CodeValue=code_value,
+                        CodeType=code_for_student.code_type,
+                        CodeExpirationDate=datetime.now() + timedelta(minutes=30),
+                        created_at=datetime.now(),
+                        updated_at=datetime.now())
+        db.add(new_code)
+
+    # Commit the session to save the changes in the database
+    db.commit()
+
+    send_verification_code_email(student.StudentNumber, student.EmailAddress, code_value)
+
+    # Return the new or updated code including the email address of the student
+    return {
+        "student_number": student.StudentNumber,
+        "email_address": student.EmailAddress,
+        "code_value": code_value,
+        "code_type": code_for_student.code_type,
+    }
+
+@router.post("/code/ratings/verify/{code}/{type}", tags=["Code"])
+def verify_Ratings_Code(code: str, type: str, db: Session = Depends(get_db)):
+    # Check if the code exists in the database
+    code = db.query(Code).filter(Code.CodeValue == code, Code.CodeType == type, Code.CodeExpirationDate > datetime.now()).first()
+
+    if not code:
+        return JSONResponse(status_code=404, content={"error": "Code does not exist or has expired"})
+
+    # return true and a message if the code is valid
+    return {
+        "valid": True,
     }
 
 #################################################################
