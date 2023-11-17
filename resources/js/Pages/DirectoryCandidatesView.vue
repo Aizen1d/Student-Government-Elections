@@ -22,6 +22,90 @@
         </div>
     </div>
 
+    <div class="modal" v-if="showRateModal">
+        <div class="modal-content" v-if="isVerified">
+            <div class="row" style="margin-top: -2%;">
+                <div class="col-10">
+                    <p style="margin-top: 2%; margin-left: 35%;"><b>Rate Candidates</b> (Verify first before rating)</p>
+                </div>
+                <div class="col-2" style="text-align: end;">
+                    <span class="close" @click="closeRateCandidates">&times;</span>
+                </div>
+            </div>
+
+            <div class="row" style="margin-top: 3%;">
+                <div class="col-6" style="">
+                    <input type="text" style="width: 80%; margin-left: 23%;" class="form-control" maxlength="15" placeholder="Enter your student number" v-model="student_number">
+                </div>
+                <div class="col-6">
+                <ActionButton @click.prevent="sendCode" :disabled="isSending || isSent || student_number === ''" 
+                                    :style="{ width: isSent ? '20em' : '15em' }"
+                                    style="font-size: 1em;
+                                    margin-left: 3%;
+                                    height: 2.2em; 
+                                    padding: 0px 0px 0px 0px !important;">{{ buttonText }}</ActionButton>
+                </div>
+            </div>
+
+            <div class="row" style="margin-top: 3%;">
+                <div class="col-6" style="">
+                    <input type="text" style="width: 80%; margin-left: 23%;" class="form-control" placeholder="Enter your verification code" v-model="verification_code">
+                </div>
+                <div class="col-6">
+                <ActionButton class="verify-button" @click.prevent="verify" :disabled="isVerifying || verification_code === ''" 
+                                    :style="{ width: '15em' }"
+                                    style="font-size: 1em;
+                                    margin-left: 3%;
+                                    height: 2.2em; 
+                                    padding: 0px 0px 0px 0px !important;">Verify</ActionButton>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-content" v-else>
+            <div class="row" style="margin-top: -2%;">
+                <div class="col-10">
+                    <p style="margin-top: 2%; margin-left: 35%;"><b>Rate Candidates</b> (One time only)</p>
+                </div>
+                <div class="col-2" style="text-align: end;">
+                    <span class="close" @click="closeRateCandidates">&times;</span>
+                </div>
+            </div>
+
+            <div class="row" style="margin-top: -1%;" v-for="(position, positionIndex) in positionsData" :key="positionIndex">
+                <h1 class="rate-position-name">{{ position.PositionName }}</h1>
+                <div class="col-8" style="display: flex;" v-for="(candidate, candidateIndex) in candidatesData" :key="candidateIndex">
+                    <template v-if="candidate.SelectedPositionName === position.PositionName">
+                        <h1 class="rate-candidate-name">
+                            {{ candidate.Student.FirstName + " " + (candidate.Student.MiddleName ? candidate.Student.MiddleName + " " : "") + candidate.Student.LastName }}
+                        </h1>
+                        <div class="rate" style="margin-top: -2.5%; !important">
+                            <input type="radio" :id="'star5-' + positionIndex + '-' + candidateIndex" :name="'rate-' + positionIndex + '-' + candidateIndex" value="5"/>
+                            <label :for="'star5-' + positionIndex + '-' + candidateIndex" title="text">5 stars</label>
+                            
+                            <input type="radio" :id="'star4-' + positionIndex + '-' + candidateIndex" :name="'rate-' + positionIndex + '-' + candidateIndex" value="4" />
+                            <label :for="'star4-' + positionIndex + '-' + candidateIndex" title="text">4 stars</label>
+
+                            <input type="radio" :id="'star3-' + positionIndex + '-' + candidateIndex" :name="'rate-' + positionIndex + '-' + candidateIndex" value="3" />
+                            <label :for="'star3-' + positionIndex + '-' + candidateIndex" title="text">3 stars</label>
+
+                            <input type="radio" :id="'star2-' + positionIndex + '-' + candidateIndex" :name="'rate-' + positionIndex + '-' + candidateIndex" value="2" />
+                            <label :for="'star2-' + positionIndex + '-' + candidateIndex" title="text">2 stars</label>
+
+                            <input type="radio" :id="'star1-' + positionIndex + '-' + candidateIndex" :name="'rate-' + positionIndex + '-' + candidateIndex" value="1" />
+                            <label :for="'star1-' + positionIndex + '-' + candidateIndex" title="text">1 star</label>
+                        </div>
+                    </template>
+                </div>
+
+                <div class="col-4">
+                    
+                </div>
+                <hr>
+            </div>
+        </div>
+    </div>
+
     <div class="main">
         <div class="row" style="margin-left: 1.8%; margin-top: 5%; margin-right: 2%; margin-bottom: -3%;">
             <div class="col-10">
@@ -30,7 +114,7 @@
                 </h1>
             </div>
             <div class="col-2" style="text-align: end;">
-                <ActionButton class="col-2 rate-button">Rate Candidates</ActionButton>
+                <ActionButton class="col-2 rate-button" @click="openRateCandidates">Rate Candidates</ActionButton>
             </div>
         </div>
 
@@ -96,6 +180,7 @@
     import { useQuery } from "@tanstack/vue-query";
     import { router } from '@inertiajs/vue3';
     import { ref, computed, watchEffect, watch } from 'vue';
+    import { useLocalStorage } from '@vueuse/core';
     import axios from 'axios';
 
     export default {
@@ -104,8 +189,16 @@
             const activeElectionName = ref(props.electionName);
             const atLeastOneCandidate = ref(false);
 
-            const cachedCandidates = ref({});
-            const fetchedIndexes = ref({});
+            const showRateModal = ref(false);
+
+            const student_number = ref('');
+            const verification_code = useLocalStorage(`rating_verification_code_${activeElectionIndex.value}`, '')
+            const isSending = useLocalStorage(`rating_is_sending_${activeElectionIndex.value}`, false);
+            const isSent = useLocalStorage(`rating_is_sent_${activeElectionIndex.value}`, false);
+            const countdown = useLocalStorage(`rating_countdown${activeElectionIndex.value}`, 0);
+
+            const isVerifying = ref(false);
+            const isVerified = useLocalStorage(`rating_is_verified_${activeElectionIndex.value}`, false);
 
             // For Sidebar data
             const fetchElections = async () => {
@@ -174,6 +267,15 @@
                 activeElectionName,
                 atLeastOneCandidate,
 
+                showRateModal,
+                student_number,
+                verification_code,
+                isSending,
+                isSent,
+                countdown,
+                isVerifying,
+                isVerified,
+
                 electionsData,
                 isElectionsLoading,
                 isElectionsSuccess,
@@ -194,8 +296,6 @@
                 fetchElections,
                 fetchPositionsOnElection,
                 fetchCandidatesFromSelectedElection,
-
-                cachedCandidates
             }
         },
         components: {
@@ -207,6 +307,19 @@
             id: '',
             electionName: ''
         },
+        computed: {
+            buttonText() {
+                if (this.isSending) {
+                    return 'Sending..';
+                }
+                else if (this.isSent) {
+                    return `Resend in ${this.countdown} seconds`;
+                }
+                else {
+                    return 'Send Code';
+                }
+            },
+        },
         methods: {
             returnDirectory() {
                 router.visit('/directory')
@@ -217,11 +330,138 @@
             toggleElection(index) {
                 this.activeElectionIndex = this.activeElectionIndex === index ? null : index;
             },
-        }
+            openRateCandidates() {
+                this.showRateModal = true;
+            },
+            closeRateCandidates() {
+                this.showRateModal = false;
+            },
+            sendCode() {
+                if (this.student_number === '') {
+                    return alert('Please enter your student number.')
+                } 
+
+                this.isSending = true;
+
+                axios.post(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/code/ratings/verification/generate`, {
+                    student_number: this.student_number,
+                    code_type: 'Rating-Verification'
+                })
+                .then((response) => {
+                    // console.log(response) // commented out because code can be seen in the console
+                    alert(`Verification code sent to your email ${response.data.email_address}`)
+
+                    this.isSending = false;
+                    this.isSent = true;
+                    this.countdown = 30; // seconds
+                    this.intervalId = setInterval(() => {
+                        if (this.countdown > 1) {
+                            this.countdown--;
+                        } 
+                        else {
+                            clearInterval(this.intervalId);
+                            this.isSent = false;
+                        }
+                    }, 1000);
+                })
+                .catch((error) => {
+                    console.log(error)
+
+                    alert('Student number does not exist.') 
+                    this.isSending = false;
+                })
+            },
+            verify() {
+                if (this.verification_code === '') {
+                    return alert('Please enter your verification code.')
+                }
+
+                this.isVerifying = true;
+
+                const code_type = 'Rating-Verification';
+
+                axios.post(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/code/ratings/verify/${this.verification_code}/${code_type}`)
+                .then((response) => {
+                    // console.log(response) // commented out because code can be seen in the console
+                    if (response.data.valid) {
+                        alert('Verification successful!')
+                    }
+                })
+                .catch((error) => {
+                    console.log(error)
+
+                    alert('Code does not exist or has expired.')
+                })
+                .finally(() => {
+                    this.isVerifying = false;
+                })
+
+            }
+         }
     }
 </script>
 
 <style scoped>
+    .modal {
+        display: block; /* Hidden by default */
+        position: fixed; /* Stay in place */
+        z-index: 1; /* Sit on top */
+        padding-top: 100px; /* Location of the box */
+        left: 0;
+        top: 0;
+        width: 100%; /* Full width */
+        height: 100%; /* Full height */
+        overflow: auto; /* Enable scroll if needed */
+        background-color: rgb(0,0,0); /* Fallback color */
+        background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+    }
+
+        /* Modal Content */
+    .modal-content {
+        background-color: #fefefe;
+        margin: auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 40%;
+    }
+
+        /* The Close Button */
+    .close {
+        color: #000;
+        font-size: 29px;
+        font-weight: bold;
+        margin-top: -2%;
+        width: fit-content;
+    }
+
+    .close:hover {
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .rate-position-name{
+        font-size: 28px;
+        font-weight: 800;
+        color: #B90321;
+        margin-bottom: 2%;
+    }
+
+    .rate-candidate-name{
+        font-size: 22px;
+        font-weight: normal;
+        margin-bottom: 2%;
+        margin-right: 2%;
+        margin-left: 7%;
+    }
+
+    .rate-input{
+        width: 10%;
+        height: 80%;
+        text-align: center;
+        font-size: 20px;
+        font-weight: 800;
+    }
+
     .eligible{
         font-size: 28px;
         font-weight: 800;
