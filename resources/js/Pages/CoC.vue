@@ -144,8 +144,8 @@
             const student_number = useLocalStorage(`coc_student_number_${id.value}`, '')
 
             const verification_code = useLocalStorage(`coc_verification_code_${id.value}`, '')
-            const isSending = useLocalStorage('is_sending', false);
-            const isSent = useLocalStorage('is_sent', false);
+            const isSending = useLocalStorage(`is_sending_${id.value}`, false);
+            const isSent = useLocalStorage(`is_sent_${id.value}`, false);
             const countdown = useLocalStorage('countdown', 0);
             const intervalId = useLocalStorage('interval_id', null);
 
@@ -426,7 +426,7 @@
 
                 this.isSending = true;
 
-                axios.post(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/code/generate`, {
+                axios.post(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/code/coc/verification/generate`, {
                     student_number: this.student_number,
                     code_type: 'Verification'
                 })
@@ -449,6 +449,9 @@
                 })
                 .catch((error) => {
                     console.log(error)
+
+                    alert('Student number does not exist.') 
+                    this.isSending = false;
                 })
 
             },
