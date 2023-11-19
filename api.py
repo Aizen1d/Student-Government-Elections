@@ -33,7 +33,7 @@ import asyncio
 from cloudinary.api import resources_by_tag, delete_resources_by_tag, delete_folder
 from services import send_verification_code_email, send_pass_code_queue_email, send_pass_code_manual_email, send_coc_status_email, send_partylist_status_email
 
-from models import Student, Organization, Announcement, Rule, Guideline, AzureToken, Election, SavedPosition, CreatedElectionPosition, Code, StudentPassword, PartyList, CoC, InsertDataQueues
+from models import Student, Organization, Announcement, Rule, Guideline, AzureToken, Election, SavedPosition, CreatedElectionPosition, Code, StudentPassword, PartyList, CoC, InsertDataQueues, Candidates, RatingsTracker
 
 #################################################################
 """ Settings """
@@ -1386,6 +1386,18 @@ async def accept_CoC(id: int, db: Session = Depends(get_db)):
 
         db.commit()
 
+        # Put to the Candidates table
+        new_candidate = Candidates(StudentNumber=coc.StudentNumber,
+                                    ElectionId=coc.ElectionId,
+                                    PartyListId=coc.PartyListId,
+                                    SelectedPositionName=coc.SelectedPositionName,
+                                    DisplayPhoto=coc.DisplayPhoto,
+                                    created_at=datetime.now(),
+                                    updated_at=datetime.now())
+        
+        db.add(new_candidate)
+        db.commit()
+
         # Get the student from the Student table using the student number in the CoC table
         student = db.query(Student).filter(Student.StudentNumber == coc.StudentNumber).first()
 
@@ -1481,6 +1493,12 @@ def generate_Ratings_Verification_Code(code_for_student:CodeForStudent, db: Sess
 
     if not student:
         return JSONResponse(status_code=404, content={"error": "Student number does not exist"})
+
+    # Check RatinsTracker table if the student has already submitted ratings
+    ratings_tracker = db.query(RatingsTracker).filter(RatingsTracker.StudentNumber == code_for_student.student_number).first()
+
+    if ratings_tracker:
+        return JSONResponse(status_code=400, content={"error": "You have already submitted your ratings"})
     
     # Check if a code already exists with same code type for this student
     existing_code_type = db.query(Code).filter(Code.StudentNumber == code_for_student.student_number, Code.CodeType == code_for_student.code_type).first()
@@ -1524,6 +1542,11 @@ def verify_Ratings_Code(code: str, type: str, db: Session = Depends(get_db)):
 
     if not code:
         return JSONResponse(status_code=404, content={"error": "Code does not exist or has expired"})
+    
+    # remove the code from the database
+    if code:
+        db.delete(code)
+        db.commit()
 
     # return true and a message if the code is valid
     return {
@@ -1745,6 +1768,142 @@ async def reject_PartyList(id: int, db: Session = Depends(get_db)):
         return {"detail": "Partylist id " + str(id) + " was successfully rejected"}
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while rejecting partylist in the table PartyList"})
+    
+#################################################################
+## Candidates APIs ## 
+
+""" Candidates Table APIs """
+class Rating(BaseModel):
+    candidate_student_number: str
+    rating: int
+
+class RatingList(BaseModel):
+    election_id: int
+    rater_student_number: str
+    ratings: List[Rating]
+
+""" ** GET Methods: Candidates Table APIs ** """
+@router.get("/candidates/all", tags=["Candidates"])
+def get_All_Candidates(db: Session = Depends(get_db)):
+    try:
+        candidates = db.query(Candidates).order_by(Candidates.CandidateId).all()
+
+        # Get the student row from student table using the student number in the candidate
+        candidates_with_student = []
+        for i, candidate in enumerate(candidates):
+            student = db.query(Student).filter(Student.StudentNumber == candidate.StudentNumber).first()
+            candidate_dict = candidate.to_dict(i+1)
+            candidate_dict["Student"] = student.to_dict() if student else {}
+
+            # Get the party list name from partylist table using the partylist id in the candidate
+            if candidate.PartyListId:
+                partylist = db.query(PartyList).filter(PartyList.PartyListId == candidate.PartyListId).first()
+                candidate_dict["PartyListName"] = partylist.PartyListName if partylist else ""
+
+            # Get the motto from coc table using the student number in the candidate
+            if candidate.StudentNumber:
+                coc = db.query(CoC).filter(CoC.StudentNumber == candidate.StudentNumber, CoC.ElectionId == candidate.ElectionId).first()
+                candidate_dict["Motto"] = coc.Motto if coc else ""
+
+            # Get the display photo from cloudinary using the candidate.displayphoto resources by tag in cloudinary
+            display_photo = resources_by_tag(candidate.DisplayPhoto)
+            candidate_dict["DisplayPhoto"] = display_photo["resources"][0]["secure_url"] if display_photo else ""
+            
+            candidates_with_student.append(candidate_dict)
+
+        return {"candidates": candidates_with_student}
+
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while fetching all candidates from the database"})
+    
+@router.get("/candidates/election/{id}/all", tags=["Candidates"])
+def get_All_Candidates_By_Election_Id(id: int, db: Session = Depends(get_db)):
+    try:
+        candidates = db.query(Candidates).filter(Candidates.ElectionId == id).order_by(Candidates.CandidateId).all()
+
+        # Get the student row from student table using the student number in the candidate
+        candidates_with_student = []
+        for i, candidate in enumerate(candidates):
+            student = db.query(Student).filter(Student.StudentNumber == candidate.StudentNumber).first()
+            candidate_dict = candidate.to_dict(i+1)
+            candidate_dict["Student"] = student.to_dict() if student else {}
+
+            # Get the party list name from partylist table using the partylist id in the candidate
+            if candidate.PartyListId:
+                partylist = db.query(PartyList).filter(PartyList.PartyListId == candidate.PartyListId).first()
+                candidate_dict["PartyListName"] = partylist.PartyListName if partylist else ""
+
+            # Get the motto from coc table using the student number in the candidate
+            if candidate.StudentNumber:
+                coc = db.query(CoC).filter(CoC.StudentNumber == candidate.StudentNumber, CoC.ElectionId == candidate.ElectionId).first()
+                candidate_dict["Motto"] = coc.Motto if coc else ""
+
+            # Get the display photo from cloudinary using the candidate.displayphoto resources by tag in cloudinary
+            display_photo = resources_by_tag(candidate.DisplayPhoto)
+            candidate_dict["DisplayPhoto"] = display_photo["resources"][0]["secure_url"] if display_photo else ""
+            
+            candidates_with_student.append(candidate_dict)
+
+        return {"candidates": candidates_with_student}
+
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while fetching all candidates from the database"})
+
+""" ** POST Methods: All about Candidates Table APIs ** """
+@router.post("/candidates/ratings/submit", tags=["Candidates"])
+def save_Candidate_Ratings(rating_list: RatingList, db: Session = Depends(get_db)):
+    # Check if the student has already rated this election
+    existing_rating = db.query(RatingsTracker).filter(RatingsTracker.StudentNumber == rating_list.rater_student_number, RatingsTracker.ElectionId == rating_list.election_id).first()
+
+    if existing_rating:
+        return JSONResponse(status_code=400, content={"error": "You have already rated this election"})
+
+    for rating in rating_list.ratings:
+        # Check if the student exists in the database
+        student = db.query(Student).filter(Student.StudentNumber == rating.candidate_student_number).first()
+
+        if not student:
+            return JSONResponse(status_code=404, content={"error": "Student number does not exist"})
+
+        # Check if the election exists in the database
+        election = db.query(Election).filter(Election.ElectionId == rating_list.election_id).first()
+
+        if not election:
+            return JSONResponse(status_code=404, content={"error": "Election does not exist"})
+
+        # Update the ratings of the candidate in the Candidates table
+        candidate = db.query(Candidates).filter(Candidates.StudentNumber == rating.candidate_student_number, Candidates.ElectionId == rating_list.election_id).first()
+
+        if not candidate:
+            return JSONResponse(status_code=404, content={"error": "Candidate does not exist"})
+
+        # Increment the number of ratings of the candidate by ratings received
+        candidate.Rating += rating.rating
+        candidate.TimesRated += 1
+        candidate.updated_at = datetime.now()
+
+        db.commit()
+
+    # Add a new record in the RatingsTracker table
+    new_rating = RatingsTracker(StudentNumber=rating_list.rater_student_number,
+                                        ElectionId=rating_list.election_id,
+                                        created_at=datetime.now(),
+                                        updated_at=datetime.now())
+
+    db.add(new_rating)
+    db.commit()
+
+    return {"response": "success"}
+
+
+#################################################################
+## RatingsTracker APIs ## 
+
+""" RatingsTracker Table APIs """
+
+""" ** GET Methods: RatingsTracker Table APIs ** """
+
+""" ** POST Methods: All about RatingsTracker Table APIs ** """
 
 #################################################################
 app.include_router(router)

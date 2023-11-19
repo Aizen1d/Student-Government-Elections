@@ -382,3 +382,51 @@ class PartyList(Base):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }
+    
+class Candidates(Base):
+    __tablename__ = "Candidates"
+
+    CandidateId = Column(Integer, primary_key=True)
+    StudentNumber = Column(String(15), ForeignKey('Student.StudentNumber'), unique=True)
+    ElectionId = Column(Integer, ForeignKey('Election.ElectionId'))
+    PartyListId = Column(Integer, ForeignKey('PartyList.PartyListId'), nullable=True)
+    SelectedPositionName = Column(String)
+    DisplayPhoto = Column(String)
+    Rating = Column(Integer, default=0)
+    TimesRated = Column(Integer, default=0)
+    Votes = Column(Integer, default=0)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    def to_dict(self, row=None):
+        return {
+            "CandidateId": self.CandidateId,
+            "StudentNumber": self.StudentNumber,
+            "ElectionId": self.ElectionId,
+            "PartyListId": self.PartyListId,
+            "SelectedPositionName": self.SelectedPositionName,
+            "DisplayPhoto": self.DisplayPhoto,
+            "Rating": self.Rating,
+            "TimesRated": self.TimesRated,
+            "Votes": self.Votes,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None
+        }
+    
+class RatingsTracker(Base):
+    __tablename__ = "RatingsTracker"
+
+    RatingsTrackerId = Column(Integer, primary_key=True)
+    StudentNumber = Column(String(15), ForeignKey('Student.StudentNumber'), unique=True)
+    ElectionId = Column(Integer, ForeignKey('Election.ElectionId'))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    def to_dict(self):
+        return {
+            "RatingsTrackerId": self.RatingsTrackerId,
+            "StudentNumber": self.StudentNumber,
+            "ElectionId": self.ElectionId,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None
+        }
