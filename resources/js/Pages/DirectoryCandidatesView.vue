@@ -23,7 +23,7 @@
     </div>
 
     <div class="modal" v-if="showRateModal">
-        <div class="modal-content" v-if="isVerified">
+        <div class="modal-content" v-if="!isVerified">
             <div class="row" style="margin-top: -2%;">
                 <div class="col-10">
                     <p style="margin-top: 2%; margin-left: 35%;"><b>Rate Candidates</b> (Verify first before rating)</p>
@@ -103,6 +103,8 @@
                 </div>
                 <hr>
             </div>
+
+            <ActionButton @click="submitRating">Submit</ActionButton>
         </div>
     </div>
 
@@ -120,12 +122,12 @@
 
         <h2 style="margin-top: 4%; margin-left: 2.6%;" v-if="isCandidatesLoading">Loading..</h2>
 
-        <template v-for="(position, index) in positionsData" :key="index">
+        <template v-for="(position, positionIndex) in positionsData" :key="positionIndex">
             <div class="position row">
                 <h1 :id="position.PositionName" class="col-10">{{ position.PositionName }} Candidates</h1>
                 <hr class="my-4">
 
-                <div class="candidate" v-for="(candidate, index) in candidatesData">
+                <div class="candidate" v-for="(candidate, candidateIndex) in candidatesData">
                     <div v-if="candidate.SelectedPositionName === position.PositionName">
                         <table>
                             <tbody>
@@ -141,20 +143,33 @@
                                                         {{ candidate.Student.FirstName + " " + (candidate.Student.MiddleName ? candidate.Student.MiddleName + " " : "") + candidate.Student.LastName }}
                                                     </strong>
                                                 </div>
-                                                <div class="rate">
-                                                    <input type="radio" id="star5" name="rate" value="5" />
-                                                    <label for="star5" title="text">5 stars</label>
-                                                    <input type="radio" id="star4" name="rate" value="4" />
-                                                    <label for="star4" title="text">4 stars</label>
-                                                    <input type="radio" id="star3" name="rate" value="3" />
-                                                    <label for="star3" title="text">3 stars</label>
-                                                    <input type="radio" id="star2" name="rate" value="2" />
-                                                    <label for="star2" title="text">2 stars</label>
-                                                    <input type="radio" id="star1" name="rate" value="1" />
-                                                    <label for="star1" title="text">1 star</label>
+                                                <div class="rate-candidate">
+                                                    <input type="radio" :id="'star5-' + positionIndex + '-' + candidateIndex" :name="'rate-' + positionIndex + '-' + candidateIndex" value="5"
+                                                            :checked="candidate.Rating / candidate.TimesRated >= 5" disabled/>
+                                                    <label :for="'star5-' + positionIndex + '-' + candidateIndex" title="5 star">5 stars</label>
+                                                    
+                                                    <input type="radio" :id="'star4-' + positionIndex + '-' + candidateIndex" :name="'rate-' + positionIndex + '-' + candidateIndex" value="4" 
+                                                            :checked="candidate.Rating / candidate.TimesRated >= 4 && candidate.Rating / candidate.TimesRated <= 4.99" disabled/>
+                                                    <label :for="'star4-' + positionIndex + '-' + candidateIndex" title="4 star">4 stars</label>
+
+                                                    <input type="radio" :id="'star3-' + positionIndex + '-' + candidateIndex" :name="'rate-' + positionIndex + '-' + candidateIndex" value="3" 
+                                                            :checked="candidate.Rating / candidate.TimesRated >= 3 && candidate.Rating / candidate.TimesRated <= 3.99" disabled/>
+                                                    <label :for="'star3-' + positionIndex + '-' + candidateIndex" title="3 star">3 stars</label>
+
+                                                    <input type="radio" :id="'star2-' + positionIndex + '-' + candidateIndex" :name="'rate-' + positionIndex + '-' + candidateIndex" value="2" 
+                                                            :checked="candidate.Rating / candidate.TimesRated >= 2 && candidate.Rating / candidate.TimesRated <= 2.99" disabled/>
+                                                    <label :for="'star2-' + positionIndex + '-' + candidateIndex" title="2 star">2 stars</label>
+
+                                                    <input type="radio" :id="'star1-' + positionIndex + '-' + candidateIndex" :name="'rate-' + positionIndex + '-' + candidateIndex" value="1" 
+                                                            :checked="candidate.Rating / candidate.TimesRated >= 1 && candidate.Rating / candidate.TimesRated <= 1.99" disabled/>
+                                                    <label :for="'star1-' + positionIndex + '-' + candidateIndex" title="1 star">1 stars</label>
                                                 </div>
+                                                <h4 style="margin-top: 1.3%; font-size: 1.1rem; color: #535353;">
+                                                    {{ candidate.Rating / candidate.TimesRated }} star rating
+                                                </h4>
                                             </div>
-                                            <div class="affiliation">{{ candidate.PoliticalAffiliation }}: {{ candidate.PartyListName }}</div>
+                                            <div class="affiliation" v-if="candidate.PartyListName">{{ candidate.PartyListName }}</div>
+                                            <div class="affiliation" v-else>Independent</div>
                                         </div>
 
                                         <div class="quote">
@@ -168,6 +183,7 @@
                 </div>
             </div>
         </template>
+
     
     </div>
 </template>
@@ -192,13 +208,15 @@
             const showRateModal = ref(false);
 
             const student_number = ref('');
-            const verification_code = useLocalStorage(`rating_verification_code_${activeElectionIndex.value}`, '')
+            const rater_student_number = ref(''); 
+
+            const verification_code = ref('');
             const isSending = useLocalStorage(`rating_is_sending_${activeElectionIndex.value}`, false);
             const isSent = useLocalStorage(`rating_is_sent_${activeElectionIndex.value}`, false);
             const countdown = useLocalStorage(`rating_countdown${activeElectionIndex.value}`, 0);
 
             const isVerifying = ref(false);
-            const isVerified = useLocalStorage(`rating_is_verified_${activeElectionIndex.value}`, false);
+            const isVerified = ref(false);
 
             // For Sidebar data
             const fetchElections = async () => {
@@ -238,17 +256,17 @@
             
             // For fetching candidates from selected election
             const fetchCandidatesFromSelectedElection = async () => {
-                const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/election/${activeElectionIndex.value}/approved/coc/all`);
+                const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/candidates/election/${activeElectionIndex.value}/all`);
                 console.log(`Get all candidates from selected election successful. Duration: ${response.duration}ms`)
 
-                if (response.data.cocs.length > 0) {
+                if (response.data.candidates.length > 0) {
                     atLeastOneCandidate.value = true;
                 }
                 else {
                     atLeastOneCandidate.value = false;
                 }
 
-                return response.data.cocs;
+                return response.data.candidates;
             }
 
             const { data: candidatesData,
@@ -269,6 +287,7 @@
 
                 showRateModal,
                 student_number,
+                rater_student_number,
                 verification_code,
                 isSending,
                 isSent,
@@ -367,7 +386,7 @@
                 .catch((error) => {
                     console.log(error)
 
-                    alert('Student number does not exist.') 
+                    alert(error.response.data.error)
                     this.isSending = false;
                 })
             },
@@ -382,21 +401,77 @@
 
                 axios.post(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/code/ratings/verify/${this.verification_code}/${code_type}`)
                 .then((response) => {
-                    // console.log(response) // commented out because code can be seen in the console
                     if (response.data.valid) {
-                        alert('Verification successful!')
+                        this.isVerified = true;
+                        this.rater_student_number = this.student_number;
+
+                        alert('Verification successful.')
                     }
                 })
                 .catch((error) => {
                     console.log(error)
 
-                    alert('Code does not exist or has expired.')
+                    alert('Code does not exist or has used/expired.')
                 })
                 .finally(() => {
                     this.isVerifying = false;
                 })
 
-            }
+            },
+            submitRating() {
+                const ratings = [];
+
+                for (let i = 0; i < this.positionsData.length; i++) {
+                    for (let j = 0; j < this.candidatesData.length; j++) {
+                        if (this.candidatesData[j].SelectedPositionName === this.positionsData[i].PositionName) {
+                            const rating = {
+                                candidate_student_number: this.candidatesData[j].Student.StudentNumber,
+                                rating: document.querySelector(`input[name="rate-${i}-${j}"]:checked`).value
+                            }
+
+                            ratings.push(rating);
+                        }
+                    }
+                }
+
+                // Pass the verified student number and rates + student number of candidates to backend
+                axios.post(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/candidates/ratings/submit`, {
+                    election_id: this.activeElectionIndex,
+                    rater_student_number: this.rater_student_number,
+                    ratings: ratings
+                })
+                .then((response) => {
+                    // TODO: make a clear local storage function?
+
+                    alert('Ratings submitted successfully.')
+                    this.closeRateCandidates();
+                })
+                .catch((error) => {
+                    console.log(error.data.error)
+                    
+                    alert(error.data.error)
+                })
+            },
+            getRatings(ratings_count, times_rated) {
+                if (ratings_count / times_rated >= 4.5) {
+                    return 5;
+                }
+                else if (ratings_count / times_rated >= 3.5) {
+                    return 4
+                }
+                else if (ratings_count / times_rated >= 2.5) {
+                    return 3
+                }
+                else if (ratings_count / times_rated >= 1.5) {
+                    return 2
+                }
+                else if (ratings_count / times_rated >= 0.5) {
+                    return 1
+                }
+                else {
+                    return 0;
+                }
+            },
          }
     }
 </script>
@@ -423,6 +498,8 @@
         padding: 20px;
         border: 1px solid #888;
         width: 40%;
+        max-height: 70%;
+        overflow: auto;
     }
 
         /* The Close Button */
@@ -616,10 +693,6 @@
         margin-top: 50px;
     }
 
-    .candidate:hover {
-        color: #CA2B00;
-    }
-
     .candidate td {
         vertical-align: top;
     }
@@ -680,5 +753,38 @@
     .rate>input:checked~label:hover~label,
     .rate>label:hover~input:checked~label {
         color: #c59b08;
+    }
+
+    .rate-candidate {
+        height: 46px;
+        padding: 0 10px;
+    }
+
+    .rate-candidate:not(:checked)>input {
+        position: absolute;
+        top: -9999px;
+    }
+
+    .rate-candidate:not(:checked)>label {
+        float: right;
+        width: 1em;
+        overflow: hidden;
+        white-space: nowrap;
+        cursor: pointer;
+        font-size: 30px;
+        color: #ccc;
+    }
+
+    .rate-candidate:not(:checked)>label:before {
+        content: '★ ';
+    }
+
+    .rate-candidate>input:checked~label {
+        color: #EEB503;
+    }
+
+    .rate-candidate :not(:checked)>label:hover,
+    .rate-candidate :not(:checked)>label:hover~label {
+        color: #dfa804;
     }
 </style>
