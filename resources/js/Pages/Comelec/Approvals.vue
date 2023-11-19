@@ -36,7 +36,7 @@
                     :columnWidths=columnWidthsCoC
                     :tableHeight="'auto'"
                     :maxTableHeight="'300px'"
-                    v-if="!isPartylistLoading && filterType === 'coc'">
+                    v-if="!isCoCLoading && filterType === 'coc'">
                     <div>
                         <tr v-for="(item, coc_index) in CoCData" :key="coc_index" @click="selectCoCItem(item)">
                             <td :style="{ width: columnWidthsCoC[0] }" class="my-cell">{{ item.StudentNumber }}</td>
