@@ -6,15 +6,13 @@
             </div>
             <h2>Login</h2>
 
-            <form class="login-form" @submit.prevent="submitForm">
                 <label for="student_number">Student Number</label>
-                <input type="text" id="student_number" placeholder="Enter your student number" maxlength="15" v-model="form.StudentNumber">
+                <input type="text" id="student_number" placeholder="Enter your student number" maxlength="15" @keyup.enter="submitForm" v-model="form.StudentNumber">
 
                 <label for="password">Password</label>
-                <input type="password" id="password" placeholder="Enter your password" v-model="form.Password">
+                <input type="password" id="password" placeholder="Enter your password" @keyup.enter="submitForm" v-model="form.Password">
 
-                <button class="login-button" type="submit" :disabled="loggingIn">{{ login_text }}</button>
-            </form>
+                <button class="login-button" @click.prevent="submitForm" :disabled="loggingIn">{{ login_text }}</button>
         </div>
     </div>
 
