@@ -80,20 +80,20 @@
                             {{ candidate.Student.FirstName + " " + (candidate.Student.MiddleName ? candidate.Student.MiddleName + " " : "") + candidate.Student.LastName }}
                         </h1>
                         <div class="rate" style="margin-top: -2.5%; !important">
-                            <input type="radio" :id="'star5-' + positionIndex + '-' + candidateIndex" :name="'rate-' + positionIndex + '-' + candidateIndex" value="5"/>
-                            <label :for="'star5-' + positionIndex + '-' + candidateIndex" title="text">5 stars</label>
+                            <input type="radio" :id="'candidate-star5-' + positionIndex + '-' + candidateIndex" :name="'candidate-rate-' + positionIndex + '-' + candidateIndex" value="5"/>
+                            <label :for="'candidate-star5-' + positionIndex + '-' + candidateIndex" title="text">5 stars</label>
                             
-                            <input type="radio" :id="'star4-' + positionIndex + '-' + candidateIndex" :name="'rate-' + positionIndex + '-' + candidateIndex" value="4" />
-                            <label :for="'star4-' + positionIndex + '-' + candidateIndex" title="text">4 stars</label>
+                            <input type="radio" :id="'candidate-star4-' + positionIndex + '-' + candidateIndex" :name="'candidate-rate-' + positionIndex + '-' + candidateIndex" value="4" />
+                            <label :for="'candidate-star4-' + positionIndex + '-' + candidateIndex" title="text">4 stars</label>
 
-                            <input type="radio" :id="'star3-' + positionIndex + '-' + candidateIndex" :name="'rate-' + positionIndex + '-' + candidateIndex" value="3" />
-                            <label :for="'star3-' + positionIndex + '-' + candidateIndex" title="text">3 stars</label>
+                            <input type="radio" :id="'candidate-star3-' + positionIndex + '-' + candidateIndex" :name="'candidate-rate-' + positionIndex + '-' + candidateIndex" value="3" />
+                            <label :for="'candidate-star3-' + positionIndex + '-' + candidateIndex" title="text">3 stars</label>
 
-                            <input type="radio" :id="'star2-' + positionIndex + '-' + candidateIndex" :name="'rate-' + positionIndex + '-' + candidateIndex" value="2" />
-                            <label :for="'star2-' + positionIndex + '-' + candidateIndex" title="text">2 stars</label>
+                            <input type="radio" :id="'candidate-star2-' + positionIndex + '-' + candidateIndex" :name="'candidate-rate-' + positionIndex + '-' + candidateIndex" value="2" />
+                            <label :for="'candidate-star2-' + positionIndex + '-' + candidateIndex" title="text">2 stars</label>
 
-                            <input type="radio" :id="'star1-' + positionIndex + '-' + candidateIndex" :name="'rate-' + positionIndex + '-' + candidateIndex" value="1" />
-                            <label :for="'star1-' + positionIndex + '-' + candidateIndex" title="text">1 star</label>
+                            <input type="radio" :id="'candidate-star1-' + positionIndex + '-' + candidateIndex" :name="'candidate-rate-' + positionIndex + '-' + candidateIndex" value="1" />
+                            <label :for="'candidate-star1-' + positionIndex + '-' + candidateIndex" title="text">1 star</label>
                         </div>
                     </template>
                 </div>
@@ -116,7 +116,7 @@
                 </h1>
             </div>
             <div class="col-2" style="text-align: end;">
-                <ActionButton class="col-2 rate-button" @click="openRateCandidates">Rate Candidates</ActionButton>
+                <ActionButton class="col-2 rate-button" @click="openRateCandidates" :disabled="isCandidatesLoading || !isCampaignPeriodOver">Rate Candidates</ActionButton>
             </div>
         </div>
 
@@ -221,12 +221,11 @@
             const isVerifying = ref(false);
             const isVerified = ref(false);
 
-            // For Sidebar data
-            const fetchElections = async () => {
-                const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/election/all`);
-                console.log(`Get all elections successful. Duration: ${response.duration}ms`)
+            const fetchActiveElection = async () => {
+                const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/election/view/${activeElectionIndex.value}`);
+                console.log(`Get election with id ${activeElectionIndex.value} successful. Duration: ${response.duration}ms`)
 
-                return response.data.elections;
+                return response.data.election;
             }
 
             const { data: electionsData,
@@ -234,8 +233,8 @@
                 isSuccess: isElectionsSuccess,
                 isError: isElectionsError } =
                 useQuery({
-                    queryKey: ['fetchElections'],
-                    queryFn: fetchElections,
+                    queryKey: [`fetchActiveElection-${activeElectionIndex.value}`],
+                    queryFn: fetchActiveElection,
                 })
 
             // For fetching positions from selected election
@@ -315,7 +314,6 @@
                 isCandidatesError,
                 isCandidatesRefetching,
 
-                fetchElections,
                 fetchPositionsOnElection,
                 fetchCandidatesFromSelectedElection,
             }
@@ -340,6 +338,17 @@
                 else {
                     return 'Send Code';
                 }
+            },
+            isCampaignPeriodOver() {
+                // Check if current datetime is after campaign period
+                if (this.isElectionsLoading) {
+                    return
+                }
+
+                const now = new Date();
+                const end = new Date(this.electionsData.CampaignEnd);
+                
+                return now > end;
             },
         },
         methods: {
@@ -427,14 +436,30 @@
                 for (let i = 0; i < this.positionsData.length; i++) {
                     for (let j = 0; j < this.candidatesData.length; j++) {
                         if (this.candidatesData[j].SelectedPositionName === this.positionsData[i].PositionName) {
+                            const radio = document.querySelector(`input[name="candidate-rate-${i}-${j}"]:checked`);
+                            const ratingValue = radio ? radio.value : '0';
+
                             const rating = {
                                 candidate_student_number: this.candidatesData[j].Student.StudentNumber,
-                                rating: document.querySelector(`input[name="rate-${i}-${j}"]:checked`).value
+                                rating: ratingValue
                             }
 
                             ratings.push(rating);
                         }
                     }
+                }
+
+                // Check if all ratings are equal to 0
+                let allZero = true;
+                for (let i = 0; i < ratings.length; i++) {
+                    if (ratings[i].rating !== '0') {
+                        allZero = false;
+                        break;
+                    }
+                }
+
+                if (allZero) {
+                    return alert('Please rate at least one candidate.')
                 }
 
                 // Pass the verified student number and rates + student number of candidates to backend
@@ -449,9 +474,9 @@
                     this.isVerified = false;
                 })
                 .catch((error) => {
-                    console.log(error.data.error)
+                    console.log(error)
                     
-                    alert(error.data.error)
+                    alert(error.response.data.error)
                 })
             },
             getRatings(ratings_count, times_rated) {
