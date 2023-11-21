@@ -13,8 +13,8 @@
             </div>
             <div class="col-6" style="text-align: end;">
                 <ActionButton class="mx-2 px-5" @click="seeResults" :disabled="false">See Results</ActionButton>
-                <ActionButton class="mx-2 px-5" @click="fileCoc" :disabled="false">File COC</ActionButton>
-                <ActionButton class="mx-2 px-5" @click="registerParty" :disabled="false">Register Party</ActionButton>
+                <ActionButton class="mx-2 px-5" @click="fileCoc" :disabled="!isFilingPeriod">File COC</ActionButton>
+                <ActionButton class="mx-2 px-5" @click="registerParty" :disabled="!isFilingPeriod">Register Party</ActionButton>
             </div>
         </div>
 
@@ -156,6 +156,16 @@
         },
         props: {
             id: '',
+        },
+        computed: {
+            isFilingPeriod() {
+                // Check if current datetime is within filing period
+                const now = new Date();
+                const start = new Date(this.formattedElectionData.CoCFilingStart);
+                const end = new Date(this.formattedElectionData.CoCFilingEnd);
+
+                return now >= start && now <= end;
+            },
         },
         methods:{
             returnPage(){
