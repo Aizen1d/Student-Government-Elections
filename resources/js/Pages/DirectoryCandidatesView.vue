@@ -164,8 +164,11 @@
                                                             :checked="candidate.Rating / candidate.TimesRated >= 1 && candidate.Rating / candidate.TimesRated <= 1.99" disabled/>
                                                     <label :for="'star1-' + positionIndex + '-' + candidateIndex" title="1 star">1 stars</label>
                                                 </div>
-                                                <h4 style="margin-top: 1.3%; font-size: 1.1rem; color: #535353;">
+                                                <h4 v-if="candidate.TimesRated !== 0" style="margin-top: 1.3%; font-size: 1.1rem; color: #535353;">
                                                     {{ candidate.Rating / candidate.TimesRated }} star rating
+                                                </h4>
+                                                <h4 v-else style="margin-top: 1.3%; font-size: 1.1rem; color: #535353;">
+                                                    Not yet rated
                                                 </h4>
                                             </div>
                                             <div class="affiliation" v-if="candidate.PartyListName">{{ candidate.PartyListName }}</div>
@@ -441,10 +444,9 @@
                     ratings: ratings
                 })
                 .then((response) => {
-                    // TODO: make a clear local storage function?
-
                     alert('Ratings submitted successfully.')
                     this.closeRateCandidates();
+                    this.isVerified = false;
                 })
                 .catch((error) => {
                     console.log(error.data.error)
