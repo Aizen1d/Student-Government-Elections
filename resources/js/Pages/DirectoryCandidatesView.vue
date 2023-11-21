@@ -116,7 +116,7 @@
                 </h1>
             </div>
             <div class="col-2" style="text-align: end;">
-                <ActionButton class="col-2 rate-button" @click="openRateCandidates" :disabled="isCandidatesLoading || !isCampaignPeriodOver">Rate Candidates</ActionButton>
+                <ActionButton class="col-2 rate-button" @click="openRateCandidates" :disabled="isCandidatesLoading || isCampaignPeriodOver">Rate Candidates</ActionButton>
             </div>
         </div>
 
