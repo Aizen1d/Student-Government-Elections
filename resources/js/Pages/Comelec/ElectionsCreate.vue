@@ -16,18 +16,18 @@
             <div class="row g-4">
                 <div class="col-6">
                     <div class="note">
-                        <h6>Set election name and type.</h6>
+                        <h6>Set election title and organization.</h6>
                     </div>
                     <div class="box upper-box">
-                        <label class="form-label" for="name">Election Name</label>
+                        <label class="form-label" for="name">Election Title</label>
                         <input class="form-control margin" type="text" name="name" v-model="election_name_input">
                         
-                        <label class="form-label" for="type">Election Type</label>
+                        <label class="form-label" for="type">Election Organization</label>
                         <input type="hidden" name="election-type">
                             <select v-model="election_type_input" class="form-select" aria-label="Default select example">
-                                <option value="" disabled hidden selected>Select election type</option>
+                                <option value="" disabled hidden selected>Select organization type</option>
                                 <option value="SSC">SSC</option>
-                                <option value="Organization">Organization</option>
+                                <option value="Commits">Commits</option>
                             </select>
                     </div>
                 </div>

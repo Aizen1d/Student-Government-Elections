@@ -19,13 +19,13 @@
             <div class="row g-4">
                 <div class="col-6">
                     <div class="note">
-                        <h6>Election name and type.</h6>
+                        <h6>Election title and organization.</h6>
                     </div>
                     <div class="box upper-box">
-                        <label class="form-label" for="name">Election Name</label>
+                        <label class="form-label" for="name">Election Title</label>
                         <input class="form-control margin" type="text" name="name" v-model="election_name_input" :disabled="true">
                         
-                        <label class="form-label" for="type">Election Type</label>
+                        <label class="form-label" for="type">Election Organization</label>
                         <input class="form-control margin" type="text" name="name" v-model="election_type_input" :disabled="true">
                     </div>
                 </div>
