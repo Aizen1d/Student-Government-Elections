@@ -13,7 +13,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 
 from database import engine, SessionLocal, Base
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Union
 from datetime import datetime, date, timedelta
 
@@ -1787,7 +1787,7 @@ async def reject_PartyList(id: int, db: Session = Depends(get_db)):
 """ Candidates Table APIs """
 class Rating(BaseModel):
     candidate_student_number: str
-    rating: int
+    rating: int = Field(0)
 
 class RatingList(BaseModel):
     election_id: int
@@ -1864,6 +1864,14 @@ def get_All_Candidates_By_Election_Id(id: int, db: Session = Depends(get_db)):
 """ ** POST Methods: All about Candidates Table APIs ** """
 @router.post("/candidates/ratings/submit", tags=["Candidates"])
 def save_Candidate_Ratings(rating_list: RatingList, db: Session = Depends(get_db)):
+
+    # Check if campaign period has not yet ended
+    election = db.query(Election).filter(Election.ElectionId == rating_list.election_id).first()
+
+    # check for ended campaign period only 
+    if election.CampaignEnd < datetime.now():
+        return JSONResponse(status_code=400, content={"error": "Rating/Campaign period for this election has ended."})
+
     # Check if the student has already rated this election
     existing_rating = db.query(RatingsTracker).filter(RatingsTracker.StudentNumber == rating_list.rater_student_number, RatingsTracker.ElectionId == rating_list.election_id).first()
 
@@ -1891,7 +1899,10 @@ def save_Candidate_Ratings(rating_list: RatingList, db: Session = Depends(get_db
 
         # Increment the number of ratings of the candidate by ratings received
         candidate.Rating += rating.rating
-        candidate.TimesRated += 1
+
+        if rating.rating > 0:
+            candidate.TimesRated += 1
+            
         candidate.updated_at = datetime.now()
 
         db.commit()
