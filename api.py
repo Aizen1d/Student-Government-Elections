@@ -1275,21 +1275,27 @@ async def save_CoC(election_id: int = Form(...), student_number: str = Form(...)
                    position: str = Form(...), display_photo: str = Form(...),
                    display_photo_file_name : str = Form(...), certification_of_grades_file_name: str = Form(...),
                    certification_of_grades: str = Form(...), db: Session = Depends(get_db)):
+
+    # Check if current datetime is within the filing period of the election
+    election = db.query(Election).filter(Election.ElectionId == election_id).first()
+    
+    if election.CoCFilingStart > datetime.now() or election.CoCFilingEnd < datetime.now():
+        return JSONResponse(status_code=400, content={"error": "Filing period for this election has ended."})
     
     # Check if the student exists in the database
     student = db.query(Student).filter(Student.StudentNumber == student_number).first()
     if not student:
-        return JSONResponse(status_code=404, content={"error": "Student number does not exist"})
+        return JSONResponse(status_code=404, content={"error": "Student number does not exist."})
     
     # Check if verification code is correct in code table and is not expired
     code = db.query(Code).filter(Code.StudentNumber == student_number, Code.CodeType == 'Verification', Code.CodeValue == verification_code, Code.CodeExpirationDate > datetime.now()).first()
     if not code:
-        return JSONResponse(status_code=400, content={"error": "Verification code is invalid or has expired"})
+        return JSONResponse(status_code=400, content={"error": "Verification code is invalid or has expired."})
     
     # Check if the student has already filed a CoC for this position and is still pending or approved
     existing_coc = db.query(CoC).filter(CoC.ElectionId == election_id, CoC.StudentNumber == student_number, CoC.SelectedPositionName == position, CoC.Status.in_(['Pending', 'Approved'])).first()
     if existing_coc:
-        return JSONResponse(status_code=400, content={"error": "You have already filed a CoC for this position"})
+        return JSONResponse(status_code=400, content={"error": "You have already filed a CoC for this position."})
     
     # Get the partylist id if the student is running under a partylist base on the partylist name
     get_party_list = db.query(PartyList).filter(PartyList.PartyListName == party_list).first()
@@ -1663,6 +1669,12 @@ async def save_PartyList(election_id: int = Form(...), party_name: str = Form(..
                          image_attachment: Optional[str] = Form(None), image_file_name: Optional[str] = Form(None),
                          video_attachment: Optional[str] = Form(None),
                          db: Session = Depends(get_db)):
+    
+    # Check if current datetime is within the filing period of the election
+    election = db.query(Election).filter(Election.ElectionId == election_id).first()
+
+    if election.CoCFilingStart > datetime.now() or election.CoCFilingEnd < datetime.now():
+        return JSONResponse(status_code=400, content={"error": "Filing period for this election has ended."})
     
     new_partylist = PartyList(ElectionId=election_id,
                             PartyListName=party_name, 
