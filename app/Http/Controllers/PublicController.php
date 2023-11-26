@@ -35,6 +35,10 @@ class PublicController extends Controller
         ]);
     }
 
+    public function electionsViewResults() {
+        return inertia('Results');
+    }
+
     public function electionsViewFileCoc(Request $request) {
         $id = $request->id;
         $election = Elections::where('ElectionId', $id)->first();

@@ -27,6 +27,9 @@ Route::get('/elections', [PublicController::class, 'elections'])
 Route::get('/elections/view', [PublicController::class, 'electionsView'])
 ->name('elections.view');
 
+Route::get('/elections/view/results', [PublicController::class, 'electionsViewResults'])
+->name('elections.view.results');
+
 Route::get('/elections/view/file-coc', [PublicController::class, 'electionsViewFileCoc'])
 ->name('elections.view.file.coc');
 
