@@ -2,8 +2,8 @@
     <div class="row">
         <div class="col-2" :class="$style.filterDropDown">
             <input type="hidden" name="filter-type">
-            <select class="form-select" :class="$style.filter" aria-label="Default select example">
-                <option value="" disabled hidden selected>Filter Search by</option>
+            <select class="form-select" :class="$style.filter" aria-label="Default select example" v-model="selectedOption">
+                <option value="" disabled selected>Filter Search by</option>
                 <option v-for="(option, index) in options" 
                         :key="index" 
                         :value="option.value">
@@ -12,7 +12,7 @@
             </select>
         </div>
         <div class="col-3">
-            <input :class="$style.searchbar" type="text" placeholder="Search..">
+            <input :class="$style.searchbar" type="text" :placeholder="'Search by '+selectedOption+'..'" v-model="searchQuery">
         </div>
     </div>
 </template>
@@ -23,6 +23,20 @@
             options: {
                 type: Array,
                 required: true
+            }
+        },
+        data() {
+            return {
+                selectedOption: '',
+                searchQuery: ''
+            }
+        },
+        watch: {
+            selectedOption(newVal, oldVal) {
+                this.$emit('filter-changed', { option: newVal, query: this.searchQuery });
+            },
+            searchQuery(newVal, oldVal) {
+                this.$emit('filter-changed', { option: this.selectedOption, query: newVal });
             }
         }
     }

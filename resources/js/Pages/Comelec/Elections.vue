@@ -15,7 +15,7 @@
         
         <BaseContainer :height="'auto'" :maxHeight="'760px'">
             <div class="utilities">
-               <SearchBarAndFilter :options="options"></SearchBarAndFilter>
+                <SearchBarAndFilter :options="options" @filter-changed="filterElections"></SearchBarAndFilter>
             </div>
 
             <BaseTable class="item-table" 
@@ -23,12 +23,16 @@
                 :columnWidths=columnWidths
                 :tableHeight="'auto'"
                 :maxTableHeight="'300px'">
-                <tr v-for="(item, index) in items.value" :key="index" @click="selectItem(item)">
-                    <td v-for="(value, key, i) in itemsWithoutId[index]"
-                        :key="key"
-                        :style="{ width: columnWidths[i] }" 
-                        class="my-cell">{{ value }}
-                    </td>
+                <tr v-for="(item, index) in filteredElections" :key="index" @click="selectItem(item)">
+                    <td :style="{ width: columnWidths[0] }" class="my-cell">{{ item.count }}</td>
+                    <td :style="{ width: columnWidths[1] }" class="my-cell">{{ item.title }}</td>
+                    <td :style="{ width: columnWidths[2] }" class="my-cell">{{ item.organization }}</td>
+                    <td :style="{ width: columnWidths[3] }" class="my-cell">{{ item.school_year }}</td>
+                    <td :style="{ width: columnWidths[4] }" class="my-cell">{{ item.created_by_name }}</td>
+                    <td :style="{ width: columnWidths[5] }" class="my-cell">{{ item.election_start }}</td>
+                    <td :style="{ width: columnWidths[6] }" class="my-cell">{{ item.date_created }}</td>
+                    <td :style="{ width: columnWidths[7] }" class="my-cell">{{ item.status }}</td>
+
                 </tr>
 
             </BaseTable>
@@ -63,11 +67,13 @@
             userStore.user_role = props.user_role;
             
             const options = [
-                { text: 'Name', value: 'name' },
-                { text: 'Type', value: 'type' },
+                { text: 'Title', value: 'title' },
+                { text: 'Organization', value: 'organization' },
                 { text: 'School Year', value: 'school-year' },
                 { text: 'Created By', value: 'created-by' },
             ];
+            const selectedOption = ref('');
+            const searchQuery = ref('');
 
             const items = ref([]);
             const columnWidths = ['10%', '20%', '20%', '20%', '20%', '20%', '20%', '10%'];
@@ -83,8 +89,8 @@
                     return {
                         id: item.ElectionId,
                         count: item.count,
-                        name: item.ElectionName,
-                        type: item.ElectionType,
+                        title: item.ElectionName,
+                        organization: item.ElectionType,
                         school_year: item.SchoolYear,
                         created_by_name: item.CreatedByName,
                         election_start: new Date(item.ElectionStart).toLocaleString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }),
@@ -108,7 +114,40 @@
                 }
             });
 
+            const filteredElections = computed(() => {
+                if (!searchQuery.value) {
+                    return electionsData.value;
+                }
+
+                const searchQueryNormalized = searchQuery.value.replace(/,| /g, '').toLowerCase();
+
+                return electionsData.value.filter(election => {
+                    let valueToCheck = '';
+                    switch (selectedOption.value) {
+                        case 'title':
+                            valueToCheck = election.title;
+                            break;
+                        case 'organization':
+                            valueToCheck = election.organization; 
+                            break;
+                        case 'school-year':
+                            valueToCheck = election.school_year;
+                            break;
+                        case 'created-by':
+                            valueToCheck = election.created_by_name;
+                            break;
+                        default:
+                            return true;
+                    }
+
+                    const normalizedValueToCheck = valueToCheck.replace(/,| /g, '').toLowerCase();
+                    return normalizedValueToCheck.includes(searchQueryNormalized);
+                });
+            });
+
             return {options, 
+                    selectedOption,
+                    searchQuery,
                     items,
                     columnWidths,
                     
@@ -116,6 +155,8 @@
                     isLoading,
                     isSuccess,
                     isError,
+
+                    filteredElections,
                 }
         },
         computed: {
@@ -148,6 +189,10 @@
                         id: item.id,
                     }
                 });
+            },
+            filterElections(filter) {
+                this.selectedOption = filter.option;
+                this.searchQuery = filter.query;
             }
         }
     }
