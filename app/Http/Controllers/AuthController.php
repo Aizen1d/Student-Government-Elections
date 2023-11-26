@@ -29,7 +29,7 @@ class AuthController extends Controller
         $cookie_data = json_encode($cookie_data);
 
         $token = 'Authorized';
-        $redirect = '/voting/process';
+        $redirect = '/home';
         
         $user_info_cookie = cookie('user_info', $cookie_data, $cookie_minutes_lifetime, null, null, true, true, false, 'strict');
         $cookie = cookie('jwt_token', $token, $cookie_minutes_lifetime, null, null, true, true, false, 'strict');

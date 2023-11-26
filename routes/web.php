@@ -32,7 +32,13 @@ Route::group(['middleware' => 'public.routes'], function () {
 
 Route::group(['middleware' => 'check.auth.student'], function () {
 
+    Route::get('/home', [StudentController::class, 'home'])
+        ->name('home');
+
     Route::get('/voting/process', [StudentController::class, 'votingProcess'])
         ->name('voting.process');
+
+    Route::get('/voting/preview', [StudentController::class, 'votingPreview'])
+        ->name('voting.preview');
 
 });
