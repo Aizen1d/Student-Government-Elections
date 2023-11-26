@@ -1,42 +1,37 @@
 <template>
     <nav class="navbar navbar-expand-lg nav navbar-dark">
-        <div class="container-fluid">
-            <div class="collapse navbar-collapse">
+        <div class="navbar-contents">
+            <div>
+                <img src="../../images/puplogo.png" alt="" class="puplogo">
+                <img src="../../images/pvs.png" alt="" class="pvs-logo">
             </div>
-            <li class="nav-item dropdown">
-                <button class="btn btn-link nav-link dropdown-toggle mx-4 user" href="#" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    {{ label }}, {{ full_name }}
+  
+            <div class="dropdown">
+                <button class="btn btn-link nav-link user" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    {{ full_name }} 
+                    <i class="dropdown-toggle"></i>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
                     <li><a class="dropdown-item" href="#" @click="logout">Logout</a></li>
                 </ul>
-            </li>
+            </div>
         </div>
-    </nav>  
+    </nav> 
 </template>
 
 <script>
     import axios from 'axios';
-    import { useUserStore } from '../Stores/UserStore.js'
     import { ref } from 'vue';
-    import { useLocalStorage } from '@vueuse/core';
+    import { useUserStore } from '../Stores/UserStore.js';
 
     export default {
         setup() {
-            const userStore = useUserStore();
-            let label = ref('');
 
-            if (!userStore.organization_name) {
-                label = 'Comelec'
-            }
-            else {
-                label = userStore.organization_name;
-            }
-
-            return {
-                label,
-                full_name: userStore.full_name,
-            };
+        },
+        computed: {
+            full_name(){
+                return useUserStore().full_name;
+            },
         },
         methods: {
             logout(){
@@ -57,52 +52,54 @@
 </script>
 
 <style scoped>
-    .nav{
+   .navbar{
         background-color: white;
-        box-shadow: rgba(0, 0, 0, 0.15) 4.8px 1px 3px;
-        z-index: 1;
+        box-shadow: 0px 3px 5px rgba(167, 165, 165, 0.5);
     }
 
-    .system{
-        color: #800000;
-        font-size: 20px;
+    .navbar-contents{
+        margin: 0% 8%;
+        display: flex;
+        align-items: center;
+        width: 100%;
+        justify-content: space-between;
     }
 
-    .content{
-        color: black;
-        font-size: 17px;
-        transition: all 0.15s ease-out;
+    .puplogo{
+        width: 58px;
     }
 
-    .content:active,
-    .content:hover,
-    .content:focus{
-        color: black;
-        transform: scale(1.05);
+    .pvs-logo{
+        width: 170px;
+        margin: 0px 30px;
     }
 
-    .user{
-        color: black;
+    .logout-button{
+        border: transparent;
+        background-color: transparent;
+        text-align: end;
+        font-size: 16px;
     }
 
+    .user,
     .user:hover, 
     .user:active,
     .user:focus
     .user:default{
         color: black;
     }
+    .dropdown-toggle{
+        margin-left: 7px;
+    }
 
-    .navbar-active{
-        color: black;
+    .dropdown-menu{
+        left: inherit;
+        right: 0;
+        border-radius: 3px;
+        box-shadow: 0px 3px 5px rgba(167, 165, 165, 0.5);
     }
 
     .dropdown-item:hover{
-        color: white;
-        background-color: #B90321;
+        background-color: rgb(207, 207, 207);
     }
-
-    .logout{
-        justify-content: right;
-    }
-
 </style>
