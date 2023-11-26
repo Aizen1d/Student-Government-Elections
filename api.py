@@ -29,7 +29,9 @@ import requests
 import cloudinary
 import cloudinary.uploader
 import asyncio
+import requests
 
+from passlib.context import CryptContext
 from cloudinary.api import resources_by_tag, delete_resources_by_tag, delete_folder
 from services import send_verification_code_email, send_pass_code_queue_email, send_pass_code_manual_email, send_coc_status_email, send_partylist_status_email
 
@@ -91,7 +93,7 @@ router = APIRouter(prefix="/api/v1")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=['http://localhost:8000', 'http://127.0.0.1:8000', 'http://127.0.0.1:7500'], # Must change to appropriate frontend URL (local or production)
+    allow_origins=['http://localhost:8000', 'http://127.0.0.1:8000', 'http://127.0.0.1:7500', 'http://127.0.0.1:7000'], # Must change to appropriate frontend URL (local or production)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -327,18 +329,23 @@ def student_Insert_Data_Manual(data: SaveStudentData, db: Session = Depends(get_
     db.add(student)
     db.commit()
 
+    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
     # Generate a unique code and add it to the database
     while True:
         # Generate a random code
         pass_value = ''.join(random.choices(string.ascii_uppercase + string.digits, k=16))
 
+        # Hash the password
+        hashed_password = pwd_context.hash(pass_value)
+
         # Check if the code already exists in the database
-        existing_code = db.query(StudentPassword).filter(StudentPassword.Password == pass_value).first()
+        existing_code = db.query(StudentPassword).filter(StudentPassword.Password == hashed_password).first()
 
         # If the code doesn't exist in the database, insert it and break the loop
         if not existing_code:
             new_pass = StudentPassword(StudentNumber=data.student_number, 
-                            Password=pass_value,
+                            Password=hashed_password,
                             created_at=datetime.now(),
                             updated_at=datetime.now())
             db.add(new_pass)
@@ -418,18 +425,23 @@ async def student_Insert_Data_Attachment(files: List[UploadFile] = File(...), db
                 db.add(student)
                 inserted_students.append([row['StudentNumber'], row['FirstName'], row.get('MiddleName', ''), row['LastName'], row['EmailAddress']])
 
+                pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
                 # Generate a unique code and add it to the database
                 while True:
                     # Generate a random code
                     pass_value = ''.join(random.choices(string.ascii_uppercase + string.digits, k=16))
 
+                    # Hash the password
+                    hashed_password = pwd_context.hash(pass_value)
+
                     # Check if the code already exists in the database
-                    existing_code = db.query(StudentPassword).filter(StudentPassword.Password == pass_value).first()
+                    existing_code = db.query(StudentPassword).filter(StudentPassword.Password == hashed_password).first()
 
                     # If the code doesn't exist in the database, insert it and break the loop
                     if not existing_code:
                         new_pass = StudentPassword(StudentNumber=row['StudentNumber'], 
-                                        Password=pass_value,
+                                        Password=hashed_password,
                                         created_at=datetime.now(),
                                         updated_at=datetime.now())
                         db.add(new_pass)
@@ -551,6 +563,31 @@ async def student_Insert_Data_Attachment(files: List[UploadFile] = File(...), db
         return JSONResponse({
                     "responses": responses,
                 })
+    
+class LoginData(BaseModel):
+    StudentNumber: str
+    Password: str
+
+@router.post("/student/voting/login", tags=["Student"])
+def student_Voting_Login(data: LoginData, db: Session = Depends(get_db)):
+    StudentNumber = data.StudentNumber
+    Password = data.Password
+
+    student = db.query(Student).filter(Student.StudentNumber == StudentNumber).first()
+    if not student:
+        return {"error": "Student not found."}
+
+    student_password = db.query(StudentPassword).filter(StudentPassword.StudentNumber == StudentNumber).first()
+    if not student_password:
+        return {"error": "Student password not found."}
+
+    # Check if the password matches
+    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+    if not pwd_context.verify(Password, student_password.Password):
+        return {"error": "Incorrect password."}
+
+    return {"message": True}
+
     
 #################################################################
 """ Election Table APIs """
@@ -734,17 +771,33 @@ def delete_Election(data: ElectionDelete, db: Session = Depends(get_db)):
     # delete all coc with the election id
     cocs = db.query(CoC).filter(CoC.ElectionId == data.id).all()
 
-    # delete all partylist with the election id
-    partylists = db.query(PartyList).filter(PartyList.ElectionId == data.id).all()
-
     if cocs:
         for coc in cocs:
             db.delete(coc)
             db.commit()
 
+    # delete all candidates with the election id
+    candidates = db.query(Candidates).filter(Candidates.ElectionId == data.id).all()
+
+    if candidates:
+        for candidate in candidates:
+            db.delete(candidate)
+            db.commit()
+
+    # delete all partylist with the election id
+    partylists = db.query(PartyList).filter(PartyList.ElectionId == data.id).all()
+
     if partylists:
         for partylist in partylists:
             db.delete(partylist)
+            db.commit()
+
+    # delete all ratingstracker with the election id
+    ratingstrackers = db.query(RatingsTracker).filter(RatingsTracker.ElectionId == data.id).all()
+
+    if ratingstrackers:
+        for ratingstracker in ratingstrackers:
+            db.delete(ratingstracker)
             db.commit()
 
     for position in positions:
