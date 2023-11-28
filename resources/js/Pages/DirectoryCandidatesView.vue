@@ -116,78 +116,77 @@
                 </h1>
             </div>
             <div class="col-2" style="text-align: end;">
-                <ActionButton class="col-2 rate-button" @click="openRateCandidates" :disabled="isCandidatesLoading || isCampaignPeriodOver">Rate Candidates</ActionButton>
+                <ActionButton class="col-2 rate-button" @click="openRateCandidates" :disabled="isCandidatesPerPositionLoading || isCampaignPeriodOver || !atLeastOneCandidate">Rate Candidates</ActionButton>
             </div>
         </div>
 
-        <h2 style="margin-top: 4%; margin-left: 2.6%;" v-if="isCandidatesLoading">Loading..</h2>
+        <h2 style="margin-top: 4%; margin-left: 2.6%;" v-if="isCandidatesPerPositionLoading">Loading..</h2>
 
-        <template v-for="(position, positionIndex) in positionsData" :key="positionIndex">
+        <div style="margin-top: 5%;" v-if="!isCandidatesPerPositionLoading" v-for="(candidatePosition, candidatePositionName, candidatePositionIndex) in candidatesPerPositionData" :key="candidatePositionIndex">
             <div class="position row">
-                <h1 :id="position.PositionName" class="col-10">{{ position.PositionName }} Candidates</h1>
-                <hr class="my-4">
+                <h1 :id="candidatePositionName" class="col-10" style="text-transform: uppercase; margin-bottom: 1%;">{{ candidatePositionName }} Candidates</h1>
 
-                <div class="candidate" v-for="(candidate, candidateIndex) in candidatesData">
-                    <div v-if="candidate.SelectedPositionName === position.PositionName">
-                        <table>
-                            <tbody>
-                                <tr>
-                                    <td>
-                                        <img :src="candidate.DisplayPhoto" class="cpic" alt="">
-                                    </td>
-                                    <td class="info">
-                                        <div class="data">
-                                            <div class="align">
-                                                <div class="name">
-                                                    <strong>
-                                                        {{ candidate.Student.FirstName + " " + (candidate.Student.MiddleName ? candidate.Student.MiddleName + " " : "") + candidate.Student.LastName }}
-                                                    </strong>
-                                                </div>
-                                                <div class="rate-candidate">
-                                                    <input type="radio" :id="'star5-' + positionIndex + '-' + candidateIndex" :name="'rate-' + positionIndex + '-' + candidateIndex" value="5"
-                                                            :checked="candidate.Rating / candidate.TimesRated >= 5" disabled/>
-                                                    <label :for="'star5-' + positionIndex + '-' + candidateIndex" title="5 star">5 stars</label>
-                                                    
-                                                    <input type="radio" :id="'star4-' + positionIndex + '-' + candidateIndex" :name="'rate-' + positionIndex + '-' + candidateIndex" value="4" 
-                                                            :checked="candidate.Rating / candidate.TimesRated >= 4 && candidate.Rating / candidate.TimesRated <= 4.99" disabled/>
-                                                    <label :for="'star4-' + positionIndex + '-' + candidateIndex" title="4 star">4 stars</label>
-
-                                                    <input type="radio" :id="'star3-' + positionIndex + '-' + candidateIndex" :name="'rate-' + positionIndex + '-' + candidateIndex" value="3" 
-                                                            :checked="candidate.Rating / candidate.TimesRated >= 3 && candidate.Rating / candidate.TimesRated <= 3.99" disabled/>
-                                                    <label :for="'star3-' + positionIndex + '-' + candidateIndex" title="3 star">3 stars</label>
-
-                                                    <input type="radio" :id="'star2-' + positionIndex + '-' + candidateIndex" :name="'rate-' + positionIndex + '-' + candidateIndex" value="2" 
-                                                            :checked="candidate.Rating / candidate.TimesRated >= 2 && candidate.Rating / candidate.TimesRated <= 2.99" disabled/>
-                                                    <label :for="'star2-' + positionIndex + '-' + candidateIndex" title="2 star">2 stars</label>
-
-                                                    <input type="radio" :id="'star1-' + positionIndex + '-' + candidateIndex" :name="'rate-' + positionIndex + '-' + candidateIndex" value="1" 
-                                                            :checked="candidate.Rating / candidate.TimesRated >= 1 && candidate.Rating / candidate.TimesRated <= 1.99" disabled/>
-                                                    <label :for="'star1-' + positionIndex + '-' + candidateIndex" title="1 star">1 stars</label>
-                                                </div>
-                                                <h4 v-if="candidate.TimesRated !== 0" style="margin-top: 1.3%; font-size: 1.1rem; color: #535353;">
-                                                    {{ candidate.Rating / candidate.TimesRated }} star rating
-                                                </h4>
-                                                <h4 v-else style="margin-top: 1.3%; font-size: 1.1rem; color: #535353;">
-                                                    Not yet rated
-                                                </h4>
+                <div class="candidate" v-if="candidatePosition.length > 0" v-for="(candidate, candidateIndex) in candidatePosition">
+                    <table>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <img :src="candidate.DisplayPhoto" class="cpic" alt="">
+                                </td>
+                                <td class="info">
+                                    <div class="data">
+                                        <div class="align">
+                                            <div class="name">
+                                                <strong>
+                                                    {{ candidate.Student.FirstName + " " + (candidate.Student.MiddleName ? candidate.Student.MiddleName + " " : "") + candidate.Student.LastName }}
+                                                </strong>
                                             </div>
-                                            <div class="affiliation" v-if="candidate.PartyListName">{{ candidate.PartyListName }}</div>
-                                            <div class="affiliation" v-else>Independent</div>
-                                        </div>
+                                            <div class="rate-candidate">
+                                                <input type="radio" :id="'star5-' + candidatePositionIndex + '-' + candidateIndex" :name="'rate-' + candidatePositionIndex + '-' + candidateIndex" value="5"
+                                                        :checked="candidate.Rating / candidate.TimesRated >= 5" disabled/>
+                                                <label :for="'star5-' + candidatePositionIndex + '-' + candidateIndex" title="5 star">5 stars</label>
+                                                
+                                                <input type="radio" :id="'star4-' + candidatePositionIndex + '-' + candidateIndex" :name="'rate-' + candidatePositionIndex + '-' + candidateIndex" value="4" 
+                                                        :checked="candidate.Rating / candidate.TimesRated >= 4 && candidate.Rating / candidate.TimesRated <= 4.99" disabled/>
+                                                <label :for="'star4-' + candidatePositionIndex + '-' + candidateIndex" title="4 star">4 stars</label>
 
-                                        <div class="quote">
-                                            <em>"{{ candidate.Motto }}"</em>
+                                                <input type="radio" :id="'star3-' + candidatePositionIndex + '-' + candidateIndex" :name="'rate-' + candidatePositionIndex + '-' + candidateIndex" value="3" 
+                                                        :checked="candidate.Rating / candidate.TimesRated >= 3 && candidate.Rating / candidate.TimesRated <= 3.99" disabled/>
+                                                <label :for="'star3-' + candidatePositionIndex + '-' + candidateIndex" title="3 star">3 stars</label>
+
+                                                <input type="radio" :id="'star2-' + candidatePositionIndex + '-' + candidateIndex" :name="'rate-' + candidatePositionIndex + '-' + candidateIndex" value="2" 
+                                                        :checked="candidate.Rating / candidate.TimesRated >= 2 && candidate.Rating / candidate.TimesRated <= 2.99" disabled/>
+                                                <label :for="'star2-' + candidatePositionIndex + '-' + candidateIndex" title="2 star">2 stars</label>
+
+                                                <input type="radio" :id="'star1-' + candidatePositionIndex + '-' + candidateIndex" :name="'rate-' + candidatePositionIndex + '-' + candidateIndex" value="1" 
+                                                        :checked="candidate.Rating / candidate.TimesRated >= 1 && candidate.Rating / candidate.TimesRated <= 1.99" disabled/>
+                                                <label :for="'star1-' + candidatePositionIndex + '-' + candidateIndex" title="1 star">1 stars</label>
+                                            </div>
+                                            <h4 v-if="candidate.TimesRated !== 0" style="margin-top: 1.3%; font-size: 1.1rem; color: #535353;">
+                                                {{ candidate.Rating / candidate.TimesRated }} star rating
+                                            </h4>
+                                            <h4 v-else style="margin-top: 1.3%; font-size: 1.1rem; color: #535353;">
+                                                Not yet rated
+                                            </h4>
                                         </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                                        <div class="affiliation" v-if="candidate.PartyListName">{{ candidate.PartyListName }}</div>
+                                        <div class="affiliation" v-else>Independent</div>
+                                    </div>
+
+                                    <div class="quote">
+                                        <em>"{{ candidate.Motto }}"</em>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <hr class="my-4">
+                </div>
+                <div v-else style="text-align: center;">
+                    <h1 style="color: black;">No candidate in this position.</h1>
                 </div>
             </div>
-        </template>
-
-    
+        </div>
     </div>
 </template>
 
@@ -261,13 +260,6 @@
                 const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/candidates/election/${activeElectionIndex.value}/all`);
                 console.log(`Get all candidates from selected election successful. Duration: ${response.duration}ms`)
 
-                if (response.data.candidates.length > 0) {
-                    atLeastOneCandidate.value = true;
-                }
-                else {
-                    atLeastOneCandidate.value = false;
-                }
-
                 return response.data.candidates;
             }
 
@@ -280,6 +272,38 @@
                 useQuery({
                     queryKey: [`fetchCandidatesFromSelectedElection${activeElectionIndex.value}`],
                     queryFn: fetchCandidatesFromSelectedElection,
+                })
+
+            const fetchCandidatsPerSelectedPosition = async () => {
+                const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/candidates/election/per-position/${activeElectionIndex.value}/all`);
+                console.log(`Get all candidates from selected election successful. Duration: ${response.duration}ms`)
+
+                let hasCandidates = false;
+                for (let position in response.data.candidates) {
+                    if (response.data.candidates[position].length > 0) {
+                    hasCandidates = true;
+                    break;
+                    }
+                }
+
+                if (hasCandidates) {
+                    atLeastOneCandidate.value = true;
+                } 
+                else {
+                    atLeastOneCandidate.value = false;
+                }
+
+                return response.data.candidates;
+            }
+
+            const { data: candidatesPerPositionData,
+                isLoading: isCandidatesPerPositionLoading,
+                isSuccess: isCandidatesPerPositionSuccess,
+                isError: isCandidatesPerPositionError,
+                isRefetching: isCandidatesPerPositionRefetching, } =
+                useQuery({
+                    queryKey: [`fetchCandidatsPerSelectedPosition${activeElectionIndex.value}`],
+                    queryFn: fetchCandidatsPerSelectedPosition,
                 })
 
             return {
@@ -314,8 +338,15 @@
                 isCandidatesError,
                 isCandidatesRefetching,
 
+                candidatesPerPositionData,
+                isCandidatesPerPositionLoading,
+                isCandidatesPerPositionSuccess,
+                isCandidatesPerPositionError,
+                isCandidatesPerPositionRefetching,
+
                 fetchPositionsOnElection,
                 fetchCandidatesFromSelectedElection,
+                fetchCandidatsPerSelectedPosition,
             }
         },
         components: {
@@ -478,26 +509,6 @@
                     
                     alert(error.response.data.error)
                 })
-            },
-            getRatings(ratings_count, times_rated) {
-                if (ratings_count / times_rated >= 4.5) {
-                    return 5;
-                }
-                else if (ratings_count / times_rated >= 3.5) {
-                    return 4
-                }
-                else if (ratings_count / times_rated >= 2.5) {
-                    return 3
-                }
-                else if (ratings_count / times_rated >= 1.5) {
-                    return 2
-                }
-                else if (ratings_count / times_rated >= 0.5) {
-                    return 1
-                }
-                else {
-                    return 0;
-                }
             },
          }
     }
@@ -678,14 +689,16 @@
     }
 
     .position {
-        margin: 5% 2%;
+        margin-left: 2%;
+        margin-top: -2.5%;
+        width: 90%;
     }
 
     .position h1 {
         color: #9A000A;
         font-size: 29px;
         font-weight: 700;
-        margin: 0%;
+        margin-top: 0%;
     }
 
     .rate-button {
@@ -797,7 +810,6 @@
         width: 1em;
         overflow: hidden;
         white-space: nowrap;
-        cursor: pointer;
         font-size: 30px;
         color: #ccc;
     }
