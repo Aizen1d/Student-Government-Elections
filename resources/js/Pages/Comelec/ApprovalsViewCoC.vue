@@ -119,7 +119,7 @@
 
                     <div class="box">
                         <div class="first-info">
-                            <label class="form-label" for="type">Election Name Applied</label>
+                            <label class="form-label" for="type">Election Title Applied</label>
                             <input class="form-control" type="text" name="name" v-model="CoCData.ElectionName" :disabled="true">
                         </div>
 
