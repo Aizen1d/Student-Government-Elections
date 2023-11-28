@@ -161,10 +161,10 @@
             isFilingPeriod() {
                 // Check if current datetime is within filing period
                 const now = new Date();
-                const start = new Date(this.formattedElectionData.CoCFilingStart);
-                const end = new Date(this.formattedElectionData.CoCFilingEnd);
+                const start = new Date(this.electionData.election.CoCFilingStart);
+                const end = new Date(this.electionData.election.CoCFilingEnd);
 
-                return now >= start && now <= end;
+                return now >= start && now < end;
             },
         },
         methods:{
@@ -172,7 +172,7 @@
                 router.visit('/elections')
             },
             seeResults(){
-                router.visit('/election/view/results')
+                router.visit('/elections/view/results')
             },
             fileCoc(){
                 router.visit('/elections/view/file-coc', {
