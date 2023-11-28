@@ -15,7 +15,7 @@
     </div>
 
     <div class="parent">
-        <BaseTable class="item-table" 
+        <BaseTable class="item-table" v-if="atleastOneElection" 
                 :columns="['Organization', 'Election Title', 'Status']" 
                 :columnWidths="['50%', '50%', '50%']"
                 :tableHeight="'auto'"
@@ -26,6 +26,9 @@
                 <td style="width: 50%; text-align: left; padding-left: 14.5%;" class="my-cell">Status</td>
             </tr>
         </BaseTable>
+        <div v-else>
+            <h1 class="my-5">No elections are currently happening at the moment.</h1>
+        </div>
     </div>
 </template>
 
@@ -42,6 +45,8 @@
 
     export default {
         setup(props){
+            const atleastOneElection = ref(false);
+
             const fetchElectionsTable = async () => {
                 const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/election/all`, {
                 });
@@ -53,6 +58,13 @@
                     type: election.ElectionType,
                     status: election.ElectionStatus,
                 }));
+
+                if (response.data.elections.length > 0){
+                    atleastOneElection.value = true;
+                }
+                else {
+                    atleastOneElection.value = false;
+                }
 
                 return elections;
             }
@@ -67,6 +79,8 @@
                     })
 
             return{
+                atleastOneElection,
+
                 electionsData,
                 isElectionsLoading,
                 isElectionsSuccess,
