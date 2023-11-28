@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException, Depends, APIRouter, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse
 
-from sqlalchemy import inspect, func
+from sqlalchemy import inspect, func, and_
 from sqlalchemy.orm import Session
 
 from reportlab.lib.pagesizes import letter
@@ -1910,6 +1910,50 @@ def get_All_Candidates_By_Election_Id(id: int, db: Session = Depends(get_db)):
             candidates_with_student.append(candidate_dict)
 
         return {"candidates": candidates_with_student}
+
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while fetching all candidates from the database"})
+    
+@router.get("/candidates/election/per-position/{id}/all", tags=["Candidates"])
+def get_All_Candidates_By_Election_Id_Per_Position(id: int, db: Session = Depends(get_db)):
+    try:
+        candidates = db.query(Candidates).filter(Candidates.ElectionId == id).order_by(Candidates.CandidateId).all()
+
+        # Get the student row from student table using the student number in the candidate
+        candidates_grouped_by_position = {}
+        for i, candidate in enumerate(candidates):
+            student = db.query(Student).filter(Student.StudentNumber == candidate.StudentNumber).first()
+            candidate_dict = candidate.to_dict(i+1)
+            candidate_dict["Student"] = student.to_dict() if student else {}
+
+            # Get the party list name from partylist table using the partylist id in the candidate
+            if candidate.PartyListId:
+                partylist = db.query(PartyList).filter(PartyList.PartyListId == candidate.PartyListId).first()
+                candidate_dict["PartyListName"] = partylist.PartyListName if partylist else ""
+
+            # Get the motto from coc table using the student number in the candidate
+            if candidate.StudentNumber:
+                coc = db.query(CoC).filter(CoC.StudentNumber == candidate.StudentNumber, CoC.ElectionId == candidate.ElectionId).first()
+                candidate_dict["Motto"] = coc.Motto if coc else ""
+
+            # Get the display photo from cloudinary using the candidate.displayphoto resources by tag in cloudinary
+            display_photo = resources_by_tag(candidate.DisplayPhoto)
+            candidate_dict["DisplayPhoto"] = display_photo["resources"][0]["secure_url"] if display_photo else ""
+
+            # Group by SelectedPositionName
+            position_name = candidate.SelectedPositionName
+
+            # Get the PositionQuantity from CreatedElectionPosition table
+            created_election_position = db.query(CreatedElectionPosition).filter(and_(CreatedElectionPosition.ElectionId == id, CreatedElectionPosition.PositionName == position_name)).first()
+            candidate_dict["PositionQuantity"] = created_election_position.PositionQuantity 
+
+            if position_name not in candidates_grouped_by_position:
+                candidates_grouped_by_position[position_name] = []
+                
+
+            candidates_grouped_by_position[position_name].append(candidate_dict)
+
+        return {"candidates": candidates_grouped_by_position}
 
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while fetching all candidates from the database"})
