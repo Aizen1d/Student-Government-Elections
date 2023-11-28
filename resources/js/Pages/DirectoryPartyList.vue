@@ -10,8 +10,12 @@
         </div>
     </div>
 
-    <div class="parent">
-        <BaseTable class="item-table" 
+    <div v-if="isPartylistLoading" style="text-align: center;">
+        <h1 style="color: black;">Loading..</h1>
+    </div>
+
+    <div class="parent" v-if="!isPartylistLoading">
+        <BaseTable class="item-table" v-if="atleastOnePartylist"
                 :columns="['Partylist Name', 'Election Title', 'Organization']" 
                 :columnWidths="['50%', '50%', '50%']"
                 :tableHeight="'auto'"
@@ -22,6 +26,9 @@
                 <td style="width: 50%; text-align: left; padding-left: 12.6%;" class="my-cell">{{ partylist.ElectionType }}</td>
             </tr>
         </BaseTable>
+        <div v-else>
+            <h1 class="my-4">There are no partylists at the moment.</h1>
+        </div>
     </div>
 </template>
 
@@ -38,10 +45,19 @@
 
     export default {
         setup(props){
+            const atleastOnePartylist = ref(false);
+
             const fetchPartylistTable = async () => {
                 const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/partylist/all`, {
                 });
                 console.log(`Get all partylist successful. Duration: ${response.duration}ms`)
+
+                if (response.data.partylists.length > 0){
+                    atleastOnePartylist.value = true;
+                }
+                else {
+                    atleastOnePartylist.value = false;
+                }
 
                 return response.data.partylists;
             }
@@ -56,6 +72,8 @@
                     })
 
             return{
+                atleastOnePartylist,
+
                 partylistData,
                 isPartylistLoading,
                 isPartylistSuccess,
