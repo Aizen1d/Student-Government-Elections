@@ -655,7 +655,7 @@ def get_Election_By_Id(id: int, db: Session = Depends(get_db)):
         if not election:
             return JSONResponse(status_code=404, content={"detail": "Election not found"})
 
-        positions = db.query(CreatedElectionPosition).filter(CreatedElectionPosition.ElectionId == id).all()
+        positions = db.query(CreatedElectionPosition).filter(CreatedElectionPosition.ElectionId == id).order_by(CreatedElectionPosition.CreatedElectionPositionId).all()
 
         election_count = db.query(Election).count()
         return {"election": election.to_dict(election_count),
