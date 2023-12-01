@@ -430,3 +430,41 @@ class RatingsTracker(Base):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }
+    
+class VotingsTracker(Base):
+    __tablename__ = "VotingsTracker"
+
+    VotingsTrackerId = Column(Integer, primary_key=True)
+    StudentNumber = Column(String(15), ForeignKey('Student.StudentNumber'), unique=True)
+    ElectionId = Column(Integer, ForeignKey('Election.ElectionId'))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    def to_dict(self):
+        return {
+            "VotingsTrackerId": self.VotingsTrackerId,
+            "StudentNumber": self.StudentNumber,
+            "ElectionId": self.ElectionId,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None
+        }
+    
+class ElectionAnalytics(Base):
+    __tablename__ = "ElectionAnalytics"
+
+    ElectionAnalyticsId = Column(Integer, primary_key=True)
+    ElectionId = Column(Integer, ForeignKey('Election.ElectionId'))
+    AbstainCount = Column(Integer, default=0)
+    VotesCount = Column(Integer, default=0)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    def to_dict(self):
+        return {
+            "ElectionAnalyticsId": self.ElectionAnalyticsId,
+            "ElectionId": self.ElectionId,
+            "AbstainCount": self.AbstainCount,
+            "VotesCount": self.VotesCount,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None
+        }
