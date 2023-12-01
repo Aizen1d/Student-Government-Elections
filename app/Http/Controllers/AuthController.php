@@ -19,7 +19,7 @@ class AuthController extends Controller
 
     public function authLogin(Request $request)
     {
-        $cookie_minutes_lifetime = 120; // Expiry of the cookie that contains the jwt token
+        $cookie_minutes_lifetime = 300; // Expiry of the cookie that contains the jwt token
       
         $cookie_data = [
             'student_number' => $request->StudentNumber,
@@ -31,8 +31,11 @@ class AuthController extends Controller
         $token = 'Authorized';
         $redirect = '/home';
         
-        $user_info_cookie = cookie('user_info', $cookie_data, $cookie_minutes_lifetime, null, null, true, true, false, 'strict');
-        $cookie = cookie('jwt_token', $token, $cookie_minutes_lifetime, null, null, true, true, false, 'strict');
+        // Put student number in a session
+        $request->session()->put('student_number', $request->StudentNumber);
+
+        $user_info_cookie = cookie('voting_user_info', $cookie_data, $cookie_minutes_lifetime, null, null, true, true, false, 'strict');
+        $cookie = cookie('voting_jwt_token', $token, $cookie_minutes_lifetime, null, null, true, true, false, 'strict');
 
         return response()->json(['redirect' => $redirect])->withCookie($cookie)->withCookie($user_info_cookie);
     } 
@@ -40,9 +43,12 @@ class AuthController extends Controller
     public function logout(Request $request) {
         try { 
             // Instruct client side to delete the cookies with withCookie() and redirect to login page
-            $cookie = cookie()->forget('jwt_token');
-            $user_info_cookie = cookie()->forget('user_info');
-            $logout_cookie = cookie('logout_pass', 'true', 1);
+            $cookie = cookie()->forget('voting_jwt_token');
+            $user_info_cookie = cookie()->forget('voting_user_info');
+            $logout_cookie = cookie('voting_logout_pass', 'true', 1);
+
+            // Remove student number in a session
+            $request->session()->forget('student_number');
 
             return response()->json([
                 'logout' => 'true',
