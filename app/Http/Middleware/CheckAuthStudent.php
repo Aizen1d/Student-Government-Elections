@@ -20,7 +20,7 @@ class CheckAuthStudent
      */
     public function handle(Request $request, Closure $next): Response
     {   
-        $token = $request->cookie('jwt_token');
+        $token = $request->cookie('voting_jwt_token');
 
         try {
             // If not yet logged out
@@ -29,8 +29,8 @@ class CheckAuthStudent
             }
             else {
                 // If logged out by the user by clicking the logout button
-                if ($request->cookie('logout_pass')) {
-                    $logout_cookie = cookie()->forget('logout_pass');
+                if ($request->cookie('voting_logout_pass')) {
+                    $logout_cookie = cookie()->forget('voting_logout_pass');
                     return redirect()->route('view.login')->withCookie($logout_cookie);
                 }
                 
