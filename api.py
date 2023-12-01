@@ -35,7 +35,7 @@ from passlib.context import CryptContext
 from cloudinary.api import resources_by_tag, delete_resources_by_tag, delete_folder
 from services import send_verification_code_email, send_pass_code_queue_email, send_pass_code_manual_email, send_coc_status_email, send_partylist_status_email
 
-from models import Student, Organization, Announcement, Rule, Guideline, AzureToken, Election, SavedPosition, CreatedElectionPosition, Code, StudentPassword, PartyList, CoC, InsertDataQueues, Candidates, RatingsTracker
+from models import Student, Organization, Announcement, Rule, Guideline, AzureToken, Election, SavedPosition, CreatedElectionPosition, Code, StudentPassword, PartyList, CoC, InsertDataQueues, Candidates, RatingsTracker, VotingsTracker, ElectionAnalytics
 
 #################################################################
 """ Settings """
@@ -721,6 +721,14 @@ def save_election(election_data: CreateElectionData, db: Session = Depends(get_d
                             created_at=datetime.now(), 
                             updated_at=datetime.now())
     db.add(new_election)
+    db.commit()
+
+    new_election_analytics = ElectionAnalytics(ElectionId=new_election.ElectionId,
+                                                TotalVotes=0,
+                                                TotalVoters=0,
+                                                created_at=datetime.now(), 
+                                                updated_at=datetime.now())
+    db.add(new_election_analytics)
     db.commit()
 
     for position in election_data.positions:
@@ -2011,6 +2019,89 @@ def save_Candidate_Ratings(rating_list: RatingList, db: Session = Depends(get_db
                                         updated_at=datetime.now())
 
     db.add(new_rating)
+    db.commit()
+
+    return {"response": "success"}
+
+#################################################################
+## VotingsTracker APIs ## 
+
+class Votes(BaseModel):
+    candidate_student_number: str
+
+class VotesList(BaseModel):
+    election_id: int
+    voter_student_number: str
+    votes: List[Votes]
+
+""" VotingsTracker Table APIs """
+
+""" ** GET Methods: VotingsTracker Table APIs ** """
+
+""" ** POST Methods: All about VotingsTracker Table APIs ** """
+
+@router.post("/votings/submit", tags=["Votings"])
+def save_Votes(votes_list: VotesList, db: Session = Depends(get_db)):
+    # Check if voting period has not yet ended
+    election = db.query(Election).filter(Election.ElectionId == votes_list.election_id).first()
+
+    # check for ended voting period only 
+    if election.VotingEnd < datetime.now():
+        return JSONResponse(status_code=400, content={"error": "Voting period for this election has ended."})
+
+    # Check if the student has already voted this election
+    existing_vote = db.query(VotingsTracker).filter(VotingsTracker.StudentNumber == votes_list.voter_student_number, VotingsTracker.ElectionId == votes_list.election_id).first()
+
+    if existing_vote:
+        return JSONResponse(status_code=400, content={"error": "You have already voted for this election."})
+    
+    election_analytics = db.query(ElectionAnalytics).filter(ElectionAnalytics.ElectionId == votes_list.election_id).first()
+
+    for vote in votes_list.votes:
+        if vote.candidate_student_number == 'abstain':
+
+            # +1 the abstaincount in ElectionAnalytics table
+            election_analytics.AbstainCount += 1
+            election_analytics.updated_at = datetime.now()
+
+            db.commit()
+            continue
+
+        # Check if the student exists in the database
+        student = db.query(Student).filter(Student.StudentNumber == vote.candidate_student_number).first()
+
+        if not student:
+            return JSONResponse(status_code=404, content={"error": "Student number does not exist"})
+
+        # Check if the election exists in the database
+        election = db.query(Election).filter(Election.ElectionId == votes_list.election_id).first()
+
+        if not election:
+            return JSONResponse(status_code=404, content={"error": "Election does not exist"})
+
+        # Update the votes of the candidate in the Candidates table
+        candidate = db.query(Candidates).filter(Candidates.StudentNumber == vote.candidate_student_number, Candidates.ElectionId == votes_list.election_id).first()
+
+        if not candidate:
+            return JSONResponse(status_code=404, content={"error": "Candidate does not exist"})
+
+        # Increment the number of votes of the candidate by votes received
+        candidate.Votes += 1
+        candidate.updated_at = datetime.now()
+
+        # +1 the vote count in ElectionAnalytics table
+        election_analytics.VotesCount += 1
+        election_analytics.updated_at = datetime.now()
+
+        db.commit()
+
+    # Add a new record in the VotingsTracker table
+    new_vote = VotingsTracker(StudentNumber=votes_list.voter_student_number,
+                                        ElectionId=votes_list.election_id,
+                                        created_at=datetime.now(),
+                                        updated_at=datetime.now())
+
+    db.add(new_vote)
     db.commit()
 
     return {"response": "success"}
