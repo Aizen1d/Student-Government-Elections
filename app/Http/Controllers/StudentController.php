@@ -4,13 +4,14 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Student;
+use App\Models\Election;
 use Inertia\Inertia;
 
 class StudentController extends Controller
 {
     public function home(Request $request)
     {
-        $get_user_info = json_decode($request->cookie('user_info'), true);
+        $get_user_info = json_decode($request->cookie('voting_user_info'), true);
 
         $student = Student::where('StudentNumber', $get_user_info['student_number'])
             ->first();
@@ -34,13 +35,51 @@ class StudentController extends Controller
         ]);
     }
 
-    public function votingProcess()
+    public function votingProcess(Request $request)
     {
-        return inertia('VotingProcess');
+        $id = $request->id;
+        $electionTable = Election::where('ElectionId', $id)->first();
+
+        if (!$id) {
+            return redirect()->route('home');
+        }
+
+        if (!$electionTable) {
+            return redirect()->route('home');
+        }
+
+        return Inertia::render('VotingProcess', [
+            'id' => $id,
+        ]);
     }
 
-    public function votingPreview()
-    {
-        return inertia('VotingPreview');
+    public function votingPreview(Request $request)
+    {   
+        $id = $request->id;
+        $votes = $request->votes;
+
+        if (!$id || !$votes) {
+            // If there's no id or votes in the request, try to get them from the session
+            $id = $request->session()->get('id', $id);
+            $votes = $request->session()->get('votes', $votes);
+        }
+
+        if (!$id || !$votes) {
+            return redirect()->back();
+        }
+
+        // Store the id and votes in the session
+        $request->session()->put('id', $id);
+        $request->session()->put('votes', $votes);
+
+        // Retrieve the student number from the session
+        $student_number = $request->session()->get('student_number');
+
+        return Inertia::render('VotingPreview', [
+            'id' => $id,
+            'votes' => $votes,
+            'student_number' => $student_number,
+        ]);
     }
+
 }
