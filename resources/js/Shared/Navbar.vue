@@ -12,7 +12,7 @@
                     <i class="dropdown-toggle"></i>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item" href="#" @click="logout">Logout</a></li>
+                    <li><a class="dropdown-item" @click.prevent="logout">Logout</a></li>
                 </ul>
             </div>
         </div>
@@ -26,18 +26,20 @@
 
     export default {
         setup() {
+            const userStore = useUserStore();
+            const full_name = ref(userStore.full_name);
 
+            return { full_name };
         },
         computed: {
             full_name(){
-                return useUserStore().full_name;
+                return this.full_name;
             },
         },
         methods: {
             logout(){
                 axios.post('/logout')
                     .then(response => {
-                        localStorage.setItem('approvalsFilterType', '')
                         useUserStore().reset(); // Reset the user store 
                         location.reload(); // trick the system to logout and prevent backing 
                                          // (Reloading to check for cookie token and throw back to login page)

@@ -52,9 +52,11 @@
             }
         },
         mounted() {
-            if (this.$page.props.flash.token_invalid) {
+            // Commented out 
+
+            /*if (this.$page.props.flash.token_invalid) {
                 this.invalid = this.$page.props.flash.token_invalid;
-            }
+            }*/
         },
         methods: {
              submitForm() {
@@ -75,13 +77,13 @@
 
                 this.loggingIn = true;
                 this.login_text = 'Logging in...';
+
                     axios.post(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/student/voting/login`, {
                         StudentNumber: this.form.StudentNumber,
                         Password: this.form.Password
                     })
                     .then(response => {
                         if (response.data.message === true) {
-
                             axios.post('/login/auth', this.form)
                             .then(response => {
                                 if (response.data.redirect) {
@@ -90,7 +92,19 @@
                             })
                             .catch(error => {
                                 console.log(error)
+
+                                if (error.response.data.message === 'CSRF token mismatch.') {
+                                    this.invalid = 'Please refresh your page and try again.';
+                                    this.loggingIn = false;
+                                    this.login_text = 'Login';
+                                    return;
+                                }
                             });
+                        }
+                        else {
+                            this.invalid = 'Invalid credentials.';
+                            this.loggingIn = false;
+                            this.login_text = 'Login';
                         }
                     })
                     .catch(error => {

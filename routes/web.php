@@ -30,6 +30,13 @@ Route::group(['middleware' => 'public.routes'], function () {
 
 });
 
+// Routes that needs to revalidate back history / or no back history
+Route::group(['middleware' => 'revalidate'], function () {
+
+    Route::post('/logout', [AuthController::class, 'logout'])
+    ->name('post.logout');
+});
+
 Route::group(['middleware' => 'check.auth.student'], function () {
 
     Route::get('/home', [StudentController::class, 'home'])
@@ -38,7 +45,10 @@ Route::group(['middleware' => 'check.auth.student'], function () {
     Route::get('/voting/process', [StudentController::class, 'votingProcess'])
         ->name('voting.process');
 
+    Route::post('/voting/preview', [StudentController::class, 'votingPreview'])
+        ->name('voting.preview.post');
+    
     Route::get('/voting/preview', [StudentController::class, 'votingPreview'])
-        ->name('voting.preview');
+        ->name('voting.preview.get');
 
 });

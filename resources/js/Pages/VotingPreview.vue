@@ -1,5 +1,7 @@
 <template>
     <Navbar></Navbar>
+    <title>Voting Preview - Voting System</title>
+
     <div class="main">
         <h1 class="preview-label">PREVIEW</h1>
 
@@ -19,42 +21,25 @@
             </div>
         </div>
 
-        <div class="selected-candidates">
+        <div v-for="(candidates, position) in votes" class="selected-candidates">
             <div class="candidate">
-                <h1 class="position">PRESIDENT</h1>
+                <h1 class="position">{{ position }}</h1>
 
                 <div class="candidate-information-wrapper">
-                    <div class="candidate-information">
-                        <img src="../../images/candidate.jpg" alt="" class="candidate-photo">
-                        <h1 class="candidate-name">David Daniel Reataza</h1>
-                        <h2 class="candidate-affiliation">Independent</h2>
+                    <div v-for="vote in candidates" class="candidate-information">
+                        <img v-if="vote === 'abstain'" src="../../images/abstain.svg" class="candidate-photo" draggable="false">
+                        <img v-else :src="vote.DisplayPhoto" alt="" class="candidate-photo" draggable="false">
+                        <h1 class="candidate-name">{{ vote === 'abstain' ? 'Abstain' : vote.Student.FirstName + ' ' + vote.Student.LastName }}</h1>
+                        <h2 class="candidate-affiliation">{{ vote === 'abstain' ? '' : (vote.PartyListId ? 'Party Name' : 'Independent') }}</h2>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="selected-candidates">
-            <div class="candidate">
-                <h1 class="position">VICE PRESIDENT</h1>
-
-                <div class="candidate-information-wrapper">
-                    <div class="candidate-information">
-                        <img src="../../images/candidate.jpg" alt="" class="candidate-photo">
-                        <h1 class="candidate-name">Roselyn Viray</h1>
-                        <h2 class="candidate-affiliation">Enigma</h2>
-                    </div>
-                    <div class="candidate-information">
-                        <img src="../../images/candidate.jpg" alt="" class="candidate-photo">
-                        <h1 class="candidate-name">Roselyn Viray</h1>
-                        <h2 class="candidate-affiliation">Enigma</h2>
-                    </div>
-                </div>
-            </div>
-        </div>
         
         <div class="preview-buttons">
-            <button class="back-button">GO BACK</button>
-            <button class="submit-button">SUBMIT</button>
+            <button class="back-button" @click.prevent="returnPage">RETURN</button>
+            <button class="submit-button" @click.prevent="confirm">CONFIRM</button>
         </div>
     </div>
 </template>
@@ -62,11 +47,60 @@
 <script>
     import Navbar from '../Shared/Navbar.vue';
 
+    import { ref } from 'vue'
+    import axios from 'axios'
+    import { useQuery } from '@tanstack/vue-query'
+    import { router } from '@inertiajs/vue3'
+
     export default {
-        setup() {
+        setup(props) {
+            const activeElectionIndex = ref(Number(props.id));
+            const votes = ref(props.votes);
+            const student_number = ref(props.student_number);
             
+            return {
+                activeElectionIndex,
+                votes,
+                student_number,
+            };
         },
         components: { Navbar },
+        props: {
+            id: '',
+            votes: {},
+            student_number: '',
+        },
+        methods: {
+            returnPage(){
+                router.visit(`/voting/process?id=${this.activeElectionIndex}`);
+            },
+            confirm(){
+                const votesList = {
+                    election_id: this.activeElectionIndex,
+                    voter_student_number: this.student_number,
+                    votes: Object.values(this.votes).flat().map(candidate => {
+                        return { 
+                            candidate_student_number: candidate === 'abstain' ? 'abstain' : candidate.StudentNumber 
+                        };
+                    }),
+                };
+
+                axios.post(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/votings/submit`, votesList)
+                    .then(response => {
+                        console.log(response.data);
+                        
+                        alert('Your votes has been submitted.');
+
+                        localStorage.removeItem(`votes-${this.activeElectionIndex}`);
+                        router.visit(`/home`);
+                    })
+                    .catch(error => {
+                        console.error(error);
+                        
+                        alert(error.response.data.error)
+                    });
+            },
+        },
     };
 </script>
 
@@ -135,6 +169,7 @@
         align-items: center;
         flex-direction: column;
         margin: 1.5% 1%;
+        transition: all 0.4s ease;
     }
 
     .candidate-photo{
@@ -144,14 +179,20 @@
         object-fit: cover;
     }
 
+    .candidate-information:hover {
+        background-color: rgb(239, 239, 239);
+        box-shadow: 0px 3.5px 5px rgba(167, 165, 165, 0.7);
+    }
+
     .candidate-name{
-        font-size: 18px;
-        margin: 3% 0%;
+        font-size: 20px;
+        margin: 8% 0%;
         font-weight: bold;
     }
 
     .candidate-affiliation{
-        font-size: 18px;
+        margin-top: -5%;
+        font-size: 17px;
     }
 
     .preview-buttons{
