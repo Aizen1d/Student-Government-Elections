@@ -2038,6 +2038,35 @@ class VotesList(BaseModel):
 
 """ ** GET Methods: VotingsTracker Table APIs ** """
 
+@router.get("/votings/election/{id}/{position_name}/results", tags=["Votings"])
+def get_Results_By_Election_Id_And_Position_Name(id: int, position_name: str, db: Session = Depends(get_db)):
+    # Rank the candidates by votes received
+    candidates = db.query(Candidates).filter(Candidates.ElectionId == id, Candidates.SelectedPositionName == position_name).order_by(Candidates.Votes.desc()).all()
+
+    # Calculate the total number of votes
+    total_votes = sum(candidate.Votes for candidate in candidates)
+
+    # Calculate the ranking, votes, and percentage of votes for each candidate
+    results = []
+    for i, candidate in enumerate(candidates):
+        # Get the first name middle name if it exist and last name of candidate by studentnumber from student table
+        student = db.query(Student).filter(Student.StudentNumber == candidate.StudentNumber).first()
+        full_name = student.FirstName + " " + student.MiddleName + " " + student.LastName if student.MiddleName else student.FirstName + " " + student.LastName
+
+        # Get the candidate photo from cloudinary using the candidate.displayphoto resources by tag in cloudinary
+        display_photo = resources_by_tag(candidate.DisplayPhoto)
+
+        results.append({
+            'rank': i + 1,
+            'candidate_student_number': candidate.StudentNumber,
+            'full_name': full_name,
+            'display_photo': display_photo["resources"][0]["secure_url"] if display_photo else "",
+            'votes': candidate.Votes,
+            'percentage': (candidate.Votes / total_votes) * 100 if total_votes > 0 else 0,
+        })
+
+    return results
+
 """ ** POST Methods: All about VotingsTracker Table APIs ** """
 
 @router.post("/votings/submit", tags=["Votings"])
