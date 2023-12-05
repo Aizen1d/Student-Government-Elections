@@ -38,6 +38,13 @@
         },
         methods: {
             logout(){
+                // Clear the local storage anything name starts from votes
+                for (const [key, value] of Object.entries(localStorage)) {
+                    if (key.startsWith('votes')) {
+                        localStorage.removeItem(key);
+                    }
+                }
+
                 axios.post('/logout')
                     .then(response => {
                         useUserStore().reset(); // Reset the user store 

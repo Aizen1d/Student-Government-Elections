@@ -58,6 +58,16 @@
                 this.invalid = this.$page.props.flash.token_invalid;
             }*/
         },
+        created() {
+            // Clear the local storage anything name starts from votes (votes storage/cache basically)
+            // To prevent when token is expired, so the votes will be cleared
+
+            for (const [key, value] of Object.entries(localStorage)) {
+                if (key.startsWith('votes')) {
+                    localStorage.removeItem(key);
+                }
+            }
+        },
         methods: {
              submitForm() {
                 if (this.countdown > 0) {
