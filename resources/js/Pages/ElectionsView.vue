@@ -172,7 +172,11 @@
                 router.visit('/elections')
             },
             seeResults(){
-                router.visit('/elections/view/results')
+                router.visit('/elections/view/results', {
+                    data: {
+                        id: this.id,
+                    }
+                })
             },
             fileCoc(){
                 router.visit('/elections/view/file-coc', {

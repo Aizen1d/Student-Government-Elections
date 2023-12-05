@@ -3,77 +3,40 @@
     <Navbar></Navbar>
 
     <div class="main">
-        <h1 class="election-name">GRAND SSC ELECTION SY 2023 RESULTS</h1>
+        <div class="col">
+            <h1 class="path" v-if="!isElectionsLoading">
+                <span class="return" @click="returnPage">{{ electionsData.ElectionName }}</span>&nbsp;>&nbsp;Ongoing Results
+            </h1>
+        </div>
 
         <div class="candidates-votes">
-            <div class="dropdown">
-                <h6 class="position dropdown-toggle">PRESIDENT</h6>
+            <div class="col-2 filterDropDown">
+                <input type="hidden" name="filter-type">
+                <select class="filter mx-3" aria-label="Default select example" v-model="selectedPosition">
+                    <option value="" disabled hidden selected>Select Position</option>
+                    <option v-for="(position, index) in positionsData"
+                            :key="index" 
+                            :value="position.PositionName">
+                            {{ position.PositionName }}
+                    </option>
+                </select>
             </div>
-            <div class="candidate1">
-                <div class="candidate-information">
-                    <span class="rank">1st</span>
-                    <img src="../../images/dog_placeholder.jpg" alt="" class="candidate-photo">
-                    <span class="candidate-name">David Daniel Reataza</span>
+            <div v-for="(result, index) in rankingsData" :key="index">
+                <div :class="result.rank === 1 ? 'candidate1' : result.rank === 2 ? 'candidate2' : result.rank === 3 ? 'candidate3' : 'candidate'">
+                    <div class="candidate-information">
+                        <span class="rank">{{ getOrdinalSuffix(result.rank) }}</span>
+                        <img :src="result.display_photo" alt="" class="candidate-photo">
+                        <span class="candidate-name">{{ result.full_name }}</span>
 
-                    <div class="vote-count">
-                        <span>25 votes</span>
-                        <span>26.32%</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="candidate2">
-                <div class="candidate-information">
-                    <span class="rank">2nd</span>
-                    <img src="../../images/dog_placeholder.jpg"  alt="" class="candidate-photo">
-                    <span class="candidate-name">Roselyn Viray</span>
-
-                    <div class="vote-count">
-                        <span>20 votes</span>
-                        <span>21.05%</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="candidate3">
-                <div class="candidate-information">
-                    <span class="rank">3rd</span>
-                    <img src="../../images/dog_placeholder.jpg"  alt="" class="candidate-photo">
-                    <span class="candidate-name">Random Student</span>
-
-                    <div class="vote-count">
-                        <span>18 votes</span>
-                        <span>18.95%</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="candidate">
-                <div class="candidate-information">
-                    <span class="rank">4th</span>
-                    <img src="../../images/dog_placeholder.jpg"  alt="" class="candidate-photo">
-                    <span class="candidate-name">Random Student A</span>
-
-                    <div class="vote-count">
-                        <span>17 votes</span>
-                        <span>17.89%</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="candidate">
-                <div class="candidate-information">
-                    <span class="rank">5th</span>
-                    <img src="../../images/dog_placeholder.jpg"  alt="" class="candidate-photo">
-                    <span class="candidate-name">Random Student B</span>
-
-                    <div class="vote-count">
-                        <span>15 votes</span>
-                        <span>15.79%</span>
+                        <div class="vote-count">
+                            <span>{{ result.votes }} {{ result.votes > 1 ? 'votes' : 'vote' }}</span>
+                            <span>{{ result.percentage.toFixed(2) }}%</span>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+
     </div>
 </template>
 
@@ -86,12 +49,89 @@
 
     import { useQuery } from "@tanstack/vue-query";
     import { router } from '@inertiajs/vue3';
-    import { ref, computed } from 'vue';
+    import { ref, computed, watch } from 'vue';
     import axios from 'axios';
 
     export default {
-        setup() {
+        setup(props) {
+            const electionId = ref(Number(props.election_id));
+            const selectedPosition = ref('');
 
+            const getElectionData = async () => {
+                const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/election/view/${electionId.value}`);
+                console.log(`Get election with id ${electionId.value} successful. Duration: ${response.duration}ms`)
+
+                return response.data.election;
+            }
+
+            const { data: electionsData,
+                isLoading: isElectionsLoading,
+                isSuccess: isElectionsSuccess,
+                isError: isElectionsError } =
+                useQuery({
+                    queryKey: [`getElectionData-${electionId.value}`],
+                    queryFn: getElectionData,
+                })
+
+            const getPositionsFromElection = async () => {
+                const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/election/view/${electionId.value}`);
+                console.log(`Get election with id ${electionId.value} successful. Duration: ${response.duration}ms`)
+
+                return response.data.positions;
+            }
+
+            const { data: positionsData,
+                isLoading: isPositionsLoading,
+                isSuccess: isPositionsSuccess,
+                isError: isPositionsError } =
+                useQuery({
+                    queryKey: [`getPositionsData-${electionId.value}`],
+                    queryFn: getPositionsFromElection,
+                })
+            
+            watch(selectedPosition, (newVal, oldVal) => {
+                if (newVal !== '') {
+                    resultsRefetch();
+                }
+            })
+
+            const getPositionRankings = async () => {
+                const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/votings/election/${electionId.value}/${selectedPosition.value}/results`);
+                console.log(`Get ${selectedPosition.value} rankings of election ${electionId.value} successful. Duration: ${response.duration}ms`)
+
+                return response.data;
+            }
+
+            const { data: rankingsData,
+                isLoading: isRankingsLoading,
+                isSuccess: isRankingsSuccess,
+                isError: isRankingsError,
+                refetch: resultsRefetch } =
+                useQuery({
+                    queryKey: [`rankingsData-${electionId.value}-${selectedPosition.value}`],
+                    queryFn: getPositionRankings,
+                })
+
+            return {
+                electionId,
+                selectedPosition,
+
+                electionsData,
+                isElectionsLoading,
+                isElectionsSuccess,
+                isElectionsError,
+
+                positionsData,
+                isPositionsLoading,
+                isPositionsSuccess,
+                isPositionsError,
+
+                rankingsData,
+                isRankingsLoading,
+                isRankingsSuccess,
+                isRankingsError,
+                resultsRefetch
+            }
         },
         components: {
             Standards,
@@ -99,7 +139,29 @@
             BaseContainer,
             BaseTable,
             ImageSkeleton
-        }
+        },
+        props: {
+            election_id: 0,
+        },
+        methods: {
+            returnPage(){
+                router.visit(`/elections/view?id=${this.electionId}`)
+            },
+            getOrdinalSuffix(i) {
+                const j = i % 10;
+                const k = i % 100;
+                if (j == 1 && k != 11) {
+                    return i + "st";
+                }
+                if (j == 2 && k != 12) {
+                    return i + "nd";
+                }
+                if (j == 3 && k != 13) {
+                    return i + "rd";
+                }
+                return i + "th";
+            }
+        },
     }
 </script>
 
@@ -109,19 +171,45 @@
         font-family: 'Inter', sans-serif;
     }
 
-    .election-name{
+    .filter{
+        margin-top: 10% !important;
+        padding-left: 3%;
+        width: 100%;
+        height: 40px;
+        border-radius: 8px;
+        border: 1px solid rgba(40, 40, 40, 0.25);
+    }
+
+    .filterDropDown{
+        margin-left: 1%;
+    }
+
+    .return{
         font-weight: 700;
         font-size: 30px;
-        color: #800000;
-        margin: 0;
+        color: #B90321;
+    }
+
+    .return:hover{
+        cursor: pointer;
+        text-decoration: underline;
+    }
+
+    .path{
+        font-weight: 700;
+        font-size: 30px;
+        color: black;
     }
 
     .candidates-votes{
+        min-height: 6rem;
+        max-height: 45rem;
         padding-bottom: 0.5%;
         margin: 1.5% 0%;
         background-color: white;
         border-radius: 6px;
-        box-shadow: 0px 3px 5px rgba(167, 165, 165, 0.5);
+        overflow-y: auto;
+        box-shadow: 0px 3px 5px rgba(167, 165, 165, 0.3);
     }
 
     .position{
@@ -141,12 +229,21 @@
         box-shadow: 0px 3px 5px rgba(167, 165, 165, 0.5);
     }
 
+    .candidate:hover{
+        box-shadow: 0px 5px 7px rgba(167, 165, 165, 0.7);
+    }
+
     .candidate1{
-        background: rgb(255,235,131);
+        background-color: rgb(255,235,131);
         background: linear-gradient(90deg, rgba(255,235,131,1) 0%, rgba(255,214,83,1) 50%, rgba(255,230,139,1) 100%);
         margin: 1.5% 2%;
         border-radius: 3px;
         box-shadow: 0px 3px 5px rgba(167, 165, 165, 0.5);
+        transition: all 0.2s ease-in-out;
+    }
+
+    .candidate1:hover{
+        box-shadow: 0px 5px 7px rgba(167, 165, 165, 0.7);
     }
 
     .candidate2{
@@ -155,6 +252,11 @@
         margin: 1.5% 2%;
         border-radius: 3px;
         box-shadow: 0px 3px 5px rgba(167, 165, 165, 0.5);
+        transition: all 0.2s ease-in-out;
+    }
+
+    .candidate2:hover{
+        box-shadow: 0px 5px 7px rgba(167, 165, 165, 0.7);
     }
 
     .candidate3{
@@ -163,6 +265,10 @@
         margin: 1.5% 2%;
         border-radius: 3px;
         box-shadow: 0px 3px 5px rgba(167, 165, 165, 0.5);
+    }
+
+    .candidate3:hover{
+        box-shadow: 0px 5px 7px rgba(167, 165, 165, 0.7);
     }
 
     .candidate-information{
