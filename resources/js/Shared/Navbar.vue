@@ -102,6 +102,7 @@
     }
 
     .dropdown-item:hover{
+        cursor: pointer;
         background-color: rgb(207, 207, 207);
     }
 </style>
