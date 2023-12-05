@@ -50,6 +50,10 @@ class AuthController extends Controller
             // Remove student number in a session
             $request->session()->forget('student_number');
 
+            // Remove id, votes session
+            $request->session()->forget('id');
+            $request->session()->forget('votes');
+
             return response()->json([
                 'logout' => 'true',
             ])->withCookie($user_info_cookie)->withCookie($cookie)->withCookie($logout_cookie);
