@@ -646,6 +646,32 @@ def get_All_Election(db: Session = Depends(get_db)):
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while fetching all elections from the database"})
 
+@router.get("/election/all/is-student-voted", tags=["Election"])
+def get_All_Election_Is_Student_Voted(student_number: str, db: Session = Depends(get_db)):
+    try:
+        # Check if the student has voted in the election
+        elections = db.query(Election).order_by(Election.ElectionId).all()
+        elections_with_creator = []
+
+        for i, election in enumerate(elections):
+            creator = db.query(Student).filter(Student.StudentNumber == election.CreatedBy).first()
+            election_dict = election.to_dict(i+1)
+            election_dict["CreatedByName"] = (creator.FirstName + ' ' + (creator.MiddleName + ' ' if creator.MiddleName else '') + creator.LastName) if creator else ""
+            
+            # Get the CreatedElectionPositions of the election then append it to the election_dict
+            positions = db.query(CreatedElectionPosition).filter(CreatedElectionPosition.ElectionId == election.ElectionId).all()
+            election_dict["Positions"] = [position.to_dict(i+1) for i, position in enumerate(positions)]
+
+            elections_with_creator.append(election_dict)
+            
+            # Check if the student has voted in the election
+            student_voted = db.query(VotingsTracker).filter(VotingsTracker.ElectionId == election.ElectionId, VotingsTracker.StudentNumber == student_number).first()
+            election_dict["IsStudentVoted"] = True if student_voted else False
+
+        return {"elections": elections_with_creator}
+    
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while fetching all elections from the database"})
     
 @router.get("/election/view/{id}", tags=["Election"])
 def get_Election_By_Id(id: int, db: Session = Depends(get_db)):
