@@ -362,6 +362,9 @@ async def student_Insert_Data_Attachment(files: List[UploadFile] = File(...), db
     elements = []
     styleSheet = getSampleStyleSheet()
 
+    inserted_student_count = 0
+    incomplete_student_column_count = 0
+
     for file in files:
         if file.filename.endswith('.csv'):
             df = pd.read_csv(file.file, encoding='ISO-8859-1')
@@ -386,8 +389,6 @@ async def student_Insert_Data_Attachment(files: List[UploadFile] = File(...), db
 
         existing_students = {student.StudentNumber for student in db.query(Student).all()}
         existing_emails = {student.EmailAddress for student in db.query(Student).all()}
-        inserted_student_count = 0
-        incomplete_student_column_count = 0
 
         # Insert the data into the database
         inserted_students = []
@@ -638,6 +639,21 @@ def get_All_Election(db: Session = Depends(get_db)):
             # Get the CreatedElectionPositions of the election then append it to the election_dict
             positions = db.query(CreatedElectionPosition).filter(CreatedElectionPosition.ElectionId == election.ElectionId).all()
             election_dict["Positions"] = [position.to_dict(i+1) for i, position in enumerate(positions)]
+
+            # Determine what election period
+            now = datetime.now()
+            if now < election.CoCFilingStart:
+                election_dict["ElectionPeriod"] = "Pre-Election"
+            elif now >= election.CoCFilingStart and now <= election.CoCFilingEnd:
+                election_dict["ElectionPeriod"] = "Filing Period"
+            elif now >= election.CampaignStart and now <= election.CampaignEnd:
+                election_dict["ElectionPeriod"] = "Campaign Period"
+            elif now >= election.VotingStart and now <= election.VotingEnd:
+                election_dict["ElectionPeriod"] = "Voting Period"
+            elif now >= election.AppealStart and now <= election.AppealEnd:
+                election_dict["ElectionPeriod"] = "Appeal Period"
+            else:
+                election_dict["ElectionPeriod"] = "Post-Election"
 
             elections_with_creator.append(election_dict)
 
