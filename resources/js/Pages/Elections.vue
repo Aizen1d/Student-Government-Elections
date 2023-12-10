@@ -16,14 +16,14 @@
 
     <div class="parent">
         <BaseTable class="item-table" v-if="atleastOneElection" 
-                :columns="['Organization', 'Election Title', 'Status']" 
+                :columns="['Organization', 'Election Title', 'Election Period']" 
                 :columnWidths="['50%', '50%', '50%']"
                 :tableHeight="'auto'"
                 :maxTableHeight="'235px'">
             <tr v-for="(election, index) in electionsData" :key="index" @click="selectItem(election)">
                 <td style="width: 50%; text-align: left; padding-left: 12.5%;" class="my-cell">{{ election.type }}</td>
                 <td style="width: 50%; text-align: left; padding-left: 12.5%;" class="my-cell">{{ election.name }}</td>
-                <td style="width: 50%; text-align: left; padding-left: 14.5%;" class="my-cell">Status</td>
+                <td style="width: 50%; text-align: left; padding-left: 11.5%;" class="my-cell">{{ election.period }}</td>
             </tr>
         </BaseTable>
         <div v-else>
@@ -57,6 +57,7 @@
                     name: election.ElectionName,
                     type: election.ElectionType,
                     status: election.ElectionStatus,
+                    period: election.ElectionPeriod,
                 }));
 
                 if (response.data.elections.length > 0){
