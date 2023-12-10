@@ -1,22 +1,28 @@
 <template>
     <Navbar></Navbar>
+    <title>Home - Voting System</title>
+
     <div class="main">
         <h1 class="header-label">ELECTIONS</h1>
 
         <template v-if="atleastOneElection && !isElectionsLoading" v-for="(election, index) in electionsData" :key="index">
-            <div class="select-election" @click="electionSelected(election)">
-                <div class="election">
+            <div v-if="isVotingPeriod(election)" class="select-election" @click="electionSelected(election)">
+                <div :class="{ 'election': !election.is_student_voted, 'voted-already': election.is_student_voted  }">
                     <div class="election-content">
                         <img src="" alt="?" class="organization-logo">
                         <h1 class="election-title">{{ election.name }}</h1>
                     </div>
                 </div>
             </div>
+            <div v-if="activeElectionQuantity === 0" style="text-align: center; margin-top: 3%;">
+                <h2>
+                    No elections are currently happening at the moment.
+                </h2>
+            </div>
         </template>
         <div v-if="!atleastOneElection && !isElectionsLoading">
             <h1>No elections are currently happening at the moment.</h1>
         </div>
-
     </div>
 </template>
 
@@ -34,12 +40,16 @@
         setup(props) {
             const userStore = useUserStore();
             const atleastOneElection = ref(useLocalStorage('atleastOneElection', false));
+            const activeElectionQuantity = ref(0);
 
             userStore.student_number = props.student_number;
             userStore.full_name = props.full_name;
             
             const fetchElectionsTable = async () => {
-                const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/election/all`, {
+                const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/election/all/is-student-voted`, {
+                    params: {
+                        student_number: userStore.student_number,
+                    }
                 });
                 console.log(`Get all elections successful. Duration: ${response.duration}ms`)
 
@@ -48,6 +58,9 @@
                     name: election.ElectionName,
                     type: election.ElectionType,
                     status: election.ElectionStatus,
+                    voting_start: election.VotingStart,
+                    voting_end: election.VotingEnd,
+                    is_student_voted: election.IsStudentVoted,
                 }));
 
                 if (response.data.elections.length > 0){
@@ -71,6 +84,7 @@
 
             return {
                 atleastOneElection,
+                activeElectionQuantity,
                 electionsData,
                 isElectionsLoading,
                 isElectionsSuccess,
@@ -84,12 +98,36 @@
         },
         methods: {
             electionSelected(election){
+                if (election.is_student_voted) {
+                    alert('You have already voted for this election.');
+                    return;
+                }
+
+                // Incase voting period ends while the user is choosing an election
+                if (!this.isVotingPeriod(election)) {
+                    alert('This election is not yet open for voting.');
+                    return;
+                }
+
                 router.visit('/voting/process', {
                     data: {
                         id: election.id,
                     }
                 })
-            }
+            },
+            isVotingPeriod(election){
+                const now = new Date();
+                const voting_start = new Date(election.voting_start);
+                const voting_end = new Date(election.voting_end);
+
+                if (now >= voting_start && now < voting_end) {
+                    this.activeElectionQuantity++;
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            },
         }
     };
 </script>
@@ -138,6 +176,14 @@
 
     .election:hover::before {
         left: 0;
+    }
+
+    .voted-already{
+        background-color: rgb(169, 169, 169);
+    }
+
+    .voted-already:hover{
+        cursor: default;
     }
 
     .election-content {
