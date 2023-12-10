@@ -31,7 +31,8 @@
                     <div class="candidate-card">
                         <img :src="candidate.DisplayPhoto" class="candidate-photo" alt="" draggable="false">
                         <h3 class="candidate-name">{{ candidate.Student.FirstName + " " + (candidate.Student.MiddleName ? candidate.Student.MiddleName + " " : "") + candidate.Student.LastName }}</h3>
-                        <h4 class="candidate-affiliation">Independent</h4>
+                        <h4 class="candidate-affiliation" v-if="candidate.PartyListName">{{ candidate.PartyListName }}</h4>
+                        <h4 class="candidate-affiliation" v-else>Independent</h4>
                     </div>
                 </div>
                 <div class="candidate" :class="{ 'voted': isAbstain(positionName) }" @click="abstain(positionName)">
@@ -235,7 +236,7 @@
                     }
                 }
 
-                // print each name of the candidate and position and is not abstain
+                /* print each name of the candidate and position and is not abstain
                 for (let position in this.votes) {
                     if (this.votes[position].length > 0) {
                         for (let candidate in this.votes[position]) {
@@ -244,7 +245,7 @@
                             }
                         }
                     }
-                }
+                }*/
 
                 return true;
             },
