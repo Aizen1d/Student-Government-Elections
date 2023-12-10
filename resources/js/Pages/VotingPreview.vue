@@ -30,13 +30,12 @@
                         <img v-if="vote === 'abstain'" src="../../images/abstain.svg" class="candidate-photo" draggable="false">
                         <img v-else :src="vote.DisplayPhoto" alt="" class="candidate-photo" draggable="false">
                         <h1 class="candidate-name">{{ vote === 'abstain' ? 'Abstain' : vote.Student.FirstName + ' ' + vote.Student.LastName }}</h1>
-                        <h2 class="candidate-affiliation">{{ vote === 'abstain' ? '' : (vote.PartyListId ? 'Party Name' : 'Independent') }}</h2>
+                        <h2 class="candidate-affiliation">{{ vote === 'abstain' ? '' : (vote.PartyListId ? vote.PartyListName : 'Independent') }}</h2>
                     </div>
                 </div>
             </div>
         </div>
 
-        
         <div class="preview-buttons">
             <button class="back-button" @click.prevent="returnPage">RETURN</button>
             <button class="submit-button" @click.prevent="confirm">CONFIRM</button>
@@ -46,22 +45,25 @@
 
 <script>
     import Navbar from '../Shared/Navbar.vue';
+    import { useUserStore } from '../Stores/UserStore.js';
 
     import { ref } from 'vue'
     import axios from 'axios'
     import { useQuery } from '@tanstack/vue-query'
     import { router } from '@inertiajs/vue3'
-
+    
     export default {
         setup(props) {
             const activeElectionIndex = ref(Number(props.id));
             const votes = ref(props.votes);
             const student_number = ref(props.student_number);
+            const confirm_clicked = ref(false);
             
             return {
                 activeElectionIndex,
                 votes,
                 student_number,
+                confirm_clicked
             };
         },
         components: { Navbar },
@@ -75,6 +77,7 @@
                 router.visit(`/voting/process?id=${this.activeElectionIndex}`);
             },
             confirm(){
+                this.confirm_clicked = true;
                 const votesList = {
                     election_id: this.activeElectionIndex,
                     voter_student_number: this.student_number,
@@ -88,18 +91,38 @@
                 axios.post(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/votings/submit`, votesList)
                     .then(response => {
                         console.log(response.data);
-                        
-                        alert('Your votes has been submitted.');
-
                         localStorage.removeItem(`votes-${this.activeElectionIndex}`);
-                        router.visit(`/home`);
+
+                        alert('Your votes has been submitted, you will be logged out now.');
+
+                        this.logout();
                     })
                     .catch(error => {
                         console.error(error);
+                        this.confirm_clicked = false;
                         
                         alert(error.response.data.error)
                     });
             },
+            logout(){
+                // Clear the local storage anything name starts from votes
+                for (const [key, value] of Object.entries(localStorage)) {
+                    if (key.startsWith('votes')) {
+                        localStorage.removeItem(key);
+                    }
+                }
+
+                axios.post('/logout')
+                    .then(response => {
+                        useUserStore().reset(); // Reset the user store 
+                        location.reload(); // trick the system to logout and prevent backing 
+                                         // (Reloading to check for cookie token and throw back to login page)
+
+                    })
+                    .catch(error => {
+                        console.log(error);
+                    });
+            }
         },
     };
 </script>
