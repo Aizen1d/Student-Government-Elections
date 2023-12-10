@@ -329,7 +329,7 @@
     }
 
     .text-area-input{
-        height: fit-content;
+        height: 6rem;
         resize: none;
     }
 

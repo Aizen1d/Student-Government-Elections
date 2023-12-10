@@ -19,7 +19,7 @@
             </div>
 
             <BaseTable class="item-table" 
-                :columns="['ID', 'Title', 'Organization', 'School Year', 'Created By', 'Start of Election', 'Date Created', 'Status']" 
+                :columns="['ID', 'Title', 'Organization', 'School Year', 'Created By', 'Start of Election', 'Date Created', 'Period']" 
                 :columnWidths=columnWidths
                 :tableHeight="'auto'"
                 :maxTableHeight="'300px'">
@@ -31,8 +31,7 @@
                     <td :style="{ width: columnWidths[4] }" class="my-cell">{{ item.created_by_name }}</td>
                     <td :style="{ width: columnWidths[5] }" class="my-cell">{{ item.election_start }}</td>
                     <td :style="{ width: columnWidths[6] }" class="my-cell">{{ item.date_created }}</td>
-                    <td :style="{ width: columnWidths[7] }" class="my-cell">{{ item.status }}</td>
-
+                    <td :style="{ width: columnWidths[7] }" class="my-cell">{{ item.period }}</td>
                 </tr>
 
             </BaseTable>
@@ -96,6 +95,7 @@
                         election_start: new Date(item.ElectionStart).toLocaleString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }),
                         date_created: formattedDate,
                         status: item.ElectionStatus,
+                        period: item.ElectionPeriod,
                     }
                 });
 
