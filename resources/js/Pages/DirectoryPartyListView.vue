@@ -50,14 +50,19 @@
             <h2 class="party-member-label">PARTY MEMBERS</h2>
 
             <div class="members-list">
-                <div class="member-card" v-for="(candidate, index) in partylistCandidates" :key="index">
-                    <h3 class="position-label">{{ candidate.SelectedPositionName.toUpperCase() }}</h3>
-                    <div class="member-photo">
-                        <img :src="candidate.DisplayPhoto" alt="" draggable="false">
+                <template v-if="partylistCandidates && partylistCandidates.length > 0">
+                    <div class="member-card" v-for="(candidate, index) in partylistCandidates" :key="index">
+                        <h3 class="position-label">{{ candidate.SelectedPositionName.toUpperCase() }}</h3>
+                        <div class="member-photo">
+                            <img :src="candidate.DisplayPhoto" alt="" draggable="false">
+                        </div>
+                        <h4 class="member-name">{{ candidate.Student.FirstName + " " + (candidate.Student.MiddleName ? candidate.Student.MiddleName + " " : "") + candidate.Student.LastName }}</h4>
+                        <h6 class="member-motto">"{{ candidate.Motto }}"</h6>
                     </div>
-                    <h4 class="member-name">{{ candidate.Student.FirstName + " " + (candidate.Student.MiddleName ? candidate.Student.MiddleName + " " : "") + candidate.Student.LastName }}</h4>
-                    <h6 class="member-motto">"{{ candidate.Motto }}"</h6>
-                </div>
+                </template>
+                <template v-else>
+                    <h2 class="party-information">No candidates are currently running under this party list.</h2>
+                </template>
             </div>
         </div>
         
