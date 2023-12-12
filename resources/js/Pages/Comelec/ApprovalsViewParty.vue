@@ -10,7 +10,7 @@
                     <span class="return" @click="returnPage">Approvals</span> > View > Partylist
                 </h2>
             </div>
-            <template v-if="!isPartylistLoading">
+            <template v-if="!isPartylistLoading && party_list_status !== ''">
                 <div v-if="party_list_status === 'Pending'" class="col-6" style="text-align: end;">
                     <ActionButton @click.prevent="acceptPartylist" class="accept-button" style="margin-right: 2% !important; background-color: rgb(71, 182, 43);">Approve</ActionButton>
                     <ActionButton @click.prevent="rejectPartylist" class="my-2">Reject</ActionButton>

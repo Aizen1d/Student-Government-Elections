@@ -10,7 +10,7 @@
                     <span class="return" @click="returnPage">Approvals</span> > View > CoC
                 </h2>
             </div>
-            <template v-if="!isCoCLoading">
+            <template v-if="!isCoCLoading && coc_status !== ''">
                 <div v-if="coc_status === 'Pending'" class="col-6" style="text-align: end;">
                     <ActionButton @click.prevent="acceptCoC" class="accept-button" style="margin-right: 2% !important; background-color: rgb(71, 182, 43);">Approve</ActionButton>
                     <ActionButton @click.prevent="rejectCoC" class="my-2">Reject</ActionButton>
