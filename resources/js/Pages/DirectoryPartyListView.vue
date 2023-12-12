@@ -41,7 +41,7 @@
             {{ partylistData.Platforms }}
         </p>
 
-        <div class="video">
+        <div class="video" v-if="partylistData.VideoAttachment">
             <iframe class="attached-link" :src="getEmbedUrl(partylistData.VideoAttachment)" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
         </div>
 
