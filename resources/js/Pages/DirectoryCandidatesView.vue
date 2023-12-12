@@ -15,7 +15,7 @@
                     {{ electionName }} 
                 </div>
 
-                <a :href="'#'+position.PositionName" v-for="(position, index) in positionsData" :key="index" class="position-selection">
+                <a :href="'#'+position.PositionName" v-if="atLeastOneCandidate" v-for="(position, index) in positionsData" :key="index" class="position-selection">
                     {{ position.PositionName }}
                 </a>
             </div>
@@ -186,6 +186,12 @@
                     <h1 style="color: black;">No candidate in this position.</h1>
                 </div>
             </div>
+            <div v-if="candidatePosition.length < 1" style="text-align: center;">
+                <h1 style="color: black;">No candidate in this position.</h1>
+            </div>
+        </div>
+        <div v-if="!atLeastOneCandidate && !isCandidatesPerPositionLoading" style="text-align: center; margin-top: 7%;">
+            <h1 style="color: black; font-size: 28px;">No candidates registered in this election yet.</h1>
         </div>
     </div>
 </template>
