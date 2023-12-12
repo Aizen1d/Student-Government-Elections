@@ -22,7 +22,7 @@
                 :columns="['ID', 'Title', 'Organization', 'School Year', 'Created By', 'Start of Election', 'Date Created', 'Period']" 
                 :columnWidths=columnWidths
                 :tableHeight="'auto'"
-                :maxTableHeight="'300px'">
+                :maxTableHeight="'550px'">
                 <tr v-for="(item, index) in filteredElections" :key="index" @click="selectItem(item)">
                     <td :style="{ width: columnWidths[0] }" class="my-cell">{{ item.count }}</td>
                     <td :style="{ width: columnWidths[1] }" class="my-cell">{{ item.title }}</td>

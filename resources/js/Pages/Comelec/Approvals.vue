@@ -52,7 +52,7 @@
                     :columns="['Party Name', 'Status', 'Date Submitted']" 
                     :columnWidths=columnWidthsParty
                     :tableHeight="'auto'"
-                    :maxTableHeight="'300px'"
+                    :maxTableHeight="'500px'"
                     v-if="!isPartylistLoading && filterType === 'party-list'">
                     <div>
                         <tr v-for="(item, index) in partylistData" :key="index" @click="selectPartyItem(item)">
