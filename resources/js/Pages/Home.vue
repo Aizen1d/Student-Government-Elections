@@ -16,12 +16,12 @@
             </div>
             <div v-if="activeElectionQuantity === 0" style="text-align: center; margin-top: 3%;">
                 <h2>
-                    No elections are currently happening at the moment.
+                    No voting period for election at the moment.
                 </h2>
             </div>
         </template>
         <div v-if="!atleastOneElection && !isElectionsLoading">
-            <h1>No elections are currently happening at the moment.</h1>
+            <h1>No voting period for election at the moment.</h1>
         </div>
     </div>
 </template>
