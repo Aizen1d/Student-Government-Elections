@@ -11,11 +11,16 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
+from apscheduler.triggers.date import DateTrigger
+
 from database import engine, SessionLocal, Base
 
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Union
 from datetime import datetime, date, timedelta
+from collections import defaultdict
 
 from dotenv import load_dotenv # for .env file
 load_dotenv()
@@ -35,7 +40,7 @@ from passlib.context import CryptContext
 from cloudinary.api import resources_by_tag, delete_resources_by_tag, delete_folder
 from services import send_verification_code_email, send_pass_code_queue_email, send_pass_code_manual_email, send_coc_status_email, send_partylist_status_email
 
-from models import Student, Organization, Announcement, Rule, Guideline, AzureToken, Election, SavedPosition, CreatedElectionPosition, Code, StudentPassword, PartyList, CoC, InsertDataQueues, Candidates, RatingsTracker, VotingsTracker, ElectionAnalytics
+from models import Student, Organization, Announcement, Rule, Guideline, AzureToken, Election, SavedPosition, CreatedElectionPosition, Code, StudentPassword, PartyList, CoC, InsertDataQueues, Candidates, RatingsTracker, VotingsTracker, ElectionAnalytics, ElectionWinners
 
 #################################################################
 """ Settings """
@@ -112,6 +117,14 @@ def get_db():
         yield db
     finally:
         db.close()
+
+# Create anbd start the scheduler
+scheduler = BackgroundScheduler()
+scheduler.add_jobstore(SQLAlchemyJobStore(url='sqlite:///jobs.sqlite'), 'default')
+
+@app.on_event("startup")
+def start_up():
+    scheduler.start()
 
 CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
@@ -744,6 +757,7 @@ def get_All_Approved_Candidates_CoC_By_Election_Id(id: int, db: Session = Depend
 
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while fetching all approved coc from the database"})
+    
 
 """ ** POST Methods: All about election APIs ** """
 @router.post("/election/create", tags=["Election"])
@@ -770,8 +784,8 @@ def save_election(election_data: CreateElectionData, db: Session = Depends(get_d
     db.commit()
 
     new_election_analytics = ElectionAnalytics(ElectionId=new_election.ElectionId,
-                                                TotalVotes=0,
-                                                TotalVoters=0,
+                                                AbstainCount=0,
+                                                VotesCount=0,
                                                 created_at=datetime.now(), 
                                                 updated_at=datetime.now())
     db.add(new_election_analytics)
@@ -785,6 +799,10 @@ def save_election(election_data: CreateElectionData, db: Session = Depends(get_d
                                                 updated_at=datetime.now())
         db.add(new_position)
         db.commit()
+
+    # Schedule the get_winners function to run at election.VotingEnd
+    trigger = DateTrigger(run_date=new_election.VotingEnd)
+    scheduler.add_job(gather_winners_by_election_id, trigger=trigger, id=f'gather_winners{new_election.ElectionId}', args=[new_election.ElectionId])
 
     return {"message": "Election created successfully",
             "election_id": new_election.ElectionId,}
@@ -814,51 +832,24 @@ def delete_Election_Position_Reusable(data: SaveReusablePositionData, db: Sessio
 
     return {"message": f"Position {capitalized_first_letter} is not re-usable anymore."}
 
+def delete_rows(db: Session, table, election_id: int):
+    rows = db.query(table).filter(table.ElectionId == election_id).all()
+    for row in rows:
+        db.delete(row)
+    db.commit()
+
 @router.post("/election/delete", tags=["Election"])
 def delete_Election(data: ElectionDelete, db: Session = Depends(get_db)):
     election = db.query(Election).filter(Election.ElectionId == data.id).first()
-    positions = db.query(CreatedElectionPosition).filter(CreatedElectionPosition.ElectionId == data.id).all()
-
     if not election:
         return {"error": "Election not found"}
-    
-    # delete all coc with the election id
-    cocs = db.query(CoC).filter(CoC.ElectionId == data.id).all()
 
-    if cocs:
-        for coc in cocs:
-            db.delete(coc)
-            db.commit()
+    # DELETE ALL REFERENCED ROWS with the election id
+    tables = [CreatedElectionPosition, CoC, ElectionAnalytics, Candidates, PartyList, RatingsTracker, VotingsTracker]
+    for table in tables:
+        delete_rows(db, table, data.id)
 
-    # delete all candidates with the election id
-    candidates = db.query(Candidates).filter(Candidates.ElectionId == data.id).all()
-
-    if candidates:
-        for candidate in candidates:
-            db.delete(candidate)
-            db.commit()
-
-    # delete all partylist with the election id
-    partylists = db.query(PartyList).filter(PartyList.ElectionId == data.id).all()
-
-    if partylists:
-        for partylist in partylists:
-            db.delete(partylist)
-            db.commit()
-
-    # delete all ratingstracker with the election id
-    ratingstrackers = db.query(RatingsTracker).filter(RatingsTracker.ElectionId == data.id).all()
-
-    if ratingstrackers:
-        for ratingstracker in ratingstrackers:
-            db.delete(ratingstracker)
-            db.commit()
-
-    for position in positions:
-        if position:
-            db.delete(position)
-            db.commit()
-
+    # FINALLY DELETE ELECTION with the election id
     db.delete(election)
     db.commit()
 
@@ -1784,6 +1775,27 @@ def get_PartyList_By_Name(name: str, db: Session = Depends(get_db)):
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while fetching partylist from the database"})
 
+# get partylists by election id
+@router.get("/partylist/election/{election_id}", tags=["Party List"])
+def get_PartyList_By_Election_Id(election_id: int, db: Session = Depends(get_db)):
+    try:
+        partylists = db.query(PartyList).filter(PartyList.ElectionId == election_id).order_by(PartyList.PartyListId).all()
+
+        # make a dictionary of partylists
+        partylists = [partylist.to_dict(i+1) for i, partylist in enumerate(partylists)]
+
+        # return the election name using the election id in the partylist dictionary
+        for partylist in partylists:
+            if partylist["ElectionId"]:
+                election = db.query(Election).filter(Election.ElectionId == partylist["ElectionId"]).first()
+                partylist["ElectionName"] = election.ElectionName if election else None
+                partylist["ElectionType"] = election.ElectionType if election else None
+
+        return {"partylists": partylists}
+        
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while fetching all partylists from the database"})
+
 
 """ ** POST Methods: All about Partylist Table APIs ** """
 
@@ -1998,7 +2010,14 @@ def get_All_Candidates_By_Election_Id(id: int, db: Session = Depends(get_db)):
 @router.get("/candidates/election/per-position/{id}/all", tags=["Candidates"])
 def get_All_Candidates_By_Election_Id_Per_Position(id: int, db: Session = Depends(get_db)):
     try:
-        candidates = db.query(Candidates).filter(Candidates.ElectionId == id).order_by(Candidates.CandidateId).all()
+        # Get the candidates and order by CreatedElectionPositionId
+        candidates = db.query(Candidates).join(
+            CreatedElectionPosition, 
+            and_(
+                Candidates.SelectedPositionName == CreatedElectionPosition.PositionName,
+                Candidates.ElectionId == id
+            )
+        ).order_by(CreatedElectionPosition.CreatedElectionPositionId).all()
 
         # Get the student row from student table using the student number in the candidate
         candidates_grouped_by_position = {}
@@ -2219,6 +2238,98 @@ def save_Votes(votes_list: VotesList, db: Session = Depends(get_db)):
     db.commit()
 
     return {"response": "success"}
+
+#################################################################
+## ElectionWinners APIs ## 
+
+""" ElectionWinners Table APIs """
+
+def gather_winners_by_election_id(election_id: int):
+    db = SessionLocal()  # create a new session
+    election = db.query(Election).filter(Election.ElectionId == election_id).first()
+
+    # Check if winners for this election have already been added
+    existing_winners = db.query(ElectionWinners).filter(ElectionWinners.ElectionId == election_id).first()
+    if existing_winners is not None:
+        print("Winners for this election have already been added.")
+        return
+    
+    if datetime.now() > election.VotingEnd:
+        # Gather candidates with the highest votes per SelectedPositionName
+        candidates = db.query(Candidates).filter(Candidates.ElectionId == election.ElectionId).order_by(Candidates.Votes.desc()).all()
+        
+        # Get the PositionQuantity for each position in the current election
+        position_quantities = {position.PositionName: int(position.PositionQuantity) for position in db.query(CreatedElectionPosition).filter(CreatedElectionPosition.ElectionId == election.ElectionId)}
+
+        # Initialize a dictionary to store the candidates with the highest votes for each position
+        candidates_with_highest_votes = defaultdict(list)
+        for candidate in candidates:
+            # Check if we have already selected the required number of candidates for this position
+            if len(candidates_with_highest_votes[candidate.SelectedPositionName]) < position_quantities[candidate.SelectedPositionName]:
+                candidates_with_highest_votes[candidate.SelectedPositionName].append(candidate)
+
+        # Store the winners in the ElectionWinners table
+        for position, candidates in candidates_with_highest_votes.items():
+            for candidate in candidates:
+                winner = ElectionWinners(ElectionId=election.ElectionId, 
+                                         StudentNumber=candidate.StudentNumber, 
+                                         SelectedPositionName=position,
+                                         Votes=candidate.Votes,
+                                         created_at=datetime.now(),
+                                         updated_at=datetime.now())
+                db.add(winner)
+
+        db.commit()
+
+""" ** GET Methods: ElectionWinners Table APIs ** """
+    
+@router.get("/votings/get-winners/{election_id}", tags=["ElectionWinners"])
+def get_Winners_By_Election_Id(election_id: int, db: Session = Depends(get_db)):
+    election = db.query(Election).filter(Election.ElectionId == election_id).first()
+
+    winners = db.query(ElectionWinners).join(
+        CreatedElectionPosition, 
+        and_(
+            ElectionWinners.SelectedPositionName == CreatedElectionPosition.PositionName,
+            ElectionWinners.ElectionId == election_id
+        )
+    ).order_by(CreatedElectionPosition.CreatedElectionPositionId).all()    
+
+    winners_dict = []
+
+    # Get the winner candidate details from the Candidates table
+    for i, winner in enumerate(winners):
+        candidate = db.query(Candidates).filter(Candidates.StudentNumber == winner.StudentNumber, Candidates.ElectionId == election_id).first()
+        student = db.query(Student).filter(Student.StudentNumber == winner.StudentNumber).first()
+        
+        full_name = student.FirstName + " " + student.MiddleName + " " + student.LastName if student.MiddleName else student.FirstName + " " + student.LastName
+        candidate_partylist = db.query(PartyList).filter(PartyList.PartyListId == candidate.PartyListId).first()
+
+        if candidate_partylist:
+            candidate_partylist_name = candidate_partylist.PartyListName
+        else:
+            candidate_partylist_name = "Independent"
+
+        # Get the candidate photo from cloudinary using the candidate.displayphoto resources by tag in cloudinary
+        try:
+            display_photo = resources_by_tag(candidate.DisplayPhoto)
+            display_photo_url = display_photo["resources"][0]["secure_url"] if display_photo else ""
+        except Exception as e:
+            print(f"Error fetching DisplayPhoto from Cloudinary: {e}")
+            display_photo_url = ""
+
+        winners_dict.append({
+            "full_name": full_name,
+            "votes": winner.Votes,
+            "position": winner.SelectedPositionName,
+            "partylist": candidate_partylist_name,
+            "display_photo": display_photo_url if display_photo_url else "",
+        })
+
+    return {"winners": winners_dict}
+        
+
+""" ** POST Methods: All about ElectionWinners Table APIs ** """
 
 
 #################################################################
