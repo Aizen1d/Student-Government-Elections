@@ -35,14 +35,26 @@ class PublicController extends Controller
         ]);
     }
 
-    public function electionsViewResults(Request $request) {
+    public function electionsViewRankings(Request $request) {
         $id = $request->id;
 
         if (!$id) {
             return redirect()->route('elections');
         }
 
-        return Inertia::render('Results', [
+        return Inertia::render('Rankings', [
+            'election_id' => $id,
+        ]);
+    }
+
+    public function electionsViewWinners(Request $request) {
+        $id = $request->id;
+
+        if (!$id) {
+            return redirect()->route('elections');
+        }
+
+        return Inertia::render('Winners', [
             'election_id' => $id,
         ]);
     }
