@@ -1,20 +1,29 @@
 <template>
     <title>Elections View - COMELEC Portal</title>
     <Navbar></Navbar>
+
     <div v-if="isElectionLoading"></div>
     <div v-else class="main">
-        <h3 class="return" @click="returnPage">Return to list</h3>
 
         <div class="row">
-            <div class="col-6 info">
-                <h1>{{ electionData.election.ElectionName }}</h1>
-                <p class="py-1">{{ electionData.election.Semester }} of S.Y. {{ electionData.election.SchoolYear }}</p>
-                <p>{{ electionData.election.ElectionType }}</p>
+            <div class="col-4">
+                <h1 class="path">
+                    <span class="return" @click="returnPage">Elections</span>&nbsp;>&nbsp;{{ electionData.election.ElectionName }}
+                </h1>
+
+                <div class="my-2">
+                    <h1 class="py-1 election-label">{{ electionData.election.Semester }} of S.Y. {{ electionData.election.SchoolYear }}</h1>
+                    <h1 class="election-label">{{ electionData.election.ElectionType }} Organization</h1>
+                </div>
             </div>
-            <div class="col-6" style="text-align: end;">
-                <ActionButton class="mx-2 px-5" @click="seeResults" :disabled="false">See Results</ActionButton>
-                <ActionButton class="mx-2 px-5" @click="fileCoc" :disabled="!isFilingPeriod">File COC</ActionButton>
-                <ActionButton class="mx-2 px-5" @click="registerParty" :disabled="!isFilingPeriod">Register Party</ActionButton>
+            <div class="col-8" style="text-align: end;">
+                <ActionButton class="mx-2 px-5 action-button" @click="seeCandidates" :disabled="false">Candidates</ActionButton>
+                <ActionButton class="mx-2 px-5 action-button" @click="fileCoc" :disabled="!isFilingPeriod">File a COC</ActionButton>
+                <ActionButton class="mx-2 px-5 action-button" @click="registerParty" :disabled="!isFilingPeriod">Register Party</ActionButton>
+                <div class="my-3"></div>
+                <ActionButton class="mx-2 px-5 action-button" @click="seePartylists" :disabled="false">Partylists</ActionButton>
+                <ActionButton class="mx-2 px-5 action-button" @click="seeRankings" :disabled="!isAboveVotingStartPeriod">Rankings</ActionButton>
+                <ActionButton class="mx-2 px-5 action-button" @click="seeWinners" :disabled="!isVotingPeriodEnded">Winners</ActionButton>
             </div>
         </div>
 
@@ -74,10 +83,10 @@
             
             <div class="positions">
                 <h1 v-if="electionData.positions.length <= 1">
-                    Position
+                    Position and Winner Quantity
                 </h1>
                 <h1 v-else>
-                    Positions
+                    Positions and Winner Quantity
                 </h1>
                 <ul v-for="(position, index) in electionData.positions" :key="index">
                     <li>{{ position.PositionName }} ({{ position.PositionQuantity }})</li>
@@ -117,6 +126,22 @@
                         queryFn: fetchElectionView,
                     })
 
+            const getPartylistsOnThisElection = async () => {
+                const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/partylist/election/${id.value}`)
+                console.log(`Get partylists on election with id ${id.value} successful. Duration: ${response.duration}ms`)
+
+                return response.data.partylists;
+            }
+
+            const { data: partylistsData,
+                    isLoading: isPartylistsLoading,
+                    isSuccess: isPartylistsSuccess,
+                    isError: isPartylistsError, } =
+                    useQuery({
+                        queryKey: [`getPartylistsOnThisElection-${id.value}`],
+                        queryFn: getPartylistsOnThisElection,
+                    })
+
             const formatDate = (dateString) => {
                 const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
                 return dateString ? new Date(dateString).toLocaleString('en-US', options) : '';
@@ -142,10 +167,17 @@
 
             return {
                 id,
+
                 electionData,
                 isElectionLoading,
                 isElectionSuccess,
                 isElectionError,
+
+                partylistsData,
+                isPartylistsLoading,
+                isPartylistsSuccess,
+                isPartylistsError,
+
                 formattedElectionData,
             }
         },
@@ -166,18 +198,32 @@
 
                 return now >= start && now < end;
             },
+            isAboveVotingStartPeriod() {
+                // Check if current datetime is above voting period
+                const now = new Date();
+                const end = new Date(this.electionData.election.VotingStart);
+
+                return now > end;
+            },
+            isVotingPeriodEnded() {
+                // Check if current datetime is above voting period
+                const now = new Date();
+                const end = new Date(this.electionData.election.VotingEnd);
+
+                return now > end;
+            },
         },
         methods:{
             returnPage(){
                 router.visit('/elections')
             },
-            seeResults(){
-                router.visit('/elections/view/results', {
+            seeCandidates(){
+                router.visit(`/directory/candidates/view`, {
                     data: {
                         id: this.id,
                     }
                 })
-            },
+            },  
             fileCoc(){
                 router.visit('/elections/view/file-coc', {
                     data: {
@@ -192,23 +238,57 @@
                     }
                 })
             },
+            seePartylists(){
+                if (this.partylistsData.length < 1) {
+                    return alert('There are no partylists registered for this election yet.')
+                }
+
+                router.visit('/directory/partylists')
+            },
+            seeRankings(){
+                router.visit('/elections/view/rankings', {
+                    data: {
+                        id: this.id,
+                    }
+                })
+            },
+            seeWinners(){
+                router.visit('/elections/view/winners', {
+                    data: {
+                        id: this.id,
+                    }
+                })
+            },
         },
     }
 </script>
 
 <style scoped>
     .return{
-        width: fit-content;
-        font-size: 20px;
-        letter-spacing: 1px;
         font-weight: 800;
-        margin-top: -1%;
-        margin-bottom: 1.5%;
+        font-size: 30px;
+        color: #B90321;
     }
 
     .return:hover{
         cursor: pointer;
         text-decoration: underline;
+    }
+
+    .path{
+        font-weight: 800;
+        font-size: 30px;
+        color: black;
+    }
+
+    .election-label{
+        font-weight: lighter;
+        font-size: 16px;
+        color: rgb(20, 20, 20);
+    }
+    .action-button{
+        width: 13rem !important;
+        height: 2.7rem !important;
     }
 
     .card{
@@ -220,17 +300,6 @@
     .main{
         margin: 3% 5%;
         font-family: 'Source Sans Pro', sans-serif;
-    }
-
-    .info h1{
-        font-weight: 800;
-        font-size: 30px;
-        color: #B90321;
-    }
-
-    .info p{
-        font-size: 17px;
-        margin: .5% 0%;
     }
 
     .btns{
@@ -274,7 +343,10 @@
 
     .positions li{
         margin-top: 1%;
-        font-size: 17px;
         line-height: 110%;
+
+        font-weight: lighter;
+        font-size: 18px;
+        color: black;
     }
 </style>
