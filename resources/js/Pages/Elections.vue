@@ -9,24 +9,24 @@
     <div class="header row">
         <div class="col">
             <h1 class="eligible">
-                ELECTIONS
+                
             </h1>
         </div>
     </div>
 
     <div class="parent">
-        <BaseTable class="item-table" v-if="atleastOneElection" 
+        <BaseTable class="item-table" v-if="atleastOneElection && !isElectionsLoading" 
                 :columns="['Organization', 'Election Title', 'Election Period']" 
                 :columnWidths="['50%', '50%', '50%']"
                 :tableHeight="'auto'"
-                :maxTableHeight="'235px'">
+                :maxTableHeight="'435px'">
             <tr v-for="(election, index) in electionsData" :key="index" @click="selectItem(election)">
                 <td style="width: 50%; text-align: left; padding-left: 12.5%;" class="my-cell">{{ election.type }}</td>
                 <td style="width: 50%; text-align: left; padding-left: 12.5%;" class="my-cell">{{ election.name }}</td>
                 <td style="width: 50%; text-align: left; padding-left: 11.5%;" class="my-cell">{{ election.period }}</td>
             </tr>
         </BaseTable>
-        <div v-else>
+        <div v-if="!atleastOneElection && !isElectionsLoading">
             <h1 class="my-5">No elections are currently happening at the moment.</h1>
         </div>
     </div>
@@ -108,13 +108,14 @@
 
 <style scoped>
     .eligible{
-        font-size: 35px;
+        font-size: 38px;
         font-weight: 800;
-        letter-spacing: 2px;
+        letter-spacing: 1px;
+        color: rgb(30, 30, 30);
     }
 
     .header{
-        margin-top: -8.5%;
+        margin-top: -9.5%;
         margin-bottom: 1%;
         margin-left: 14.3%;
         width: 78%;
