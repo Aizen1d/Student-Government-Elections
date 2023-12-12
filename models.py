@@ -468,3 +468,25 @@ class ElectionAnalytics(Base):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }
+    
+class ElectionWinners(Base):
+    __tablename__ = "ElectionWinners"
+
+    ElectionWinnersId = Column(Integer, primary_key=True)
+    ElectionId = Column(Integer, ForeignKey('Election.ElectionId'))
+    StudentNumber = Column(String(15), ForeignKey('Student.StudentNumber'), unique=True)
+    SelectedPositionName = Column(String)
+    Votes = Column(Integer, default=0)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    def to_dict(self):
+        return {
+            "ElectionWinnersId": self.ElectionWinnersId,
+            "ElectionId": self.ElectionId,
+            "StudentNumber": self.StudentNumber,
+            "SelectedPositionName": self.SelectedPositionName,
+            "Votes": self.Votes,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None
+        }
