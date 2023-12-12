@@ -4,7 +4,7 @@
     <div>
         <div class="main">
             <div class="header my-5">
-                <h1>ANNOUNCEMENTS</h1>
+                <h1></h1>
             </div>
 
             <div class="choices-container mb-3">
@@ -157,8 +157,8 @@
 }
 
 .header h1{
-    font-size: 28px;
-    letter-spacing: 4px;
+    font-size: 38px;
+    letter-spacing: 1px;
     font-weight: 800;
 }
 

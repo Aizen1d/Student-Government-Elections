@@ -5,7 +5,7 @@
     <div class="header row">
         <div class="col">
             <h1 class="eligible">
-                DIRECTORY
+                
             </h1>
         </div>
     </div>
@@ -77,12 +77,12 @@
     .eligible{
         font-size: 38px;
         font-weight: 800;
-        letter-spacing: 3px;
+        letter-spacing: 1px;
     }
 
     .header{
         margin-top: 1.8%;
-        margin-left: 10%;
+        margin-left: 2.5%;
         width: 78%;
     }
     .main{
