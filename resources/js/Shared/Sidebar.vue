@@ -81,12 +81,14 @@ export default {
                     class="main list-group-item py-2">
                     <img class="side-icon" src="../../images/icons/rules.svg" alt="Icon" height="35" width="35">
                     <span>Rules & Guidelines</span>
-                </Link  >
+                </Link>
 
-                <a href="" class="main list-group-item py-2"  aria-expanded="true">
+                <Link href="/comelec/directory" 
+                    :class="{ 'active': $inertia.page.url.startsWith('/comelec/directory') }" 
+                    class="main list-group-item py-2">
                     <img class="side-icon" src="../../images/icons/directory.svg" alt="Icon" height="35" width="35">
                     <span>Directory</span>
-                </a>
+                </Link>
 
                 <a href="" class="main list-group-item py-2"  aria-expanded="true">
                     <img class="side-icon" src="../../images/icons/appeal.svg" alt="Icon" height="35" width="35">

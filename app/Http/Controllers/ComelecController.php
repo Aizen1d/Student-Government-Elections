@@ -138,4 +138,19 @@ class ComelecController extends Controller
     { 
         return inertia('Comelec/RulesAndGuidelines');
     }
+
+    public function directory() 
+    { 
+        return inertia('Comelec/Directory');
+    }
+
+    public function directoryCertifications() 
+    { 
+        return inertia('Comelec/DirectoryCertifications');
+    }
+
+    public function directoryCertificationsCreate() 
+    { 
+        return inertia('Comelec/DirectoryCertificationsCreate');
+    }
 }
