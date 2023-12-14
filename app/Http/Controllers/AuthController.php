@@ -19,7 +19,7 @@ class AuthController extends Controller
 
     public function authLogin(Request $request)
     {
-        $cookie_minutes_lifetime = 120; // Expiry of the cookie that contains the jwt token
+        $cookie_minutes_lifetime = 300; // Expiry of the cookie that contains the jwt token
         $guards = [
             'comelec' => '/comelec/elections',
             'organization' => '/organization/elections'
