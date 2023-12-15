@@ -40,7 +40,7 @@ from passlib.context import CryptContext
 from cloudinary.api import resources_by_tag, delete_resources_by_tag, delete_folder
 from services import send_verification_code_email, send_pass_code_queue_email, send_pass_code_manual_email, send_coc_status_email, send_partylist_status_email
 
-from models import Student, Organization, Announcement, Rule, Guideline, AzureToken, Election, SavedPosition, CreatedElectionPosition, Code, StudentPassword, PartyList, CoC, InsertDataQueues, Candidates, RatingsTracker, VotingsTracker, ElectionAnalytics, ElectionWinners
+from models import Student, Organization, Announcement, Rule, Guideline, AzureToken, Election, SavedPosition, CreatedElectionPosition, Code, StudentPassword, PartyList, CoC, InsertDataQueues, Candidates, RatingsTracker, VotingsTracker, ElectionAnalytics, ElectionWinners, Certifications, CreatedAdminSignatory
 
 #################################################################
 """ Settings """
@@ -1276,6 +1276,62 @@ def delete_Guideline(guideline_data: GuidelineDeleteData, db: Session = Depends(
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while deleting guideline from the table Guideline"})
     
+#################################################################
+""" Certifications Table APIs """
+
+class SignatoryData(BaseModel):
+    name: str
+    position: str
+
+class CertificationData(BaseModel):
+    title: str
+    election_id: int
+    date: date
+    quantity: str
+    signatories: List[SignatoryData]
+
+""" ** GET Methods: Certifications Table APIs ** """
+@router.get("/certification/all", tags=["Certification"])
+def get_All_Certification(db: Session = Depends(get_db)):
+    try:
+        certifications = db.query(Certifications).order_by(Certifications.CertificationId).all()
+        certifications_with_election = []
+
+        for i, certification in enumerate(certifications):
+            election = db.query(Election).filter(Election.ElectionId == certification.ElectionId).first()
+            certification_dict = certification.to_dict()
+            certification_dict["ElectionName"] = election.ElectionName if election else ""
+
+            certifications_with_election.append(certification_dict)
+
+        return {"certifications": certifications_with_election}
+    
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while fetching all certifications from the database"})
+
+""" ** POST Methods: Certifications Table APIs ** """
+@router.post("/certification/create", tags=["Certification"])
+def create_Certification(certification_data: CertificationData, db: Session = Depends(get_db)):
+    new_certification = Certifications(Title=certification_data.title,
+                                        ElectionId=certification_data.election_id,
+                                        Date=certification_data.date,
+                                        AdminSignatoryQuantity=certification_data.quantity,
+                                        created_at=datetime.now(),
+                                        updated_at=datetime.now())
+    db.add(new_certification)
+    db.commit()
+
+    for signatory in certification_data.signatories:
+        new_signatory = CreatedAdminSignatory(CertificationId=new_certification.CertificationId,
+                                    SignatoryName=signatory.name,
+                                    SignatoryPosition=signatory.position,
+                                    created_at=datetime.now(),
+                                    updated_at=datetime.now())
+        db.add(new_signatory)
+        db.commit()
+
+    return {"message": "Certification created successfully"}
+
 
 #################################################################
 ## Organizations APIs ## 
