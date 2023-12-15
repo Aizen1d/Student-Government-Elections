@@ -226,6 +226,48 @@ class Guideline(Base):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }
+    
+class Certifications(Base):
+    __tablename__ = "Certifications"
+    
+    CertificationId = Column(Integer, primary_key=True)
+    Title = Column(String)
+    ElectionId = Column(Integer, ForeignKey('Election.ElectionId'))
+    Date = Column(Date)
+    AdminSignatoryQuantity = Column(String)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    def to_dict(self):
+        return {
+            "CertificationId": self.CertificationId,
+            "Title": self.Title,
+            "ElectionId": self.ElectionId,
+            "Date": self.Date.isoformat() if self.Date else None,
+            "AdminSignatoryQuantity": self.AdminSignatoryQuantity,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+    
+class CreatedAdminSignatory(Base):
+    __tablename__ = "CreatedAdminSignatory"
+    
+    CreatedAdminSignatoryId = Column(Integer, primary_key=True)
+    CertificationId = Column(Integer, ForeignKey('Certifications.CertificationId'))
+    SignatoryName = Column(String)
+    SignatoryPosition = Column(String)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    def to_dict(self):
+        return {
+            "CreatedAdminSignatory": self.CreatedAdminSignatoryId,
+            "CertificationId": self.CertificationId,
+            "SignatoryName": self.SignatoryName,
+            "SignatoryPosition": self.SignatoryPosition,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
 
 class AzureToken(Base):
     __tablename__ = "AzureToken"
