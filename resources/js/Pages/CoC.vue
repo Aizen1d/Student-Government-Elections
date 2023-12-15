@@ -97,7 +97,7 @@
                         <h6>Certification of Grades</h6>
 
                         <div v-if="certification_of_grades_base_64">
-                            <img :src="certification_of_grades_base_64" alt="Certification of Grades" style="width: 500px; height: 300px; margin-left: 11.5%; margin-top: 1%;" >
+                            <img :src="certification_of_grades_base_64" alt="Certification of Grades" style="width: 500px; height: auto; margin-left: 11.5%; margin-top: 1%;" >
                         </div>
                         
                         <div class="row my-4">
