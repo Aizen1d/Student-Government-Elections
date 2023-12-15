@@ -23,8 +23,8 @@
                         <div class="candidate-information">
                             <img :src="winner.display_photo" alt="" class="candidate-photo">
                             <h1 class="candidate-name">{{ winner.full_name }}</h1>
-                            <h2 class="candidate-affiliation">{{ winner.votes }} votes</h2>
                             <h2 class="candidate-affiliation">{{ winner.partylist }}</h2>
+                            <h2 class="candidate-affiliation">{{ winner.votes }} votes</h2>
                         </div>
                     </div>
                 </div>
