@@ -5,33 +5,26 @@
 
     <div class="components">
         <div class="header">
-            <h1 class="page-title">Certifications</h1>
-            <button @click="createCertification" class="create-button">Create</button>
+            <h2 class="my-1">
+                <span class="return" @click="returnPage">Directory</span> > Certifications
+            </h2>
+            <ActionButton @click="createCertification" class="create-button">Create</ActionButton>
         </div>
-        
-        <div class="list">
-            <table class="table table-hover table-bordered border-dark table-responsive">
-                <thead class="head">
-                    <tr>
-                        <th>#</th>
-                        <th class="th-sm">Title</th>
-                        <th class="th-sm">Date Created</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <th scope="row">1</th>
-                        <th>Oath of Certification</th>
-                        <th>September 4, 2023</th>
-                    </tr>
-                    <tr>
-                        <th scope="row">2</th>
-                        <th>Certification</th>
-                        <th>September 4, 2023</th>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+     
+        <BaseContainer class="item-container" :height="'auto'" :maxHeight="'550px'">
+            <BaseTable class="item-table" 
+                    :columns="['ID', 'Certification Title', 'Election Name', 'Date']" 
+                    :tableHeight="'auto'"
+                    :maxTableHeight="'500px'">
+                <tr v-for="(certification, index) in certificationsData" :key="index" @click="selectItem(item)">
+                    <td class="my-cell">{{ index + 1 }}</td>
+                    <td class="my-cell">{{ certification.Title }}</td>
+                    <td class="my-cell">{{ certification.ElectionName }}</td>
+                    <td class="my-cell">{{ toDate(certification.Date) }}</td>
+                </tr>
+            </BaseTable>
+        </BaseContainer>
+
     </div>
 </template>
 
@@ -51,9 +44,24 @@
 
     export default {
         setup() {
+            const fetchCertifications = async () => {
+                const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/certification/all`)
+                console.log(`Certifications successfully fetched. Duration: ${response.duration}`)
+
+                return response.data.certifications;
+            };
+
+            const { data: certificationsData, isLoading, isSuccess, isError } = 
+                useQuery({
+                    queryKey: ['fetchCertifications'],
+                    queryFn: fetchCertifications,
+                });
 
             return {
-
+                certificationsData,
+                isLoading,
+                isSuccess,
+                isError,
             }
         },
         components: {
@@ -65,9 +73,15 @@
             ImageSkeleton,
         },
         methods: {
+            returnPage(){
+                router.visit('/comelec/directory');
+            },
             createCertification(){
                 router.visit('/comelec/directory/certifications/create');
-            }
+            },
+            toDate(date){
+                return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            },
         }
     }
 </script>
@@ -78,6 +92,15 @@
         margin-top: 2%;
         font-family: 'Inter', sans-serif;
         margin-right: 3%;
+    }
+
+    .return{
+        color: #B90321;
+        cursor: pointer;
+    }
+
+    .return:hover{
+        text-decoration: underline;
     }
 
     .header{
@@ -91,14 +114,6 @@
         font-weight: 900;
         font-size: 28px;
         margin: 0%;
-    }
-
-    .create-button{
-        padding: 13px 50px;
-        border: transparent;
-        border-radius: 10px;
-        background-color: #B90321;
-        color: white;
     }
 
     .list{
