@@ -199,7 +199,7 @@
 
                         <div v-if="!isCoCLoading">
                             <img :src="CoCData.CertificationOfGrades" alt="Certification of Grades" @click="viewImage(CoCData.CertificationOfGrades)" 
-                            style="width: 500px; height: 300px; margin-left: 11.5%; margin-top: 1%; cursor: pointer;" >
+                            style="width: 500px; height: auto; margin-left: 11.5%; margin-top: 1%; cursor: pointer;" >
                         </div>
                         
                     </div>
