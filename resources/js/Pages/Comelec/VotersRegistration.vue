@@ -57,8 +57,8 @@
                                 <label class="form-label" for="sem">Current Semester</label>
                                 <select class="form-select margin" name="sem" v-model="semester" aria-label="Default select example">
                                     <option value="" disabled hidden selected>Select semester</option>
-                                    <option value="1st Semester">1st Semester</option>
-                                    <option value="2nd Semester">2nd Semester</option>
+                                    <option value="1st">1st Semester</option>
+                                    <option value="2nd">2nd Semester</option>
                                 </select>
                             </div>
                             <div class="col">
