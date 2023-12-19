@@ -99,10 +99,9 @@
 
     .page-title{
         font-weight: 800;
-        font-size: 28px;
         margin: 0%;
         margin-left: 1%;
-        font-family: 'Source Sans', sans-serif;
+        font-family: 'Inter', sans-serif;
     }
 
     .directory{
@@ -141,7 +140,7 @@
     }
 
     .directory:hover{
-        color: #800000;
+        color: #B90321;
         background-color: #f4f4f4;
 
         .logo{
