@@ -7,9 +7,10 @@ from sqlalchemy.orm import Session
 
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Flowable, Image
 from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_JUSTIFY, TA_LEFT, TA_CENTER, TA_RIGHT
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
@@ -1310,6 +1311,14 @@ def get_All_Certification(db: Session = Depends(get_db)):
         return JSONResponse(status_code=500, content={"detail": "Error while fetching all certifications from the database"})
 
 """ ** POST Methods: Certifications Table APIs ** """
+class SignatureLine(Flowable):
+    def __init__(self, width):
+        Flowable.__init__(self)
+        self.width = width
+
+    def draw(self):
+        self.canv.line(self.width, 0, 0, 0)  # Start from the right and extend to the left
+
 @router.post("/certification/create", tags=["Certification"])
 def create_Certification(certification_data: CertificationData, db: Session = Depends(get_db)):
     new_certification = Certifications(Title=certification_data.title,
@@ -1330,7 +1339,96 @@ def create_Certification(certification_data: CertificationData, db: Session = De
         db.add(new_signatory)
         db.commit()
 
-    return {"message": "Certification created successfully"}
+    # Create the PDF
+    now = datetime.now()
+    pdf_name = f"Report_{now.strftime('%Y%m%d_%H%M%S')}.pdf"
+    doc = SimpleDocTemplate(pdf_name, pagesize=letter, topMargin=36)
+
+    # Get the default style sheet
+    styles = getSampleStyleSheet()
+
+    # Create a list to hold the PDF elements
+    elements = []
+
+    # Styles
+    styles.add(ParagraphStyle(name="SchoolStyle", fontName="Californian FB", fontSize=18, alignment=TA_CENTER, spaceAfter=10))
+    styles.add(ParagraphStyle(name="BranchStyle", fontSize=16, alignment=TA_CENTER, spaceAfter=18))
+    styles.add(ParagraphStyle(name="TitleStyle", fontName="Times-Roman", bold=True, fontSize=24, alignment=TA_CENTER, spaceAfter=26))
+    styles.add(ParagraphStyle(name="ParagraphStyle", fontName="Times-Roman", fontSize=12, alignment=TA_JUSTIFY, spaceAfter=6, leading=12, firstLineIndent=36))
+    styles.add(ParagraphStyle(name="ParagraphStyle2", fontName="Times-Roman", fontSize=12, alignment=TA_LEFT, spaceAfter=6, leading=12))
+
+    # Add the logo
+    logo = Image("puplogo.png", width=100, height=100)  # Adjust the path and size as needed
+    elements.append(logo)
+    elements.append(Spacer(1, 12))
+
+    school = Paragraph("Polytechnic University of the Philippines", styles["SchoolStyle"])
+    elements.append(school)
+    elements.append(Spacer(1, 2))
+
+    branch = Paragraph("QUEZON CITY BRANCH", styles["BranchStyle"])
+    elements.append(branch)
+    elements.append(Spacer(1, 12))
+
+    date = Paragraph('<para align="right">' + certification_data.date.strftime("%B %d, %Y") + '</para>', styles["Normal"])
+    elements.append(date)
+    elements.append(Spacer(1, 24))
+
+    title = Paragraph("<b>OATH OF OFFICE</b>", styles["TitleStyle"])
+    elements.append(title)
+    elements.append(Spacer(1, 12))
+
+    # Add the first part of the content (justified)
+    text = f'''
+    \tI, <b>{certification_data.signatories[0].name.upper()}</b>, having been elected as {certification_data.signatories[0].position} of
+    the Supreme Student Council of the Polytechnic University of
+    the Philippines, Quezon City do solemnly swear that:
+    '''
+    paragraph = Paragraph(text, styles["ParagraphStyle"])
+    elements.append(paragraph)
+    elements.append(Spacer(1, 12))
+
+    text = f'''
+    I will maintain allegiance to the Republic of the Philippines
+    I will abide by laws of the Supreme Student Council and the
+            Polytechnic University Of The Philippines;
+    I will perform my duties and responsibilities as {certification_data.signatories[0].position},
+            and conduct myself as a true professional according to best
+            of my duty knowledge and discretion.
+    
+    So help me God.
+    '''
+    paragraph = Paragraph(text, styles["ParagraphStyle2"])
+    paragraph_table = Table([[text]], colWidths=[300], hAlign='CENTER')  # Adjust the column width as needed
+    elements.append(paragraph_table)
+    elements.append(Spacer(1, 12))
+
+    # Add the signatures (right-aligned with a line for the signature)
+    for i, signatory in enumerate(certification_data.signatories):
+        # Signature line and name
+        signature_line = SignatureLine(130)  # Adjust the width as needed
+        signature_name = Paragraph('<para align="center">' + signatory.name + '<br/>' + signatory.position + '</para>', styles["Normal"])
+        signature_table = Table([[signature_line], [signature_name]], colWidths=[140], hAlign='RIGHT')  # Adjust the column width as needed
+        elements.append(signature_table)
+        elements.append(Spacer(1, 28))
+
+    # Build the PDF
+    doc.build(elements)
+
+    # Upload to cloudinary
+    upload_result = cloudinary.uploader.upload(pdf_name, 
+                           resource_type = "raw", 
+                           public_id = f"InsertData/Reports/{pdf_name}",
+                           tags=[pdf_name])
+    
+    # Delete the local file
+    os.remove(pdf_name)
+
+    # Return the responses and a URL to download the PDF
+    return JSONResponse({
+        "message": "Certification created successfully",
+        "pdf_url": upload_result['secure_url']
+    })
 
 
 #################################################################
