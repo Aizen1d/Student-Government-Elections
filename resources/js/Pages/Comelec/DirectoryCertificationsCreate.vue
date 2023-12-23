@@ -5,7 +5,7 @@
 
     <div class="components">
         <div class="header">
-            <h2 class="my-1">
+            <h2 class="my-1 page-title">
                 <span class="return" @click="returnDirectory">Directory</span> > <span class="return" @click="returnCertifications">Certifications</span> > Create
             </h2>
         </div>

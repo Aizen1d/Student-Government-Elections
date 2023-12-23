@@ -5,7 +5,7 @@
 
     <div class="components">
         <div class="header">
-            <h2 class="my-1">
+            <h2 class="my-1 page-title">
                 <span class="return" @click="returnPage">Directory</span> > Certifications
             </h2>
             <ActionButton @click="createCertification" class="create-button">Create</ActionButton>
