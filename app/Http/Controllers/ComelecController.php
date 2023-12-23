@@ -144,6 +144,16 @@ class ComelecController extends Controller
         return inertia('Comelec/Directory');
     }
 
+    public function directoryElectionWinners() 
+    { 
+        return inertia('Comelec/DirectoryElectionWinners');
+    }
+
+    public function directoryStudentOrganizations() 
+    { 
+        return inertia('Comelec/DirectoryStudentOrganizations');
+    }
+
     public function directoryCertifications() 
     { 
         return inertia('Comelec/DirectoryCertifications');

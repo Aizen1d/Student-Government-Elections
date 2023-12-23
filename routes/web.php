@@ -90,6 +90,12 @@ Route::group(['middleware' => 'check.auth.comelec'], function () {
     Route::get('/comelec/directory', [ComelecController::class, 'directory'])
         ->name('comelec.directory');
 
+    Route::get('/comelec/directory/election-winners', [ComelecController::class, 'directoryElectionWinners'])
+        ->name('comelec.directory.election.winners');
+
+    Route::get('/comelec/directory/student-organizations', [ComelecController::class, 'directoryStudentOrganizations'])
+        ->name('comelec.directory.student.organizations');
+
     Route::get('/comelec/directory/certifications', [ComelecController::class, 'directoryCertifications'])
         ->name('comelec.directory.certifications');
 
