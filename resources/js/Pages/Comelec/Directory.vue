@@ -7,7 +7,7 @@
         <div class="header">
             <h1 class="page-title">Directory</h1>
         </div>
-        <div @click="" class="select-directory">
+        <div @click="electionWinners" class="select-directory">
             <div class="directory">
                 <div class="directory-content">
                     <img src="../../../images/icons/winner.svg" alt="" class="logo">
@@ -16,7 +16,7 @@
             </div>
         </div>
 
-        <div @click="" class="select-directory">
+        <div @click="studentOrganizations" class="select-directory">
             <div class="directory">
                 <div class="directory-content">
                     <img src="../../../images/icons/organization.svg" alt="" class="logo">
@@ -99,6 +99,7 @@
 
     .page-title{
         font-weight: 800;
+        font-size: 28px;
         margin: 0%;
         margin-left: 1%;
         font-family: 'Inter', sans-serif;
