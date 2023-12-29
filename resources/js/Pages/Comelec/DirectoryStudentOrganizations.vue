@@ -2,6 +2,7 @@
     <title>Directory Election Winners - EMS</title>
     <Sidebar></Sidebar>
     <Navbar></Navbar>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
     <div class="components">
         <div class="header">
@@ -10,52 +11,61 @@
             </h2>
         </div>
 
-        <div class="row g-4">
-            <div class="col-6">
+        <div class="row">
+            <div class="col-6" style="height: 100%;">
                 <div class="note">
                     <span>Set the organization name, logo, and member requirements.</span>
                 </div>
-                <div class="content row" style="height: 33.5% !important;">
+                <div class="content row" style="height: 255px">
                     <div class="col-3 upload">
-                        <img src="../../../images/icons/default-org.png" alt="" class="organization-logo">
+                        <img v-if="organization_logo === ''" src="../../../images/icons/default-org.png" alt="" class="organization-logo">
+                        <img v-else :src="organization_logo" alt="" class="organization-logo">
                         <div class="round">
-                            <input type="file">
-                            <i class = "fa fa-camera" style = "color: #fff;"></i>
-                            </div>
+                            <input :disabled="creating" type="file" accept="image/*" @change="previewImageLogo($event)">
+                            <i class = "fa fa-camera" style = "color: black;"></i>
+                        </div>
                     </div>
                     <div class="col info">
                         <label class="form-label" for="name">Organization Name</label>
-                        <input class="form-control margin" type="text" name="name">
+                        <input :disabled="creating" class="form-control margin" type="text" name="name" v-model="organization_name">
                         
-                        <label class="form-label" for="selected">Member Requirements</label>
-                        <input type="hidden" name="requirements">
-                        <select class="form-select padding" aria-label="Default select example">
-                            <option selected>Select</option>
-                            <option value="1">All</option>
-                            <option value="2">BBTLEDHE</option>
-                            <option value="3">BSBAHRM</option>
-                            <option value="4">BSBA-MM</option>
-                            <option value="5">BSENTREP</option>
-                            <option value="6">BSIT</option>
-                            <option value="7">BPAPFM</option>
-                            <option value="8">DOMTMOM</option>
+                        <label class="form-label" for="selected">Member Course Requirements</label>
+                        <input :disabled="creating" type="hidden" name="requirements">
+                        <select class="form-select padding" aria-label="Default select example" v-model="organization_requirements">
+                            <option selected hidden value="">Select</option>
+                            <option value="All">All</option>
+                            <option value="BBTLEDHE">BBTLEDHE</option>
+                            <option value="BSBAHRM">BSBAHRM</option>
+                            <option value="BSBA-MM">BSBA-MM</option>
+                            <option value="BSENTREP">BSENTREP</option>
+                            <option value="BSIT">BSIT</option>
+                            <option value="BPAPFM">BPAPFM</option>
+                            <option value="DOMTMOM">DOMTMOM</option>
                         </select>
                     </div>
                 </div>   
                 
                 <div class="note mt-4">
-                    <span>Set the organization adviser, vision, and mission.</span>
+                    <span>Set the organization adviser, image, vision, and mission.</span>
                 </div>
                 <div class="content row">
+                    <div class="col-3 upload">
+                        <img v-if="organization_adviser_image === ''" src="../../../images/icons/default-org.png" alt="" class="organization-logo">
+                        <img v-else :src="organization_adviser_image" alt="" class="organization-logo">
+                        <div class="round">
+                            <input :disabled="creating" type="file" accept="image/*" @change="previewImageAdviserImage($event)">
+                            <i class = "fa fa-camera" style = "color: black;"></i>
+                        </div>
+                    </div>
                     <div class="col info">
                         <label class="form-label" for="adviser">Adviser Name</label>
-                        <input class="form-control margin1" type="text" name="adviser">
+                        <input :disabled="creating" class="form-control margin1" type="text" name="adviser" v-model="organization_adviser_name">
                         
-                        <label class="form-label" for="vision">Vision</label>
-                        <input class="form-control margin1" type="text" name="vision">
+                        <label class="form-label" for="vision">Vision <span style="font-family: Arial; font-size: 14px;">(Optional)</span></label>
+                        <input :disabled="creating" class="form-control margin1" type="text" name="vision" v-model="organization_vision">
                         
-                        <label class="form-label" for="mission">Mission</label>
-                        <input class="form-control padding1" type="text" name="mission">
+                        <label class="form-label" for="mission">Mission <span style="font-family: Arial; font-size: 14px;">(Optional)</span></label>
+                        <input :disabled="creating" class="form-control padding1" type="text" name="mission" v-model="organization_mission">
                     </div>
                 </div>     
             </div>
@@ -65,60 +75,97 @@
                     <span>Set the organization officers.</span>
                 </div>
                 
-                <div class="content row">
+                <div class="content row flex-column">
                     <div class="header">
-                        <span class="header-label">Organization Officers</span>
-                        <button class="add-button"><img src="../../../images/icons/add.svg" alt="" class="add-svg"></button>
+                        <span class="header-label">Organization Officers ({{ officers_count + 1 }})</span>
+                        <button @click="addOfficer" class="add-button" :disabled="creating"><img src="../../../images/icons/add.svg" draggable="false" class="add-svg"></button>
                     </div>
-                    <div class="col info">
-                        <label class="form-label" for="position">Position</label>
-                        <input class="form-control margin" type="text" name="position">
-                        
-                        <label class="form-label" for="officer">Officer Name</label>
-                        <input class="form-control" type="text" name="officer">
-                    </div>
-                    <div class="col-3 upload1">
-                        <img src="../../../images/icons/default-org.png" alt="" class="organization-logo">
-                        <div class="round1">
-                            <input type="file">
-                            <i class = "fa fa-camera" style = "color: #fff;"></i>
+                    <template v-for="(officer, officer_index) in officers" :key="officer_index">
+                        <hr v-if="officer_index !== 0" style="margin-top: 5%; margin-bottom: 5%;"/> <!-- Add hr on newly added not in the first index -->
+                        <div class="d-flex flex-row align-items-start">
+                            <div class="col info">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <label class="form-label" for="officer">Student Number
+                                            <i class="fa fa-spinner fa-spin fa-1x" v-if="officer.checking"></i>
+                                        </label>
+                                        <input :disabled="creating" class="form-control margin" type="text" name="officer" v-model="officer.student_number" @keyup="debouncedGetOfficerFullName(officer)">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label" for="officer">Officer Name</label>
+                                        <input class="form-control margin" :style="{ color: !officer.existing ? '#B90321' : 'black'}" type="text" name="officer" v-model="officer.name" disabled>
+                                    </div>
+                                </div>
+
+                                <label class="form-label" for="position">Position</label>
+                                <input :disabled="creating" class="form-control" type="text" name="position" v-model="officer.position">
+                            </div>  
+                            <div class="col-3 upload1">
+                                <img v-if="officer.image === ''" src="../../../images/icons/default-org.png" class="organization-logo">
+                                <img v-else :src="officer.image" alt="" class="organization-logo">
+                                <div class="round1">
+                                    <input :disabled="creating" type="file" accept="image/*" @change="previewImageOfficer($event, officer)">
+                                    <i class = "fa fa-camera" style = "color: black;"></i>
+                                </div>
+                            </div>
+                            <button v-if="officer_index !== 0" class="delete-button" @click="removeOfficer(officer_index)" :disabled="creating"><img src="../../../images/icons/delete.svg" draggable="false" class="delete-svg"></button> <!-- Add delete button -->
                         </div>
-                    </div>
-                </div>   
+                    </template>
+                </div>
                 
                 <div class="note" style="margin-top: 3%;">
                     <span>Set the organization members.</span>
                 </div>
-                <div class="content row">
+                <div class="content row flex-column">
                     <div class="header">
-                        <span class="header-label">Organization Members</span>
-                        <button class="add-button"><img src="../../../images/icons/add.svg" alt="" class="add-svg"></button>
+                        <span class="header-label">Organization Members ({{ members_count + 1 }})</span>
+                        <button @click="addMember" class="add-button" :disabled="creating"><img src="../../../images/icons/add.svg" class="add-svg" draggable="false"></button>
                     </div>
-                    <div class="col info">
-                        <label class="form-label" for="member">Member Name</label>
-                        <input class="form-control margin1" type="text" name="member">
-
-                        <div class="group">
-                            <label class="form-label" for="member">Member Name</label>
-                            <button class="delete-button"><img src="../../../images/icons/delete.svg" alt="" class="delete-svg"></button>
-                        </div>  
-                        <input class="form-control margin1" type="text" name="member">
-
-                        <!--IMPORTANT NOTE!!! KAPAG LAST MEMBER DAPAT MAY PADDING1 SA CLASS NIYA-->
-                        <div class="group">
-                            <label class="form-label" for="member">Member Name</label>
-                            <button class="delete-button"><img src="../../../images/icons/delete.svg" alt="" class="delete-svg"></button>
-                        </div>  
-                        <input class="form-control padding1" type="text" name="member">
-                    </div>   
+                    <template v-for="(member, member_index) in members" :key="member_index">
+                        <div class="col info">
+                            <template v-if="member_index === 0">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <label class="form-label" for="member">Student Number
+                                            <i class="fa fa-spinner fa-spin fa-1x" v-if="member.checking"></i>
+                                        </label>
+                                        <input :disabled="creating" class="form-control margin" type="text" name="member" v-model="member.student_number" @keyup="debouncedGetMemberFullName(member)">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label" for="member">Member Name</label>
+                                        <input class="form-control margin1" :style="{ color: !member.existing ? '#B90321' : 'black'}" type="text" name="member" v-model="member.name" disabled>
+                                    </div>
+                                </div>
+                            </template>
+                            <template v-else>
+                                <div class="row">
+                                    <hr style="margin-bottom: 3%;">
+                                    <div class="col-6">
+                                        <label class="form-label" for="member">Student Number
+                                            <i class="fa fa-spinner fa-spin fa-1x" v-if="member.checking"></i>
+                                        </label>
+                                        <input :disabled="creating" class="form-control margin" type="text" name="member" v-model="member.student_number" @keyup="debouncedGetMemberFullName(member)">
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="group">
+                                            <label class="form-label" for="member">Member Name</label>
+                                            <button @click="removeMember(member_index)" class="delete-button" :disabled="creating"><img src="../../../images/icons/delete.svg" alt="" class="delete-svg" draggable="false"></button>
+                                        </div>  
+                                        <input class="form-control margin1" :style="{ color: !member.existing ? '#B90321' : 'black'}" type="text" name="member" v-model="member.name" disabled>
+                                    </div>                                    
+                                </div>
+                            </template>
+                        </div>   
+                    </template>
                 </div>
+                
             </div>
         </div>
 
         <div class="box">
             <div class="buttons">
-                <button class="cancel-button">Cancel</button>
-                <button class="create-button">Create</button>
+                <button @click="returnDirectory" :disabled="creating" class="cancel-button">Cancel</button>
+                <ActionButton @click="create" :disabled="creating" class="create-button">Create</ActionButton>
             </div>
         </div>
     </div>
@@ -126,7 +173,7 @@
 
 <script>
     import { router } from '@inertiajs/vue3'
-    import { ref, watch, watchEffect } from 'vue';
+    import { ref, watch, watchEffect, reactive } from 'vue';
 
     import Navbar from '../../Shared/Navbar.vue';
     import Sidebar from '../../Shared/Sidebar.vue';
@@ -140,10 +187,142 @@
 
     export default {
         setup() {
-           
+            const organization_name = ref('');
+            const organization_requirements = ref('');
+            const organization_logo = ref('');
+
+            const organization_adviser_name = ref('');
+            const organization_adviser_image = ref('');
+            const organization_vision = ref('');
+            const organization_mission = ref('');
+
+            const creating = ref(false);
+
+            const officers_count = ref(0);
+            const officers = reactive([
+                                    { 
+                                        student_number: '',
+                                        checking: false,
+                                        existing: false,
+                                        name: '',
+                                        position: '',
+                                        image: ''
+                                    }
+            ]);
+
+            const members_count = ref(0);
+            const members = ref([
+                                    { 
+                                        student_number: '',
+                                        checking: false,
+                                        existing: false,
+                                        name: '',
+                                    }
+            ]);
+
+            const getOfficerFullName = async (officer) => {
+                if (officer.student_number && officer.student_number !== '') {
+                    axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/student/fullname/${officer.student_number}`)
+                    .then(response => {
+                        officer.name = response.data.full_name;
+                        officer.existing = true;
+                    })
+                    .catch(error => {
+                        officer.name = 'Student does not exist.';
+                        officer.existing = false;
+                    })
+                    .finally(() => {
+                        officer.checking = false;
+                    })
+                }
+                else {
+                    officer.checking = false;
+                    officer.name = '';
+                    officer.existing = false;
+                }
+            }
+
+            let officerTimeoutId;
+
+            const debouncedGetOfficerFullName = (officer) => {
+                if (officer.student_number === '') {
+                    officer.checking = false;
+                    officer.name = '';
+                    officer.existing = false;
+
+                    return;
+                }
+                officer.checking = true;
+                officer.existing = false;
+
+                clearTimeout(officerTimeoutId);
+                officerTimeoutId = setTimeout(() => getOfficerFullName(officer), 500);
+            }
+
+            // Member stuffs
+
+            const getMemberFullName = async (member) => {
+                if (member.student_number && member.student_number !== '') {
+                    axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/student/fullname/${member.student_number}`)
+                    .then(response => {
+                        member.name = response.data.full_name;
+                        member.existing = true;
+                    })
+                    .catch(error => {
+                        member.name = 'Student does not exist.';
+                        member.existing = false;
+                    })
+                    .finally(() => {
+                        member.checking = false;
+                    })
+                }
+                else {
+                    member.checking = false;
+                    member.name = '';
+                    member.existing = false;
+                }
+            }
+            
+            let memberTimeoutId;
+
+            const debouncedGetMemberFullName = (member) => {
+                if (member.student_number === '') {
+                    member.checking = false;
+                    member.name = '';
+                    member.existing = false;
+
+                    return;
+                }
+                member.checking = true;
+                member.existing = false;
+
+                clearTimeout(memberTimeoutId);
+                memberTimeoutId = setTimeout(() => getMemberFullName(member), 500);
+            }
 
             return {
-                
+                organization_name,
+                organization_requirements,
+                organization_logo,
+
+                organization_adviser_name,
+                organization_adviser_image,
+                organization_vision,
+                organization_mission,
+
+                creating,
+
+                officers_count,
+                officers,
+
+                members_count,
+                members,
+
+                getOfficerFullName,
+                debouncedGetOfficerFullName,
+
+                getMemberFullName,
+                debouncedGetMemberFullName,
             }
         },
         components: {
@@ -157,6 +336,166 @@
         methods: {
             returnDirectory() {
                 router.visit('/comelec/directory');
+            },
+            addOfficer() {
+                this.officers_count++;
+                this.officers.push({ 
+                                        student_number: '',
+                                        checking: false,
+                                        existing: false,
+                                        name: '',
+                                        position: '',
+                                        image: ''
+                });
+            },
+            removeOfficer(index) {
+                // Remove officer from array base on index
+                this.officers.splice(index, 1);
+                this.officers_count--;
+            },
+            addMember() {
+                this.members_count++;
+                this.members.push({ 
+                                    student_number: '',
+                                    checking: false,
+                                    existing: false,
+                                    name: '',
+                });
+            },
+            removeMember(index) {
+                // Remove member from array base on index
+                this.members.splice(index, 1);
+                this.members_count--;
+            },
+            previewImageOfficer(event, officer) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    officer.image = e.target.result;
+                };
+                reader.readAsDataURL(event.target.files[0]);
+            },
+            previewImageLogo(event) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    this.organization_logo = e.target.result;
+                };
+                reader.readAsDataURL(event.target.files[0]);
+            },
+            previewImageAdviserImage(event) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    this.organization_adviser_image = e.target.result;
+                };
+                reader.readAsDataURL(event.target.files[0]);
+            },
+            validate() {
+                // Validate one by one
+                if (this.organization_logo === '') {
+                    alert('Please input organization logo.');
+                    return false;
+                }
+                if (this.organization_name === '') {
+                    alert('Please input organization name.');
+                    return false;
+                }
+                if (this.organization_requirements === '') {
+                    alert('Please input organization requirements.');
+                    return false;
+                }
+
+                if (this.organization_adviser_image === '') {
+                    alert("Please input adviser's image.");
+                    return false;
+                }
+                if (this.organization_adviser_name === '') {
+                    alert('Please input adviser name.');
+                    return false;
+                }
+
+                // validate each officer
+                for(let i = 0; i <= this.officers_count; i++) {
+                    if (this.officers[i].student_number === '') {
+                        alert(`Please input officer student number at row ${i + 1}.`);
+                        return false;
+                    }
+
+                    if (this.officers[i].existing === false) {
+                        alert(`Please input an existing officer student number at row ${i + 1}.`)
+                        return false;
+                    }
+
+                    // Check for duplicate student numbers
+                    for(let j = 0; j < i; j++) {
+                        if (this.officers[j].student_number === this.officers[i].student_number) {
+                            alert(`Duplicate officer student number found at rows ${j + 1} and ${i + 1}.`);
+                            return false;
+                        }
+                    }
+
+                    if (this.officers[i].position === '') {
+                        alert(`Please input officer position at row ${i + 1}.`);
+                        return false;
+                    }
+
+                    if ( this.officers[i].image === '') {
+                        alert(`Please input officer image at row ${i + 1}.`);
+                        return false;
+                    }
+
+                }
+
+                // validate each member
+                for(let i = 0; i <= this.members_count; i++) {
+                    if (this.members[i].student_number === '') {
+                        alert(`Please input member student number at row ${i + 1}.`);
+                        return false;
+                    }
+                    
+                    if (this.members[i].existing === false) {
+                        alert(`Please input an existing member student number at row ${i + 1}.`)
+                        return false;
+                    }
+
+                    for(let j = 0; j < i; j++) {
+                        if (this.members[j].student_number === this.members[i].student_number) {
+                            alert(`Duplicate member student number found at rows ${j + 1} and ${i + 1}.`);
+                            return false;
+                        }
+                    }
+                }
+
+                return true;
+            },
+            create(){
+                if (this.validate()) {
+
+                    const data = {
+                        organization_logo: this.organization_logo,
+                        organization_name: this.organization_name,
+                        organization_requirements: this.organization_requirements,
+                        organization_adviser_image: this.organization_adviser_image,
+                        organization_adviser_name: this.organization_adviser_name,
+                        organization_vision: this.organization_vision,
+                        organization_mission: this.organization_mission,
+                        officers: this.officers,
+                        members: this.members,
+                    };
+
+                    this.creating = true;
+
+                    axios.post(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/student/organization/create`, data)
+                    .then(response => {
+                        alert(response.data.message);
+                        this.returnDirectory();
+                    })
+                    .catch(error => {
+                        console.log(error);
+                        alert(error.data)
+                    })
+                    .finally(() => {
+                        this.creating = false;
+                    })                    
+                }
             }
         }
     }
@@ -214,8 +553,11 @@
     }
 
     .organization-logo{
-        width: 100%;
-        height: 100%;
+        width: 145px;
+        height: 145px;
+        object-fit: cover;
+        border-radius: 100px;
+        outline: 1px solid #bbbb;
     }
 
     .margin{
@@ -295,15 +637,6 @@
         background-color: transparent;
         color: #CC3300;
     }
-
-    .create-button{
-        padding: 13px 50px;
-        border: transparent;
-        border-radius: 10px;
-        background-color: #B90321;
-        color: white;
-    }
-
 
     .upload{
         width: 135px;
