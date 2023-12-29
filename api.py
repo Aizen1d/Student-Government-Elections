@@ -41,8 +41,7 @@ from passlib.context import CryptContext
 from cloudinary.api import resources_by_tag, delete_resources_by_tag, delete_folder
 from services import send_verification_code_email, send_pass_code_queue_email, send_pass_code_manual_email, send_coc_status_email, send_partylist_status_email
 
-from models import Student, Organization, Announcement, Rule, Guideline, AzureToken, Election, SavedPosition, CreatedElectionPosition, Code, StudentPassword, PartyList, CoC, InsertDataQueues, Candidates, RatingsTracker, VotingsTracker, ElectionAnalytics, ElectionWinners, Certifications, CreatedAdminSignatory
-
+from models import Student, Announcement, Rule, Guideline, AzureToken, Election, SavedPosition, CreatedElectionPosition, Code, StudentPassword, PartyList, CoC, InsertDataQueues, Candidates, RatingsTracker, VotingsTracker, ElectionAnalytics, ElectionWinners, Certifications, CreatedAdminSignatory, StudentOrganization, OrganizationOfficer, OrganizationMember
 #################################################################
 """ Settings """
 
@@ -283,6 +282,18 @@ def get_All_Students_Arranged(db: Session = Depends(get_db)):
         return {"students": [student.to_dict() for student in students]}
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while fetching all students from the database"})
+    
+@router.get("/student/fullname/{student_number}", tags=["Student"])
+def get_Student_By_Student_Number(student_number: str, db: Session = Depends(get_db)):
+    try:
+        student = db.query(Student).filter(Student.StudentNumber == student_number).first()
+        
+        # Get the full name of the student check for middle name
+        full_name = student.FirstName + ' ' + (student.MiddleName + ' ' if student.MiddleName else '') + student.LastName
+
+        return {"full_name": full_name}
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while fetching the student from the database"})
     
 @router.get("/student/insert/data/queues/all", tags=["Student"])
 def get_All_Insert_Data_Queues(db: Session = Depends(get_db)):
@@ -603,6 +614,123 @@ def student_Voting_Login(data: LoginData, db: Session = Depends(get_db)):
 
     return {"message": True}
 
+#################################################################
+""" Student Organization Table APIs """
+class Officer(BaseModel):
+    student_number: str
+    position: str
+    image: str
+
+class Member(BaseModel):
+    student_number: str
+
+class StudentOrganizationData(BaseModel):
+    organization_logo: str
+    organization_name: str
+    organization_requirements: str
+    organization_adviser_image: str
+    organization_adviser_name: str
+    organization_vision: str
+    organization_mission: str
+    officers: List[Officer]
+    members: List[Member]
+
+""" ** GET Methods: All about Student Organizations APIs ** """
+@router.get("/student/organization/all", tags=["Student Organization"])
+def get_All_Student_Organization(db: Session = Depends(get_db)):
+    student_organizations = db.query(StudentOrganization).order_by(StudentOrganization.StudentOrganizationId).all()
+    return {"student_organizations": [student_organization.to_dict() for student_organization in student_organizations]}
+
+""" ** POST Methods: All about Student Organizations APIs ** """
+@router.post("/student/organization/create", tags=["Student Organization"])
+def student_Organization_Create(data: StudentOrganizationData, db: Session = Depends(get_db)):
+    # Check if the organization already exists
+    existing_organization = db.query(StudentOrganization).filter(StudentOrganization.OrganizationName == data.organization_name).first()
+    if existing_organization:
+        return JSONResponse(status_code=400, content={"detail": "Organization already exists."})
+    
+    organization = StudentOrganization(
+        OrganizationLogo='',
+        OrganizationName=data.organization_name,
+        OrganizationMemberRequirements=data.organization_requirements,
+        AdviserImage='',
+        AdviserName=data.organization_adviser_name,
+        Vision=data.organization_vision,
+        Mission=data.organization_mission,
+        created_at=datetime.now(),
+        updated_at=datetime.now()
+    )
+
+    db.add(organization)
+    db.commit()
+
+    organization_logo_tag = 'OrganizationLogo' + str(organization.StudentOrganizationId)
+    adviser_image_tag = 'AdviserImage' + str(organization.StudentOrganizationId)
+
+    # Upload the organization logo to cloudinary
+    upload_result1 = cloudinary.uploader.upload(data.organization_logo,
+                                        public_id = f"StudentOrganization/{data.organization_name + str(organization.StudentOrganizationId)}/Logo",
+                                        tags=[organization_logo_tag])
+    
+    # Upload the organization adviser image to cloudinary
+    upload_result2 = cloudinary.uploader.upload(data.organization_adviser_image,
+                                        public_id = f"StudentOrganization/{data.organization_name + str(organization.StudentOrganizationId)}/Adviser",
+                                        tags=[adviser_image_tag])
+    
+    organization.OrganizationLogo = organization_logo_tag
+    organization.AdviserImage = adviser_image_tag
+
+    db.commit()
+            
+    # Create the officers
+    for officer in data.officers:
+        new_officer = OrganizationOfficer(
+            StudentOrganizationId=organization.StudentOrganizationId,
+            StudentNumber=officer.student_number,
+            Position=officer.position,
+            Image='',
+            created_at=datetime.now(),
+            updated_at=datetime.now()
+        )
+        db.add(new_officer)
+        db.commit()
+
+        officer_image_tag = 'OrganizationOfficer' + str(new_officer.OrganizationOfficerId)
+
+        # uplaod the officer image to cloudinary
+        upload_result = cloudinary.uploader.upload(officer.image,
+                                        public_id = f"StudentOrganization/{data.organization_name + str(organization.StudentOrganizationId)}/Officers/{officer.student_number}",
+                                        tags=[officer_image_tag])
+
+        new_officer.Image = officer_image_tag
+        db.commit()
+
+    # Create the members
+    for member in data.members:
+        new_member = OrganizationMember(
+            StudentOrganizationId=organization.StudentOrganizationId,
+            StudentNumber=member.student_number,
+            created_at=datetime.now(),
+            updated_at=datetime.now()
+        )
+        db.add(new_member)
+        db.commit()
+
+    return {"message": "Organization created successfully."}
+
+#################################################################
+""" Organization Officer Table APIs """
+
+""" ** GET Methods: All about Organization Officers APIs ** """
+@router.get("/organization/officer/all", tags=["Organization Officer"])
+def get_All_Organization_Officer(db: Session = Depends(get_db)):
+    try:
+        officers = db.query(OrganizationOfficer).order_by(OrganizationOfficer.OrganizationOfficerId).all()
+        return {"officers": [officer.to_dict() for officer in officers]}
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while fetching all organization officers from the database"})
+
+""" ** POST Methods: All about Organization Officers APIs ** """
     
 #################################################################
 """ Election Table APIs """
@@ -1438,26 +1566,9 @@ class OrganizationName(BaseModel):
 
 """ Organization Election Table APIs """
 
+""" ** GET Methods: All about orgnanization election APIs ** """
+
 """ ** POST Methods: All about orgnanization election APIs ** """
-@router.post("/election/organization/all", tags=["Organization Election"])
-def get_All_Organization_Election(org_data: OrganizationName, db: Session = Depends(get_db)):
-    try:
-        # Join Election and Organization tables
-        elections = db.query(Election, Organization).join(Organization, Election.CreatedBy == Organization.StudentNumber).filter(Organization.OrganizationName == org_data.name).order_by(Election.ElectionId).all()
-        
-        elections_with_creator = []
-
-        for i, (election, organization) in enumerate(elections):
-            creator = db.query(Student).filter(Student.StudentNumber == election.CreatedBy).first()
-            election_dict = election.to_dict(i+1)
-            election_dict["CreatedByName"] = (creator.FirstName + ' ' + (creator.MiddleName + ' ' if creator.MiddleName else '') + creator.LastName) if creator else ""
-            
-            elections_with_creator.append(election_dict)
-
-        return {"elections": elections_with_creator}
-
-    except:
-        return JSONResponse(status_code=500, content={"detail": "Error while fetching all elections from the database"})
 
 #################################################################
 ## CoC APIs ## 
