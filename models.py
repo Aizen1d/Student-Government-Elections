@@ -43,26 +43,6 @@ class Student(Base):
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }
     
-class Organization(Base):
-    __tablename__ = "Organization"
-    
-    OrganizationId = Column(Integer, primary_key=True)
-    StudentNumber = Column(String(15), unique=True)
-    OfficerPositionId = Column(Integer, unique=True)
-    OrganizationName = Column(String)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-
-    def to_dict(self):
-        return {
-            "OrganizationId": self.OrganizationId,
-            "StudentNumber": self.StudentNumber,
-            "OfficerPositionId": self.OfficerPositionId,
-            "OrganizationName": self.OrganizationName,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None
-        }
-    
 class Election(Base):
     __tablename__ = "Election"
     
@@ -350,6 +330,74 @@ class InsertDataQueues(Base):
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }
     
+class StudentOrganization(Base):
+    __tablename__ = "StudentOrganization"
+    
+    StudentOrganizationId = Column(Integer, primary_key=True)
+    OrganizationLogo = Column(String)
+    OrganizationName = Column(String)
+    OrganizationMemberRequirements = Column(String)
+    AdviserImage = Column(String)
+    AdviserName = Column(String)
+    Vision = Column(String)
+    Mission = Column(String)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    def to_dict(self):
+        return {
+            "StudentOrganizationId": self.StudentOrganizationId,
+            "OrganizationLogo": self.OrganizationLogo,
+            "OrganizationName": self.OrganizationName,
+            "OrganizationMemberRequirements": self.OrganizationMemberRequirements,
+            "AdviserImage": self.AdviserImage,
+            "AdviserName": self.AdviserName,
+            "Vision": self.Vision,
+            "Mission": self.Mission,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+class OrganizationOfficer(Base):
+    __tablename__ = "OrganizationOfficer"
+
+    OrganizationOfficerId = Column(Integer, primary_key=True)
+    StudentOrganizationId = Column(Integer, ForeignKey('StudentOrganization.StudentOrganizationId'))
+    StudentNumber = Column(String(15), unique=True)
+    Image = Column(String)
+    Position = Column(String)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    def to_dict(self):
+        return {
+            "OrganizationOfficerId": self.OrganizationOfficerId,
+            "StudentOrganizationId": self.StudentOrganizationId,
+            "StudentNumber": self.StudentNumber,
+            "Image": self.Image,
+            "Position": self.Position,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+class OrganizationMember(Base):
+    __tablename__ = "OrganizationMember"
+
+    OrganizationMemberId = Column(Integer, primary_key=True)
+    StudentOrganizationId = Column(Integer, ForeignKey('StudentOrganization.StudentOrganizationId'))
+    StudentNumber = Column(String(15), unique=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    def to_dict(self):
+        return {
+            "OrganizationMemberId": self.OrganizationMemberId,
+            "StudentOrganizationId": self.StudentOrganizationId,
+            "StudentNumber": self.StudentNumber,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
 #########################################################
 """ Comelec Portal Table Models """
 
