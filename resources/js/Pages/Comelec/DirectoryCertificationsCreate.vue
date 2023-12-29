@@ -92,7 +92,11 @@
             watch(signatory_input, (newVal, oldVal) => {
                 if (newVal > oldVal) {
                     for (let i = 0; i < newVal - oldVal; i++) {
-                        signatories.value.push({ name: '', position: '' });
+                        signatories.value.push(
+                                            { 
+                                                name: '',
+                                                position: '' 
+                                            });
                     }
                 } 
                 else {
