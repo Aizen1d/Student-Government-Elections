@@ -222,6 +222,26 @@
 
             const getOfficerFullName = async (officer) => {
                 if (officer.student_number && officer.student_number !== '') {
+
+                    let studentNumberExistsInOtherOrganization = false;
+
+                    // Check if student number exists in other organization
+                    await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/organization/officer/existing/${officer.student_number}`)
+                    .then(response => {
+                        studentNumberExistsInOtherOrganization= response.data.response;
+                    })
+                    .catch(error => {
+                        console.log(error);
+                    })
+
+                    // If student number exists in other organization, return
+                    if (studentNumberExistsInOtherOrganization) {
+                        officer.checking = false;
+                        officer.name = 'Exists in other organization.';
+                        officer.existing = false;
+                        return;
+                    }
+
                     axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/student/fullname/${officer.student_number}`)
                     .then(response => {
                         officer.name = response.data.full_name;
@@ -263,6 +283,23 @@
 
             const getMemberFullName = async (member) => {
                 if (member.student_number && member.student_number !== '') {
+
+                    let studentNumberExistsInOtherOrganization = false;
+
+                    // Check if student number exists in other organization
+                    await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/organization/member/existing/${member.student_number}`)
+                    .then(response => {
+                        studentNumberExistsInOtherOrganization= response.data.response;
+                    })
+
+                    // If student number exists in other organization, return
+                    if (studentNumberExistsInOtherOrganization) {
+                        member.checking = false;
+                        member.name = 'Exists in other organization.';
+                        member.existing = false;
+                        return;
+                    }
+
                     axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/student/fullname/${member.student_number}`)
                     .then(response => {
                         member.name = response.data.full_name;
@@ -420,7 +457,7 @@
                     }
 
                     if (this.officers[i].existing === false) {
-                        alert(`Please input an existing officer student number at row ${i + 1}.`)
+                        alert(`Please resolve problem at row ${i + 1}.`)
                         return false;
                     }
 
@@ -452,7 +489,7 @@
                     }
                     
                     if (this.members[i].existing === false) {
-                        alert(`Please input an existing member student number at row ${i + 1}.`)
+                        alert(`Please resolve problem at row ${i + 1}.`)
                         return false;
                     }
 
