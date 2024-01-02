@@ -33,7 +33,7 @@
                         <input :disabled="creating" type="hidden" name="requirements">
                         <select class="form-select padding" aria-label="Default select example" v-model="organization_requirements">
                             <option selected hidden value="">Select</option>
-                            <option value="All">All</option>
+                            <option value="All Courses">All Courses</option>
                             <option value="BBTLEDHE">BBTLEDHE</option>
                             <option value="BSBAHRM">BSBAHRM</option>
                             <option value="BSBA-MM">BSBA-MM</option>
