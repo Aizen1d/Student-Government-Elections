@@ -589,13 +589,13 @@ export default {
 .components {
     margin-left: 18%;
     margin-top: 2%;
-    font-family: 'Source Sans', sans-serif;
+    font-family: 'Inter', sans-serif;
     margin-right: 3.2%;
 }
 
 .components h2 {
     font-weight: 800;
-    font-size: 28px;
+    font-size: 30px;
 }
 
 .form-control, .form-select, .body {
@@ -736,7 +736,6 @@ export default {
 }
 
 .section-title {
-    font-weight: bolder;
     margin-top: 1%;
 }
 

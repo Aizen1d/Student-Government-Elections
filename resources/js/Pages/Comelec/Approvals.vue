@@ -24,8 +24,8 @@
                         </select>
                     </div>
                     <div class="col">
-                        <h1 v-show="filterType === 'coc'" class="table-data-label">Viewing CoC</h1>
-                        <h1 v-show="filterType === 'party-list'" class="table-data-label">Viewing Partylist</h1>
+                        <h1 style="font-family: 'Inter', sans-serif;" v-show="filterType === 'coc'" class="table-data-label">Viewing CoC</h1>
+                        <h1 style="font-family: 'Inter', sans-serif;" v-show="filterType === 'party-list'" class="table-data-label">Viewing Partylist</h1>
                     </div>
                 </div>
             </div>
@@ -199,13 +199,13 @@
     .components{
         margin-left: 18%;
         margin-top: 2%;
-        font-family: 'Source Sans', sans-serif;
+        font-family: 'Inter', sans-serif;
         margin-right: 3.2%;
     }
 
     .components h2{
         font-weight: 800;
-        font-size: 28px;
+        font-size: 30px;
         margin-bottom: 1.5%;
     }
 

@@ -360,7 +360,7 @@
     .components{
         margin-left: 18%;
         margin-top: 2%;
-        font-family: 'Source Sans', sans-serif;
+        font-family: 'Inter', sans-serif;
         margin-right: 3.2%;
     }
 
