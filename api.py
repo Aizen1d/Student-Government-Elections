@@ -729,8 +729,44 @@ def get_All_Organization_Officer(db: Session = Depends(get_db)):
         return {"officers": [officer.to_dict() for officer in officers]}
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while fetching all organization officers from the database"})
+    
+@router.get("/organization/officer/existing/{student_number}", tags=["Organization Officer"])
+def get_Organization_Officer_By_Student_Number(student_number: str, db: Session = Depends(get_db)):
+    try:
+        officer = db.query(OrganizationOfficer).filter(OrganizationOfficer.StudentNumber == student_number).first()
+        
+        if not officer:
+            return {"response": False}
+        
+        return {"response": True}
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while fetching the organization officer from the database"})
 
 """ ** POST Methods: All about Organization Officers APIs ** """
+
+#################################################################
+""" Organization Member Table APIs """
+
+""" ** GET Methods: All about Organization Members APIs ** """
+@router.get("/organization/member/all", tags=["Organization Member"])
+def get_All_Organization_Member(db: Session = Depends(get_db)):
+    try:
+        members = db.query(OrganizationMember).order_by(OrganizationMember.OrganizationMemberId).all()
+        return {"members": [member.to_dict() for member in members]}
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while fetching all organization members from the database"})
+    
+@router.get("/organization/member/existing/{student_number}", tags=["Organization Member"])
+def get_Organization_Member_By_Student_Number(student_number: str, db: Session = Depends(get_db)):
+    try:
+        member = db.query(OrganizationMember).filter(OrganizationMember.StudentNumber == student_number).first()
+        
+        if not member:
+            return {"response": False}
+        
+        return {"response": True}
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while fetching the organization member from the database"})
     
 #################################################################
 """ Election Table APIs """
