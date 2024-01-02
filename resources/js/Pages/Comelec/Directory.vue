@@ -7,15 +7,6 @@
         <div class="header">
             <h1 class="page-title">Directory</h1>
         </div>
-        <div @click="electionWinners" class="select-directory">
-            <div class="directory">
-                <div class="directory-content">
-                    <img src="../../../images/icons/winner.svg" alt="" class="logo">
-                    <h1 class="directory-title">ELECTION WINNERS</h1>
-                </div>
-            </div>
-        </div>
-
         <div @click="studentOrganizations" class="select-directory">
             <div class="directory">
                 <div class="directory-content">
