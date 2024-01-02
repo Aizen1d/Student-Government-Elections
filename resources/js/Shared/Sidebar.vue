@@ -116,7 +116,7 @@ body{
 }
 
 .sidebar-header-title{
-    font-family: 'Source Sans', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-weight: 800;
     font-size: 22px;
     color: #B90321;
@@ -184,7 +184,7 @@ body{
     border: transparent;
     transition: margin-left .4s;
     color: black;
-    font-family: 'Just Sans', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 100%;
     margin-top: 4% !important;
     background-color: white;
