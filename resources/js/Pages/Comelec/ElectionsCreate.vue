@@ -22,13 +22,23 @@
                         <label class="form-label" for="name">Election Title</label>
                         <input class="form-control margin" type="text" name="name" v-model="election_name_input">
                         
-                        <label class="form-label" for="type">Election Organization</label>
-                        <input type="hidden" name="election-type">
-                            <select v-model="election_type_input" class="form-select" aria-label="Default select example">
-                                <option value="" disabled hidden selected>Select organization type</option>
-                                <option value="SSC">SSC</option>
-                                <option value="Commits">Commits</option>
-                            </select>
+                        <div class="row">
+                            <div class="col-6">
+                                <label class="form-label" for="type">Election Organization</label>
+                                <input type="hidden" name="election-type">
+                                <select v-model="election_type_input" class="form-select" aria-label="Default select example">
+                                    <option value="" disabled hidden selected>Select organization type</option>
+                                    <option v-for="organization in organizationData" :key="organization.OrganizationName" 
+                                        :value="organization.OrganizationName">
+                                        {{ organization.OrganizationName }}
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label" for="type">Course Requirements</label>
+                                <input v-model="election_course_requirements" class="form-control" type="text" name="name" readonly disabled>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="col-6">
@@ -194,6 +204,7 @@
     import { useUserStore } from '../../Stores/UserStore';
     import { router } from '@inertiajs/vue3'
     import { ref, watch, computed } from 'vue';
+    import { useQuery } from "@tanstack/vue-query";
 
     import Navbar from '../../Shared/Navbar.vue';
     import Sidebar from '../../Shared/Sidebar.vue';
@@ -211,6 +222,7 @@
 
             const election_name_input = ref('');
             const election_type_input = ref('');
+            const election_course_requirements = ref('');
             const election_school_year_input = ref('');
             const election_semester_input = ref('');
             const election_start_input = ref('');
@@ -293,10 +305,33 @@
                 return mostRecentPosition.name !== '' && mostRecentPosition.quantity > 0;
             });
 
+            // Watch for changes in election_type_input value then find the OrganizationMemberRequirements in organizationData then set to election_course_requirements
+            watch(() => election_type_input.value, (newVal) => {
+                const organization = organizationData.value.find((org) => org.OrganizationName === newVal);
+                election_course_requirements.value = organization.OrganizationMemberRequirements;
+            });
+
+            const fetchAllOrganization = async () => {
+                const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/student/organization/all`);
+                console.log(`All organization fetched. Duration: ${response.duration}`)
+
+                return response.data.student_organizations;
+            }
+
+            const { data: organizationData,
+                    isLoading: isOrganizationLoading,
+                    isError: isOrganizationError,
+                    error: organizationError,} = 
+                    useQuery({
+                        queryKey: [`fetchAllOrganization`],
+                        queryFn: fetchAllOrganization,
+                    })
+
             return { 
                     createdByStudentNumber, 
                     election_name_input,
                     election_type_input,
+                    election_course_requirements,
                     election_school_year_input,
                     election_semester_input,
                     election_start_input,
@@ -313,6 +348,11 @@
                     position_list, 
                     isMostRecentPositionFilled, 
                     position_saved_selection, 
+
+                    organizationData,
+                    isOrganizationLoading,
+                    isOrganizationError,
+                    organizationError,
                 }
         },
         components: { Navbar, Sidebar, ActionButton, SearchBarAndFilter, BaseContainer, BaseTable, },
