@@ -48,7 +48,7 @@ class Election(Base):
     
     ElectionId = Column(Integer, primary_key=True)
     ElectionName = Column(String)
-    ElectionType = Column(String)
+    StudentOrganizationId = Column(Integer, ForeignKey('StudentOrganization.StudentOrganizationId'))
     ElectionStatus = Column(String)
     SchoolYear = Column(String)
     Semester = Column(String)
@@ -73,7 +73,7 @@ class Election(Base):
             "ElectionId": self.ElectionId,
             "count": row,
             "ElectionName": self.ElectionName,
-            "ElectionType": self.ElectionType,
+            "StudentOrganizationId": self.StudentOrganizationId,
             "ElectionStatus": self.ElectionStatus,
             "SchoolYear": self.SchoolYear,
             "Semester": self.Semester,
