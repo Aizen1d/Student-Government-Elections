@@ -15,7 +15,7 @@
                     {{ electionName }} 
                 </div>
 
-                <a :href="'#'+position.PositionName" v-if="atLeastOneCandidate" v-for="(position, index) in positionsData" :key="index" class="position-selection">
+                <a :href="'#'+position.PositionName" v-if="atLeastOneCandidate === true" v-for="(position, index) in positionsData" :key="index" class="position-selection">
                     {{ position.PositionName }}
                 </a>
             </div>
@@ -39,9 +39,10 @@
                 </div>
                 <div class="col-6">
                 <ActionButton @click.prevent="sendCode" :disabled="isSending || isSent || student_number === ''" 
-                                    :style="{ width: isSent ? '20em' : '15em' }"
+                                    :style="{ width: isSent ? '15em' : '15em' }"
                                     style="font-size: 1em;
                                     margin-left: 3%;
+                                    margin-right: 3%;
                                     height: 2.2em; 
                                     padding: 0px 0px 0px 0px !important;">{{ buttonText }}</ActionButton>
                 </div>
@@ -116,7 +117,7 @@
                 </h1>
             </div>
             <div class="col-2" style="text-align: end;">
-                <ActionButton class="col-2 rate-button" @click="openRateCandidates" :disabled="isCandidatesPerPositionLoading || isCampaignPeriodOver || !atLeastOneCandidate">Rate Candidates</ActionButton>
+                <ActionButton class="col-2 rate-button" @click="openRateCandidates" :disabled="isCandidatesPerPositionLoading || !isCampaignPeriod || atLeastOneCandidate === false">Rate Candidates</ActionButton>
             </div>
         </div>
 
@@ -173,7 +174,7 @@
                                         <div class="affiliation" v-else>Independent</div>
                                     </div>
 
-                                    <div class="quote">
+                                    <div class="quote" v-if="candidate.Motto && candidate.Motto !== ''">
                                         <em>"{{ candidate.Motto }}"</em>
                                     </div>
                                 </td>
@@ -190,7 +191,7 @@
                 <h1 style="color: black;">No candidate in this position.</h1>
             </div>
         </div>
-        <div v-if="!atLeastOneCandidate && !isCandidatesPerPositionLoading" style="text-align: center; margin-top: 7%;">
+        <div v-if="atLeastOneCandidate === false && !isCandidatesPerPositionLoading" style="text-align: center; margin-top: 7%;">
             <h1 style="color: black; font-size: 28px;">No candidates registered in this election yet.</h1>
         </div>
     </div>
@@ -211,7 +212,7 @@
         setup(props) {
             const activeElectionIndex = ref(Number(props.id));
             const activeElectionName = ref(props.electionName);
-            const atLeastOneCandidate = ref(false);
+            const atLeastOneCandidate = ref(null);
 
             const showRateModal = ref(false);
 
@@ -376,17 +377,30 @@
                     return 'Send Code';
                 }
             },
-            isCampaignPeriodOver() {
+            isCampaignPeriod() {
                 // Check if current datetime is after campaign period
                 if (this.isElectionsLoading) {
                     return
                 }
 
                 const now = new Date();
+                const start = new Date(this.electionsData.CampaignStart);
                 const end = new Date(this.electionsData.CampaignEnd);
                 
-                return now > end;
+                return now >= start && now < end;
             },
+        },
+        created() {
+            this.intervalId = setInterval(() => {
+                let countdownEndTime = localStorage.getItem(`rating_countdown${this.activeElectionIndex}`);
+                if (countdownEndTime > 0) {
+                    this.countdown--;
+                } 
+                else {
+                    clearInterval(this.intervalId);
+                    this.isSent = false;
+                }
+            }, 1000);
         },
         methods: {
             returnDirectory() {
@@ -421,7 +435,9 @@
 
                     this.isSending = false;
                     this.isSent = true;
-                    this.countdown = 30; // seconds
+                    const countdownDuration = 10; // seconds
+                    this.countdown = countdownDuration;
+
                     this.intervalId = setInterval(() => {
                         if (this.countdown > 1) {
                             this.countdown--;
@@ -530,7 +546,6 @@
         top: 0;
         width: 100%; /* Full width */
         height: 100%; /* Full height */
-        overflow: auto; /* Enable scroll if needed */
         background-color: rgb(0,0,0); /* Fallback color */
         background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
     }
