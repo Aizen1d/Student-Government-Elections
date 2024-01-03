@@ -178,7 +178,7 @@
                                             @click="removePosition(index)">Remove position</button>
                                 </div>
                                 <div class="col-6 save">
-                                    <button :disabled="position.name === ''" class="reusable-btn" :style="{ color: position.is_re_usable ? '#00ae0c' : '#B90321' }"
+                                    <button hidden :disabled="position.name === ''" class="reusable-btn" :style="{ color: position.is_re_usable ? '#00ae0c' : '#B90321' }"
                                             @click.prevent="makePositionReusableOrNot(index)">{{ position.is_re_usable ? 'Make this position reusable' : 'Make this position non-reusable' }}
                                     </button>
                                 </div>
@@ -308,7 +308,58 @@
             // Watch for changes in election_type_input value then find the OrganizationMemberRequirements in organizationData then set to election_course_requirements
             watch(() => election_type_input.value, (newVal) => {
                 const organization = organizationData.value.find((org) => org.OrganizationName === newVal);
+                const id = organization.StudentOrganizationId;
+
                 election_course_requirements.value = organization.OrganizationMemberRequirements;
+
+                // Get the positions from the organization and add them to the position list
+                axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/organization/officer/${id}`)
+                .then((response) => {
+                    const officers = response.data.officers;
+                    
+                    // Clear saved positions selection list if election type is changed
+                    position_saved_selection.value = [];
+
+                    // Clear each position name and value if election type is changed
+                    position_list.value.forEach((position) => {
+                        position.name = '';
+                        position.value = '';
+                    });
+
+                    // Add the positions to the saved positions selection list and make sure its unique
+                    officers.forEach((officer) => {
+                        const savedPositionsSelection = {
+                            name: officer.Position,
+                            value: officer.Position,
+                            is_already_selected: true,
+                        };
+
+                        // Check if the position already exists in the saved positions selection list
+                        const positionExists = position_saved_selection.value.some((pos) => pos.name === savedPositionsSelection.name);
+
+                        // If it doesn't exist, add it to the saved positions selection list
+                        if (!positionExists) {
+                            position_saved_selection.value.push(savedPositionsSelection);
+                        }
+                    });
+
+                    // Add the positions to the position list use the first position as the default value
+                    position_list.value = [];
+                    officers.forEach((officer, index) => {
+                        const position = {
+                            count: index + 1,
+                            name: officer.Position,
+                            value: officer.Position,
+                            quantity: 1,
+                            is_re_usable: false,
+                        };
+                        position_list.value.push(position);
+                    });
+                })
+                .catch((error) => {
+                    console.log(error);
+                });
+
             });
 
             const fetchAllOrganization = async () => {
