@@ -25,8 +25,16 @@
                         <label class="form-label" for="name">Election Title</label>
                         <input class="form-control margin" type="text" name="name" v-model="election_name_input" :disabled="true">
                         
-                        <label class="form-label" for="type">Election Organization</label>
-                        <input class="form-control margin" type="text" name="name" v-model="election_type_input" :disabled="true">
+                        <div class="row">
+                            <div class="col-6">
+                                <label class="form-label" for="type">Election Student Organization</label>
+                                <input class="form-control margin" type="text" name="name" v-model="election_type_input" :disabled="true">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label" for="type">Course Requirements</label>
+                                <input v-model="election_course_requirements" class="form-control" type="text" name="name" readonly disabled>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="col-6">
@@ -169,6 +177,7 @@
 
             let election_name_input = ref('');
             let election_type_input = ref('');
+            let election_course_requirements = ref('');
             let election_school_year_input = ref('');
             let election_semester_input = ref('');
             let election_start_input = ref('');
@@ -200,7 +209,8 @@
             watchEffect(() => {
                 if (isSuccess && data.value) {
                     election_name_input.value = data.value.election.ElectionName;
-                    election_type_input.value = data.value.election.ElectionType;
+                    election_type_input.value = data.value.student_organization_name;
+                    election_course_requirements.value = data.value.organization_member_requirement;
                     election_school_year_input.value = data.value.election.SchoolYear;
                     election_semester_input.value = data.value.election.Semester;
                     election_start_input.value = data.value.election.ElectionStart;
@@ -228,6 +238,7 @@
             return {
                 election_name_input,
                 election_type_input,
+                election_course_requirements,
                 election_school_year_input,
                 election_semester_input,
                 election_start_input,
