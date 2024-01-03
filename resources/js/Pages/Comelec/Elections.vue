@@ -89,7 +89,7 @@
                         id: item.ElectionId,
                         count: item.count,
                         title: item.ElectionName,
-                        organization: item.ElectionType,
+                        organization: item.StudentOrganizationName,
                         school_year: item.SchoolYear,
                         created_by_name: item.CreatedByName,
                         election_start: new Date(item.ElectionStart).toLocaleString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }),
