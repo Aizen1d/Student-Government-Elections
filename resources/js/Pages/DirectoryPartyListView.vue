@@ -2,7 +2,7 @@
     <title>Directory View Partylist - COMELEC Portal</title>
     <Navbar></Navbar>
     
-    <div class="main">
+    <div class="main" v-if="partylistData.ImageAttachment">
         <img :src="partylistData.ImageAttachment" alt="" class="party-image" draggable="false">
     </div>
 
