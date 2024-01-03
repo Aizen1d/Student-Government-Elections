@@ -72,7 +72,7 @@
 
             <div class="col-6">
                 <div class="note">
-                    <span>Set the organization officers.</span>
+                    <span>Set the current organization officers.</span>
                 </div>
                 
                 <div class="content row flex-column">
