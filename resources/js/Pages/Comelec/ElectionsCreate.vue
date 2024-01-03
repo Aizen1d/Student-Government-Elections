@@ -24,14 +24,16 @@
                         
                         <div class="row">
                             <div class="col-6">
-                                <label class="form-label" for="type">Election Organization</label>
+                                <label class="form-label" for="type">Election Student Organization</label>
                                 <input type="hidden" name="election-type">
                                 <select v-model="election_type_input" class="form-select" aria-label="Default select example">
-                                    <option value="" disabled hidden selected>Select organization type</option>
-                                    <option v-for="organization in organizationData" :key="organization.OrganizationName" 
-                                        :value="organization.OrganizationName">
-                                        {{ organization.OrganizationName }}
-                                    </option>
+                                    <option value="" disabled hidden selected>Select student organization</option>
+                                    <template v-if="!isOrganizationLoading">
+                                        <option v-for="organization in organizationData" :key="organization.StudentOrganizationId" 
+                                            :value="organization.StudentOrganizationId">
+                                            {{ organization.OrganizationName }}
+                                        </option>
+                                    </template>
                                 </select>
                             </div>
                             <div class="col-6">
@@ -307,8 +309,8 @@
 
             // Watch for changes in election_type_input value then find the OrganizationMemberRequirements in organizationData then set to election_course_requirements
             watch(() => election_type_input.value, (newVal) => {
-                const organization = organizationData.value.find((org) => org.OrganizationName === newVal);
-                const id = organization.StudentOrganizationId;
+                const id = newVal;
+                const organization = organizationData.value.find((organization) => organization.StudentOrganizationId === id);
 
                 election_course_requirements.value = organization.OrganizationMemberRequirements;
 
@@ -562,7 +564,7 @@
                     return alert('Election name cannot be empty');
                 }
                 if (this.election_type_input === '') {
-                    return alert('Election type cannot be empty');
+                    return alert('Election student organization cannot be empty');
                 }
                 if (this.election_school_year_input === '') {
                     return alert('School year cannot be empty');
@@ -644,7 +646,7 @@
 
                 const electionData = {
                     election_name: this.election_name_input,
-                    election_type: this.election_type_input,
+                    election_type: parseInt(this.election_type_input),
                     school_year: String(this.election_school_year_input),
                     semester: String(this.election_semester_input),
                     election_start: this.election_start_input,
