@@ -741,6 +741,14 @@ def get_Organization_Officer_By_Student_Number(student_number: str, db: Session 
         return {"response": True}
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while fetching the organization officer from the database"})
+    
+@router.get("/organization/officer/{student_organization_id}", tags=["Organization Officer"])
+def get_Organization_Officer_By_Student_Organization_Id(student_organization_id: int, db: Session = Depends(get_db)):
+    try:
+        officers = db.query(OrganizationOfficer).filter(OrganizationOfficer.StudentOrganizationId == student_organization_id).order_by(OrganizationOfficer.OrganizationOfficerId).all()
+        return {"officers": [officer.to_dict() for officer in officers]}
+    except:
+        return JSONResponse(status_code=500, content={"detail": "Error while fetching all organization officers from the database"})
 
 """ ** POST Methods: All about Organization Officers APIs ** """
 
@@ -773,7 +781,7 @@ def get_Organization_Member_By_Student_Number(student_number: str, db: Session =
 
 class ElectionInfoData(BaseModel):
     election_name: str
-    election_type: str
+    election_type: int
     school_year: str
     semester: str
     election_start: datetime
@@ -928,7 +936,7 @@ def get_All_Approved_Candidates_CoC_By_Election_Id(id: int, db: Session = Depend
 @router.post("/election/create", tags=["Election"])
 def save_election(election_data: CreateElectionData, db: Session = Depends(get_db)):
     new_election = Election(ElectionName=election_data.election_info.election_name,
-                            ElectionType=election_data.election_info.election_type,
+                            StudentOrganizationId=election_data.election_info.election_type,
                             ElectionStatus="Active",
                             SchoolYear=election_data.election_info.school_year,
                             Semester=election_data.election_info.semester,
