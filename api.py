@@ -822,6 +822,14 @@ def get_All_Election(db: Session = Depends(get_db)):
             election_dict = election.to_dict(i+1)
             election_dict["CreatedByName"] = (creator.FirstName + ' ' + (creator.MiddleName + ' ' if creator.MiddleName else '') + creator.LastName) if creator else ""
             
+            # Get the StudentOrganizationName of the election from the StudentOrganization table
+            student_organization = db.query(StudentOrganization).filter(StudentOrganization.StudentOrganizationId == election.StudentOrganizationId).first()
+            election_dict["StudentOrganizationName"] = student_organization.OrganizationName if student_organization else ""
+
+            # Get the OrganizationMemberRequirement of the election from the StudentOrganization table
+            student_organization = db.query(StudentOrganization).filter(StudentOrganization.StudentOrganizationId == election.StudentOrganizationId).first()
+            election_dict["OrganizationMemberRequirement"] = student_organization.OrganizationMemberRequirements if student_organization else ""
+           
             # Get the CreatedElectionPositions of the election then append it to the election_dict
             positions = db.query(CreatedElectionPosition).filter(CreatedElectionPosition.ElectionId == election.ElectionId).all()
             election_dict["Positions"] = [position.to_dict(i+1) for i, position in enumerate(positions)]
@@ -860,6 +868,10 @@ def get_All_Election_Is_Student_Voted(student_number: str, db: Session = Depends
             election_dict = election.to_dict(i+1)
             election_dict["CreatedByName"] = (creator.FirstName + ' ' + (creator.MiddleName + ' ' if creator.MiddleName else '') + creator.LastName) if creator else ""
             
+            # Return the OrganizationMemberRequirement of the election from the StudentOrganization table
+            student_organization = db.query(StudentOrganization).filter(StudentOrganization.StudentOrganizationId == election.StudentOrganizationId).first()
+            election_dict["OrganizationMemberRequirement"] = student_organization.OrganizationMemberRequirements if student_organization else ""
+
             # Get the CreatedElectionPositions of the election then append it to the election_dict
             positions = db.query(CreatedElectionPosition).filter(CreatedElectionPosition.ElectionId == election.ElectionId).all()
             election_dict["Positions"] = [position.to_dict(i+1) for i, position in enumerate(positions)]
@@ -884,10 +896,16 @@ def get_Election_By_Id(id: int, db: Session = Depends(get_db)):
             return JSONResponse(status_code=404, content={"detail": "Election not found"})
 
         positions = db.query(CreatedElectionPosition).filter(CreatedElectionPosition.ElectionId == id).order_by(CreatedElectionPosition.CreatedElectionPositionId).all()
+        student_organization_name = db.query(StudentOrganization).filter(StudentOrganization.StudentOrganizationId == election.StudentOrganizationId).first().OrganizationName
+
+        organiztion_member_requirement = db.query(StudentOrganization).filter(StudentOrganization.StudentOrganizationId == election.StudentOrganizationId).first().OrganizationMemberRequirements
 
         election_count = db.query(Election).count()
         return {"election": election.to_dict(election_count),
-                "positions": [position.to_dict(i+1) for i, position in enumerate(positions)]}
+                "student_organization_name": student_organization_name,
+                "organization_member_requirement": organiztion_member_requirement,
+                "positions": [position.to_dict(i+1) for i, position in enumerate(positions)]
+                }
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while fetching election from the database"})
 
