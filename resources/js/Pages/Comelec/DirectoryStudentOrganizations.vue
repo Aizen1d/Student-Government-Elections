@@ -2,7 +2,6 @@
     <title>Directory Student Organizations - EMS</title>
     <Sidebar></Sidebar>
     <Navbar></Navbar>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
     <div class="components">
         <div class="header">
@@ -73,6 +72,9 @@
             <div class="col-6">
                 <div class="note">
                     <span>Set the current organization officers.</span>
+                    <Tooltip class="mx-3">
+                        <slot>Enter the student number of the desired officer.</slot>
+                    </Tooltip>
                 </div>
                 
                 <div class="content row flex-column">
@@ -181,6 +183,7 @@
     import BaseContainer from '../../Shared/BaseContainer.vue';
     import BaseTable from '../../Shared/BaseTable.vue';
     import ImageSkeleton from '../../Skeletons/ImageSkeleton.vue';
+    import Tooltip from '../../Shared/Tooltip.vue';
 
     import { useQuery } from "@tanstack/vue-query";
     import axios from 'axios';
@@ -369,6 +372,7 @@
             BaseContainer,
             BaseTable,
             ImageSkeleton,
+            Tooltip,
         },
         methods: {
             returnDirectory() {
