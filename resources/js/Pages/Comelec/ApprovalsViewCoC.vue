@@ -125,7 +125,7 @@
 
                         <div class="margin">
                             <label class="form-label" for="type">Organization</label>
-                            <input class="form-control" type="text" name="name" v-model="CoCData.ElectionType" :disabled="true">
+                            <input class="form-control" type="text" name="name" v-model="CoCData.StudentOrganizationName" :disabled="true">
                         </div>
 
                         <div class="margin">
