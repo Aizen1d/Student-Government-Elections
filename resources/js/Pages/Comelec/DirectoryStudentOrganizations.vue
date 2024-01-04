@@ -30,7 +30,7 @@
                         
                         <label class="form-label" for="selected">Member Course Requirements</label>
                         <input :disabled="creating" type="hidden" name="requirements">
-                        <select class="form-select padding" aria-label="Default select example" v-model="organization_requirements">
+                        <select class="form-select padding" aria-label="Default select example" v-model="organization_requirements" :disabled="creating">
                             <option selected hidden value="">Select</option>
                             <option value="All Courses">All Courses</option>
                             <option value="BBTLEDHE">BBTLEDHE</option>
