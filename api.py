@@ -1649,7 +1649,10 @@ def get_All_CoC(db: Session = Depends(get_db)):
             if coc["ElectionId"]:
                 election = db.query(Election).filter(Election.ElectionId == coc["ElectionId"]).first()
                 coc["ElectionName"] = election.ElectionName if election else None
-                coc["ElectionType"] = election.ElectionType if election else None
+
+                # Get the studentorganizationname from studentorganization table using the election table's studentorganizationid to look at studentorganizationname
+                student_organization = db.query(StudentOrganization).filter(StudentOrganization.StudentOrganizationId == election.StudentOrganizationId).first()
+                coc["StudentOrganizationName"] = student_organization.OrganizationName if student_organization else None
 
         return {"coc": coc_dict}
     except:
@@ -1673,7 +1676,9 @@ def get_CoC_By_Id(id: int, db: Session = Depends(get_db)):
         if coc.ElectionId:
             election = db.query(Election).filter(Election.ElectionId == coc.ElectionId).first()
             coc_dict["ElectionName"] = election.ElectionName if election else None
-            coc_dict["ElectionType"] = election.ElectionType if election else None
+
+            student_organization = db.query(StudentOrganization).filter(StudentOrganization.StudentOrganizationId == election.StudentOrganizationId).first()
+            coc_dict["StudentOrganizationName"] = student_organization.OrganizationName if student_organization else None
 
         # Include the party list name using the party list id in the CoC dictionary
         if coc.PartyListId:
@@ -2582,28 +2587,51 @@ def gather_winners_by_election_id(election_id: int):
         return
     
     if datetime.now() > election.VotingEnd:
-        # Gather candidates with the highest votes per SelectedPositionName
-        candidates = db.query(Candidates).filter(Candidates.ElectionId == election.ElectionId).order_by(Candidates.Votes.desc()).all()
-        
+        # Gather all candidates
+        all_candidates = db.query(Candidates).filter(Candidates.ElectionId == election.ElectionId).all()
+
+        # Count the number of candidates for each position
+        candidate_counts = defaultdict(int)
+        for candidate in all_candidates:
+            candidate_counts[candidate.SelectedPositionName] += 1
+
         # Get the PositionQuantity for each position in the current election
         position_quantities = {position.PositionName: int(position.PositionQuantity) for position in db.query(CreatedElectionPosition).filter(CreatedElectionPosition.ElectionId == election.ElectionId)}
 
         # Initialize a dictionary to store the candidates with the highest votes for each position
         candidates_with_highest_votes = defaultdict(list)
-        for candidate in candidates:
+        for candidate in all_candidates:
             # Check if we have already selected the required number of candidates for this position
             if len(candidates_with_highest_votes[candidate.SelectedPositionName]) < position_quantities[candidate.SelectedPositionName]:
                 candidates_with_highest_votes[candidate.SelectedPositionName].append(candidate)
 
+        # Get the organization based on the election id
+        organization = db.query(StudentOrganization).filter_by(StudentOrganizationId=election.StudentOrganizationId).first()
+        eligible_voters = db.query(Student).filter_by(Course=organization.OrganizationMemberRequirements).count()
+
         # Store the winners in the ElectionWinners table
         for position, candidates in candidates_with_highest_votes.items():
-            for candidate in candidates:
+            # If there's exactly one candidate for this position, check if the candidate has achieved the required vote threshold
+            if candidate_counts[position] == 1:
+                # Calculate the vote threshold
+                vote_threshold = (eligible_voters // 2) + 1  # 50% students + 1 vote constraint
+
+                if candidates[0].Votes >= vote_threshold:
+                    winner = ElectionWinners(ElectionId=election.ElectionId, 
+                                            StudentNumber=candidates[0].StudentNumber, 
+                                            SelectedPositionName=position,
+                                            Votes=candidates[0].Votes,
+                                            created_at=datetime.now(),
+                                            updated_at=datetime.now())
+                    db.add(winner)
+            else:  # There's more than one candidate for this position
+                # The candidate with the highest votes wins
                 winner = ElectionWinners(ElectionId=election.ElectionId, 
-                                         StudentNumber=candidate.StudentNumber, 
-                                         SelectedPositionName=position,
-                                         Votes=candidate.Votes,
-                                         created_at=datetime.now(),
-                                         updated_at=datetime.now())
+                                        StudentNumber=candidates[0].StudentNumber, 
+                                        SelectedPositionName=position,
+                                        Votes=candidates[0].Votes,
+                                        created_at=datetime.now(),
+                                        updated_at=datetime.now())
                 db.add(winner)
 
         db.commit()
