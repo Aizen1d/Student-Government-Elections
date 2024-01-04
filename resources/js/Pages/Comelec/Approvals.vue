@@ -41,7 +41,7 @@
                         <tr v-for="(item, coc_index) in CoCData" :key="coc_index" @click="selectCoCItem(item)">
                             <td :style="{ width: columnWidthsCoC[0] }" class="my-cell">{{ item.StudentNumber }}</td>
                             <td :style="{ width: columnWidthsCoC[1] }" class="my-cell">{{ item.ElectionName }}</td>
-                            <td :style="{ width: columnWidthsCoC[2] }" class="my-cell">{{ item.ElectionType }}</td>
+                            <td :style="{ width: columnWidthsCoC[2] }" class="my-cell">{{ item.StudentOrganizationName }}</td>
                             <td :style="{ width: columnWidthsCoC[3] }" class="my-cell">{{ item.Status }}</td>
                             <td :style="{ width: columnWidthsCoC[4] }" class="my-cell">{{ formatDate(item.created_at) }}</td>
                         </tr>
