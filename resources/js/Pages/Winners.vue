@@ -15,10 +15,10 @@
         </div>
 
         <div v-for="(position, positionIndex) in positionsData" :key="positionIndex">
-            <div class="candidate" v-for="(winner, winnerIndex) in winnersData" :key="winnerIndex">
-                <div v-if="winner.position === position.PositionName">
-                    <h1 class="position">{{ position.PositionName }}</h1>
+            <h1 class="position candidate">{{ position.PositionName }}</h1>
 
+            <div v-for="(winner, winnerIndex) in winnersData" :key="winnerIndex">
+                <div v-if="winner.position === position.PositionName" class="candidate">
                     <div class="candidate-information-wrapper">
                         <div class="candidate-information">
                             <img :src="winner.display_photo" alt="" class="candidate-photo">
@@ -29,7 +29,11 @@
                     </div>
                 </div>
             </div>
-            
+
+            <!-- Display 'No winner' if there's no winner for this position -->
+            <div v-if="!winnersData.some(winner => winner.position === position.PositionName)" class="no-winner">
+                <h1 class="candidate">No winner</h1>
+            </div>
         </div>
 
     </div>
