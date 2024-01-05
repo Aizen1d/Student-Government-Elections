@@ -13,7 +13,7 @@
 
                 <div class="my-2">
                     <h1 class="py-1 election-label">{{ electionData.election.Semester }} of S.Y. {{ electionData.election.SchoolYear }}</h1>
-                    <h1 class="election-label">{{ electionData.election.ElectionType }} Organization</h1>
+                    <h1 class="election-label">{{ electionData.student_organization_name }} Organization</h1>
                 </div>
             </div>
             <div class="col-8" style="text-align: end;">
