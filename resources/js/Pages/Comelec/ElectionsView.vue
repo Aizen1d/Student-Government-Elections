@@ -74,7 +74,7 @@
                     <hr class="my-4">
 
                     <div class="row">
-                        <label for="filing-period" class="col-3 col-form-label">Filing of COC Period</label>
+                        <label for="filing-period" class="col-3 col-form-label">Filing of COC/Partylist Period</label>
                         <div class="col-5">
                             <label class="form-label" for="f-start">Filing Start</label>
                             <input type="datetime-local" class="form-control margin" v-model="election_filing_coc_start_input" :disabled="true">
