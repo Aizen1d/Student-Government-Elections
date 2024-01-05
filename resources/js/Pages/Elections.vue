@@ -55,7 +55,7 @@
                 const elections = response.data.elections.map(election => ({
                     id: election.ElectionId,
                     name: election.ElectionName,
-                    type: election.ElectionType,
+                    type: election.StudentOrganizationName,
                     status: election.ElectionStatus,
                     period: election.ElectionPeriod,
                 }));
