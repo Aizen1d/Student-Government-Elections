@@ -879,6 +879,14 @@ def get_All_Election_Is_Student_Voted(student_number: str, db: Session = Depends
             student_organization = db.query(StudentOrganization).filter(StudentOrganization.StudentOrganizationId == election.StudentOrganizationId).first()
             election_dict["OrganizationMemberRequirement"] = student_organization.OrganizationMemberRequirements if student_organization else ""
 
+            # Get the organization logo from cloudinary using the student organization id in the election
+            try:
+                organization_logo = resources_by_tag(student_organization.OrganizationLogo)
+                election_dict["OrganizationLogo"] = organization_logo["resources"][0]["secure_url"] if organization_logo else ""
+            except Exception as e:
+                print(f"Error fetching image from Cloudinary: {e}")
+                election_dict["OrganizationLogo"] = ""
+
             # Check if the student's course matches the OrganizationMemberRequirement and it's within the voting period
             if student_course == election_dict["OrganizationMemberRequirement"] and now >= election.VotingStart and now < election.VotingEnd:
                 atleast_one_available_election = True
