@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Student;
 use App\Models\Election;
+use App\Models\StudentOrganization;
+use App\Models\VotingsTracker;
 use Inertia\Inertia;
 
 class StudentController extends Controller
@@ -43,11 +45,44 @@ class StudentController extends Controller
         $id = $request->id;
         $electionTable = Election::where('ElectionId', $id)->first();
 
-        if (!$id) {
+        if (!$id || !$electionTable) {
             return redirect()->route('home');
         }
 
-        if (!$electionTable) {
+        // Check if student course is same as election course
+
+        $student_number = $request->session()->get('student_number');
+        $student = Student::where('StudentNumber', $student_number)->first();
+        $student_course = $student->Course; 
+
+        $organization = StudentOrganization::where('StudentOrganizationId', $electionTable->StudentOrganizationId)->first();
+        $election_organization_course = $organization->OrganizationMemberRequirements;
+
+        if ($election_organization_course != $student_course) {
+            return redirect()->route('home');
+        }
+
+        // Check if in Voting Period
+
+        $now = date('Y-m-d H:i');
+        $votingStart = $electionTable->VotingStart;
+        $votingEnd = $electionTable->VotingEnd;
+
+        if ($now < $votingStart) {
+            return redirect()->route('home');
+        }
+
+        if ($now > $votingEnd) {
+            return redirect()->route('home');
+        }
+
+        // Check if student has already voted
+
+        $isVoted = VotingsTracker::where('StudentNumber', $student_number)
+            ->where('ElectionId', $id)
+            ->first();
+
+        if ($isVoted) {
             return redirect()->route('home');
         }
 
@@ -75,8 +110,43 @@ class StudentController extends Controller
         $request->session()->put('id', $id);
         $request->session()->put('votes', $votes);
 
-        // Retrieve the student number from the session
+        // Check if student course is same as election course
+        $electionTable = Election::where('ElectionId', $id)->first();
+
         $student_number = $request->session()->get('student_number');
+        $student = Student::where('StudentNumber', $student_number)->first();
+        $student_course = $student->Course; 
+
+        $organization = StudentOrganization::where('StudentOrganizationId', $electionTable->StudentOrganizationId)->first();
+        $election_organization_course = $organization->OrganizationMemberRequirements;
+
+        if ($election_organization_course != $student_course) {
+            return redirect()->route('home');
+        }
+
+        // Check if in Voting Period
+
+        $now = date('Y-m-d H:i');
+        $votingStart = $electionTable->VotingStart;
+        $votingEnd = $electionTable->VotingEnd;
+
+        if ($now < $votingStart) {
+            return redirect()->route('home');
+        }
+
+        if ($now > $votingEnd) {
+            return redirect()->route('home');
+        }
+
+        // Check if student has already voted
+        
+        $isVoted = VotingsTracker::where('StudentNumber', $student_number)
+            ->where('ElectionId', $id)
+            ->first();
+
+        if ($isVoted) {
+            return redirect()->route('home');
+        }
 
         return Inertia::render('VotingPreview', [
             'id' => $id,
