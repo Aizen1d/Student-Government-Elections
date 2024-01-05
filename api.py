@@ -859,9 +859,16 @@ def get_All_Election(db: Session = Depends(get_db)):
 @router.get("/election/all/is-student-voted", tags=["Election"])
 def get_All_Election_Is_Student_Voted(student_number: str, db: Session = Depends(get_db)):
     try:
+        # Get the student's course
+        student = db.query(Student).filter(Student.StudentNumber == student_number).first()
+        student_course = student.Course if student else ""
+
         # Check if the student has voted in the election
         elections = db.query(Election).order_by(Election.ElectionId).all()
         elections_with_creator = []
+        atleast_one_available_election = False
+
+        now = datetime.now()
 
         for i, election in enumerate(elections):
             creator = db.query(Student).filter(Student.StudentNumber == election.CreatedBy).first()
@@ -872,17 +879,21 @@ def get_All_Election_Is_Student_Voted(student_number: str, db: Session = Depends
             student_organization = db.query(StudentOrganization).filter(StudentOrganization.StudentOrganizationId == election.StudentOrganizationId).first()
             election_dict["OrganizationMemberRequirement"] = student_organization.OrganizationMemberRequirements if student_organization else ""
 
+            # Check if the student's course matches the OrganizationMemberRequirement and it's within the voting period
+            if student_course == election_dict["OrganizationMemberRequirement"] and now >= election.VotingStart and now < election.VotingEnd:
+                atleast_one_available_election = True
+
+            # Check if the student has voted in the election
+            student_voted = db.query(VotingsTracker).filter(VotingsTracker.ElectionId == election.ElectionId, VotingsTracker.StudentNumber == student_number).first()
+            election_dict["IsStudentVoted"] = True if student_voted else False
+
             # Get the CreatedElectionPositions of the election then append it to the election_dict
             positions = db.query(CreatedElectionPosition).filter(CreatedElectionPosition.ElectionId == election.ElectionId).all()
             election_dict["Positions"] = [position.to_dict(i+1) for i, position in enumerate(positions)]
 
             elections_with_creator.append(election_dict)
-            
-            # Check if the student has voted in the election
-            student_voted = db.query(VotingsTracker).filter(VotingsTracker.ElectionId == election.ElectionId, VotingsTracker.StudentNumber == student_number).first()
-            election_dict["IsStudentVoted"] = True if student_voted else False
 
-        return {"elections": elections_with_creator}
+        return {"elections": {"AtleastOneAvailableElection": atleast_one_available_election, "data": elections_with_creator}}
     
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while fetching all elections from the database"})
