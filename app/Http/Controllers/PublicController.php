@@ -37,8 +37,21 @@ class PublicController extends Controller
 
     public function electionsViewRankings(Request $request) {
         $id = $request->id;
+        $election = Elections::where('ElectionId', $id)->first();
 
         if (!$id) {
+            return redirect()->route('elections');
+        }
+
+        if (!$election) {
+            return redirect()->route('elections');
+        }
+
+        // Check if voting started
+        $now = date('Y-m-d H:i');
+        $votingStart = $election->VotingStart;
+
+        if ($now > $votingStart) {
             return redirect()->route('elections');
         }
 
@@ -49,8 +62,21 @@ class PublicController extends Controller
 
     public function electionsViewWinners(Request $request) {
         $id = $request->id;
+        $election = Elections::where('ElectionId', $id)->first();
 
         if (!$id) {
+            return redirect()->route('elections');
+        }
+
+        if (!$election) {
+            return redirect()->route('elections');
+        }
+
+        // Check if voting ended
+        $now = date('Y-m-d H:i');
+        $votingEnd = $election->VotingEnd;
+
+        if ($now > $votingEnd) {
             return redirect()->route('elections');
         }
 
@@ -62,13 +88,27 @@ class PublicController extends Controller
     public function electionsViewFileCoc(Request $request) {
         $id = $request->id;
         $election = Elections::where('ElectionId', $id)->first();
-        $electionName = $election->ElectionName;
 
         if (!$election) {
             return redirect()->route('elections');
         }
 
+        $electionName = $election->ElectionName;
+
         if (!$id) {
+            return redirect()->route('elections');
+        }
+
+        // Check if in CoCFilingStart and CoCFilingEnd
+        $now = date('Y-m-d H:i');
+        $cocFilingStart = $election->CoCFilingStart;
+        $cocFilingEnd = $election->CoCFilingEnd;
+
+        if ($now < $cocFilingStart) {
+            return redirect()->route('elections');
+        }
+
+        if ($now > $cocFilingEnd) {
             return redirect()->route('elections');
         }
 
@@ -81,13 +121,27 @@ class PublicController extends Controller
     public function electionsViewRegisterParty(Request $request) {
         $id = $request->id;
         $election = Elections::where('ElectionId', $id)->first();
-        $electionName = $election->ElectionName;
 
         if (!$election) {
             return redirect()->route('elections');
         }
 
+        $electionName = $election->ElectionName;
+
         if (!$id) {
+            return redirect()->route('elections');
+        }
+
+        // Check if in CoCFilingStart and CoCFilingEnd Since it was the same with CoC Filing Date
+        $now = date('Y-m-d H:i');
+        $cocFilingStart = $election->CoCFilingStart;
+        $cocFilingEnd = $election->CoCFilingEnd;
+
+        if ($now < $cocFilingStart) {
+            return redirect()->route('elections');
+        }
+
+        if ($now > $cocFilingEnd) {
             return redirect()->route('elections');
         }
 
