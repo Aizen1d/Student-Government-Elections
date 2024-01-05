@@ -47,7 +47,7 @@ class PublicController extends Controller
             return redirect()->route('elections');
         }
 
-        $now = date('Y-m-d H:i');
+        $now = date('Y-m-d H:i:s');
         $votingStart = $election->VotingStart;
 
         // if the voting has not started yet, redirect to elections
@@ -73,7 +73,7 @@ class PublicController extends Controller
         }
 
         // Check if voting ended
-        $now = date('Y-m-d H:i');
+        $now = date('Y-m-d H:i:s');
         $votingEnd = $election->VotingEnd;
 
         // if the voting has not ended yet, redirect to elections
@@ -101,7 +101,7 @@ class PublicController extends Controller
         }
 
         // Check if in CoCFilingStart and CoCFilingEnd
-        $now = date('Y-m-d H:i');
+        $now = date('Y-m-d H:i:s');
         $cocFilingStart = $election->CoCFilingStart;
         $cocFilingEnd = $election->CoCFilingEnd;
 
@@ -134,7 +134,7 @@ class PublicController extends Controller
         }
 
         // Check if in CoCFilingStart and CoCFilingEnd Since it was the same with CoC Filing Date
-        $now = date('Y-m-d H:i');
+        $now = date('Y-m-d H:i:s');
         $cocFilingStart = $election->CoCFilingStart;
         $cocFilingEnd = $election->CoCFilingEnd;
 
