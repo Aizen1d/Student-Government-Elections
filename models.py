@@ -567,6 +567,7 @@ class ElectionWinners(Base):
     StudentNumber = Column(String(15), ForeignKey('Student.StudentNumber'), unique=True)
     SelectedPositionName = Column(String)
     Votes = Column(Integer, default=0)
+    IsTied = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -577,6 +578,7 @@ class ElectionWinners(Base):
             "StudentNumber": self.StudentNumber,
             "SelectedPositionName": self.SelectedPositionName,
             "Votes": self.Votes,
+            "IsTied": self.IsTied,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }
