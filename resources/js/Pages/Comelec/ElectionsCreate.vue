@@ -12,193 +12,191 @@
             </div>
         </div>
 
-        <form @submit.prevent="submit">
-            <div class="row g-4">
-                <div class="col-6">
-                    <div class="note">
-                        <h6>Set election title and organization.</h6>
-                    </div>
-                    <div class="box upper-box">
-                        <label class="form-label" for="name">Election Title</label>
-                        <input class="form-control margin" type="text" name="name" v-model="election_name_input">
-                        
-                        <div class="row">
-                            <div class="col-6">
-                                <label class="form-label" for="type">Election Student Organization</label>
-                                <input type="hidden" name="election-type">
-                                <select v-model="election_type_input" class="form-select" aria-label="Default select example">
-                                    <option value="" disabled hidden selected>Select student organization</option>
-                                    <template v-if="!isOrganizationLoading">
-                                        <option v-for="organization in organizationData" :key="organization.StudentOrganizationId" 
-                                            :value="organization.StudentOrganizationId">
-                                            {{ organization.OrganizationName }}
-                                        </option>
-                                    </template>
-                                </select>
-                            </div>
-                            <div class="col-6">
-                                <label class="form-label" for="type">Course Requirements</label>
-                                <input v-model="election_course_requirements" class="form-control" type="text" name="name" readonly disabled>
-                            </div>
-                        </div>
-                    </div>
+        <div class="row g-4">
+            <div class="col-6">
+                <div class="note">
+                    <h6>Set election title and organization.</h6>
                 </div>
-                <div class="col-6">
-                    <div class="note">
-                        <h6>Set the current school year and semester for this election.</h6>
-                    </div>
-                    <div class="box upper-box">
-                        <label class="form-label" for="sy">School Year</label>
-                        <select class="form-select margin" name="SY" v-model="election_school_year_input">
-                            <option value="" disabled hidden selected>Select school year</option>
-                            <option v-for="year in nextFiveYears" :key="year" :value="year">{{ year }}</option>
-                        </select>
-    
-                        <label class="form-label" for="sem">Semester</label>
-                        <select class="form-select" name="sem" v-model="election_semester_input">
-                            <option value="" disabled hidden selected>Select semester</option>
-                            <option value="1st Semester">1st Semester</option>
-                            <option value="2nd Semester">2nd Semester</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-            
-            <div>
-                <div class="note-timeline">
-                    <h6>Set a timeline for the whole election.</h6>
-                </div>
-                <div class="box">
+                <div class="box upper-box">
+                    <label class="form-label" for="name">Election Title</label>
+                    <input class="form-control margin" type="text" name="name" v-model="election_name_input">
+                    
                     <div class="row">
-                        <label for="election-period" class="col-3 col-form-label">Election Period</label>
-                        <div class="col-5">
-                            <label class="form-label" for="e-start">Election Start</label>
-                            <input type="datetime-local" class="form-control margin" v-model="election_start_input">
-
-                            <label class="form-label" for="e-end">Election End</label>
-                            <input type="datetime-local" class="form-control margin" v-model="election_end_input">
-                        </div>
-                    </div>
-
-                    <hr class="my-4">
-
-                    <div class="row">
-                        <label for="filing-period" class="col-3 col-form-label">Filing of COC Period</label>
-                        <div class="col-5">
-                            <label class="form-label" for="f-start">Filing Start</label>
-                            <input type="datetime-local" class="form-control margin" v-model="election_filing_coc_start_input">
-
-                            <label class="form-label" for="f-end">Filing End</label>
-                            <input type="datetime-local" class="form-control margin" v-model="election_filing_coc_end_input">
-                        </div>
-                    </div>
-
-                    <hr class="my-4">
-
-                    <div class="row">
-                        <label for="filing-period" class="col-3 col-form-label">Campaign Period</label>
-                        <div class="col-5">
-                            <label class="form-label" for="c-start">Campaign Start</label>
-                            <input type="datetime-local" class="form-control margin" v-model="election_campaign_start_input">
-
-                            <label class="form-label" for="c-end">Campaign End</label>
-                            <input type="datetime-local" class="form-control margin" v-model="election_campaign_end_input">
-                        </div>
-                    </div>
-
-                    <hr class="my-4">
-
-                    <div class="row">
-                        <label for="filing-period" class="col-3 col-form-label">Voting Period</label>
-                        <div class="col-5">
-                            <label class="form-label" for="v-start">Voting Start</label>
-                            <input type="datetime-local" class="form-control margin" v-model="election_voting_start_input">
-
-                            <label class="form-label" for="v-end">Voting End</label>
-                            <input type="datetime-local" class="form-control margin" v-model="election_voting_end_input">
-                        </div>
-                    </div>
-
-                    <hr class="my-4">
-
-                    <div class="row">
-                        <label for="filing-period" class="col-3 col-form-label">Appeal Period</label>
-                        <div class="col-5">
-                            <label class="form-label" for="a-start">Appeal Start</label>
-                            <input type="datetime-local" class="form-control margin" v-model="election_appeal_start_input">
-
-                            <label class="form-label" for="a-end">Appeal End</label>
-                            <input type="datetime-local" class="form-control" v-model="election_appeal_end_input">
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div>
-                <div class="note-timeline">
-                    <div class="row">
-                        <div class="col-6 my-1">
-                            <h6>Create positions for the election and set the quantity for each position.</h6>
+                        <div class="col-6">
+                            <label class="form-label" for="type">Election Student Organization</label>
+                            <input type="hidden" name="election-type">
+                            <select v-model="election_type_input" class="form-select" aria-label="Default select example">
+                                <option value="" disabled hidden selected>Select student organization</option>
+                                <template v-if="!isOrganizationLoading">
+                                    <option v-for="organization in organizationData" :key="organization.StudentOrganizationId" 
+                                        :value="organization.StudentOrganizationId">
+                                        {{ organization.OrganizationName }}
+                                    </option>
+                                </template>
+                            </select>
                         </div>
                         <div class="col-6">
-                            <div class="position-btn">
-                                <ActionButton class="new-btn" @click="addNewPosition" :disabled="!isMostRecentPositionFilled">Add new position</ActionButton>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="position-box mb-4" v-for="(position, index) in position_list" :key="index">
-                    <div class="row g-4">
-                        <div class="col">
-                            <label class="form-label" for="position-name">Position Name</label>
-                            <div class="row">
-                                <div class="col-4">
-                                    <select v-model="position.value" @change="onPositionListSelect" class="form-select margin" aria-label="Position selection">
-                                        <option value="" disabled hidden selected>Saved Positions</option>
-                                        <option value="New" style="color: #00ae0c;">Create new</option>
-                                        <option v-for="saved_position in position_saved_selection" 
-                                                :value="saved_position.value"
-                                                :disabled="saved_position.is_already_selected">
-                                            {{ saved_position.name }}
-                                        </option>
-                                    </select>
-                                </div>
-                                <div class="col-8">
-                                    <input type="text" class="form-control position-name margin" 
-                                        v-model="position.name" 
-                                        :disabled="position.value !== 'New'">
-                                </div>
-                            </div>
-
-                            <label class="form-label" for="position-quantity">Position Quantity</label>
-                            <input type="number" min="1" class="form-control position-quantity margin" v-model.number="position.quantity">
-
-                            <div class="row button">
-                                <div class="col-6">
-                                    <button class="remove-btn" 
-                                            v-if="index !== 0"
-                                            @click="removePosition(index)">Remove position</button>
-                                </div>
-                                <div class="col-6 save">
-                                    <button hidden :disabled="position.name === ''" class="reusable-btn" :style="{ color: position.is_re_usable ? '#00ae0c' : '#B90321' }"
-                                            @click.prevent="makePositionReusableOrNot(index)">{{ position.is_re_usable ? 'Make this position reusable' : 'Make this position non-reusable' }}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col">
-                            
+                            <label class="form-label" for="type">Course Requirements</label>
+                            <input v-model="election_course_requirements" class="form-control" type="text" name="name" readonly disabled>
                         </div>
                     </div>
                 </div>
             </div>
-            <div>
-                <div class="election-btn mb-4">
-                    <ActionButton class="cancel" @click.prevent="returnPage">Cancel</ActionButton>
-                    <ActionButton class="create">Create Election</ActionButton>
+            <div class="col-6">
+                <div class="note">
+                    <h6>Set the current school year and semester for this election.</h6>
+                </div>
+                <div class="box upper-box">
+                    <label class="form-label" for="sy">School Year</label>
+                    <select class="form-select margin" name="SY" v-model="election_school_year_input">
+                        <option value="" disabled hidden selected>Select school year</option>
+                        <option v-for="year in nextFiveYears" :key="year" :value="year">{{ year }}</option>
+                    </select>
+
+                    <label class="form-label" for="sem">Semester</label>
+                    <select class="form-select" name="sem" v-model="election_semester_input">
+                        <option value="" disabled hidden selected>Select semester</option>
+                        <option value="1st Semester">1st Semester</option>
+                        <option value="2nd Semester">2nd Semester</option>
+                    </select>
                 </div>
             </div>
-        </form>
+        </div>
+        
+        <div>
+            <div class="note-timeline">
+                <h6>Set a timeline for the whole election.</h6>
+            </div>
+            <div class="box">
+                <div class="row">
+                    <label for="election-period" class="col-3 col-form-label">Election Period</label>
+                    <div class="col-5">
+                        <label class="form-label" for="e-start">Election Start</label>
+                        <input type="datetime-local" class="form-control margin" v-model="election_start_input">
+
+                        <label class="form-label" for="e-end">Election End</label>
+                        <input type="datetime-local" class="form-control margin" v-model="election_end_input">
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <div class="row">
+                    <label for="filing-period" class="col-3 col-form-label">Filing of COC Period</label>
+                    <div class="col-5">
+                        <label class="form-label" for="f-start">Filing Start</label>
+                        <input type="datetime-local" class="form-control margin" v-model="election_filing_coc_start_input">
+
+                        <label class="form-label" for="f-end">Filing End</label>
+                        <input type="datetime-local" class="form-control margin" v-model="election_filing_coc_end_input">
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <div class="row">
+                    <label for="filing-period" class="col-3 col-form-label">Campaign Period</label>
+                    <div class="col-5">
+                        <label class="form-label" for="c-start">Campaign Start</label>
+                        <input type="datetime-local" class="form-control margin" v-model="election_campaign_start_input">
+
+                        <label class="form-label" for="c-end">Campaign End</label>
+                        <input type="datetime-local" class="form-control margin" v-model="election_campaign_end_input">
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <div class="row">
+                    <label for="filing-period" class="col-3 col-form-label">Voting Period</label>
+                    <div class="col-5">
+                        <label class="form-label" for="v-start">Voting Start</label>
+                        <input type="datetime-local" class="form-control margin" v-model="election_voting_start_input">
+
+                        <label class="form-label" for="v-end">Voting End</label>
+                        <input type="datetime-local" class="form-control margin" v-model="election_voting_end_input">
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <div class="row">
+                    <label for="filing-period" class="col-3 col-form-label">Appeal Period</label>
+                    <div class="col-5">
+                        <label class="form-label" for="a-start">Appeal Start</label>
+                        <input type="datetime-local" class="form-control margin" v-model="election_appeal_start_input">
+
+                        <label class="form-label" for="a-end">Appeal End</label>
+                        <input type="datetime-local" class="form-control" v-model="election_appeal_end_input">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <div class="note-timeline">
+                <div class="row">
+                    <div class="col-6 my-1">
+                        <h6>Create positions for the election and set the quantity for each position.</h6>
+                    </div>
+                    <div class="col-6">
+                        <div class="position-btn">
+                            <ActionButton class="new-btn" @click.prevent="addNewPosition" :disabled="!isMostRecentPositionFilled">Add new position</ActionButton>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="position-box mb-4" v-for="(position, index) in position_list" :key="index">
+                <div class="row g-4">
+                    <div class="col">
+                        <label class="form-label" for="position-name">Position Name</label>
+                        <div class="row">
+                            <div class="col-4">
+                                <select v-model="position.value" @change="onPositionListSelect" class="form-select margin" aria-label="Position selection">
+                                    <option value="" disabled hidden selected>Org Positions</option>
+                                    <option value="New" style="color: #00ae0c;">Create new</option>
+                                    <option v-for="saved_position in position_saved_selection" 
+                                            :value="saved_position.value"
+                                            :disabled="saved_position.is_already_selected">
+                                        {{ saved_position.name }}
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="col-8">
+                                <input type="text" class="form-control position-name margin" 
+                                    v-model="position.name" 
+                                    :disabled="position.value !== 'New'">
+                            </div>
+                        </div>
+
+                        <label class="form-label" for="position-quantity">Position Quantity</label>
+                        <input type="number" min="1" class="form-control position-quantity margin" v-model.number="position.quantity">
+
+                        <div class="row button">
+                            <div class="col-6">
+                                <button class="remove-btn" 
+                                        v-if="index !== 0"
+                                        @click.prevent="removePosition(index)">Remove position</button>
+                            </div>
+                            <div class="col-6 save">
+                                <button hidden :disabled="true || position.name === ''" class="reusable-btn" :style="{ color: position.is_re_usable ? '#00ae0c' : '#B90321' }"
+                                        @click.prevent="makePositionReusableOrNot(index)">{{ position.is_re_usable ? 'Make this position reusable' : 'Make this position non-reusable' }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div>
+            <div class="election-btn mb-4">
+                <ActionButton class="cancel" @click.prevent="returnPage">Cancel</ActionButton>
+                <ActionButton class="create" @click.prevent="submit">Create Election</ActionButton>
+            </div>
+        </div>
     </div>
 </template>
 
