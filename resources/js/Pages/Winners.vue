@@ -10,7 +10,7 @@
         </div>
         
         <div class="header">
-            <h1 class="election-label">{{ electionsData.ElectionName }}</h1>
+            <h1 v-if="!isElectionsLoading" class="election-label">{{ electionsData.ElectionName }}</h1>
             <h2 class="phrase">We extend our sincere congratulations to each of you on your election victories. Your leadership journeys have now officially begun.</h2>
         </div>
 
