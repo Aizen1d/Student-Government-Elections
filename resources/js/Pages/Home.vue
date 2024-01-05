@@ -14,7 +14,7 @@
                         class="select-election" @click="electionSelected(election)">
                         <div :class="{ 'election': !election.IsStudentVoted, 'voted-already': election.IsStudentVoted  }">
                             <div class="election-content">
-                                <img src="" alt="?" class="organization-logo">
+                                <img :src="election.OrganizationLogo" alt="" class="organization-logo">
                                 <h1 class="election-title">{{ election.ElectionName }}</h1>
                             </div>
                         </div>
@@ -133,7 +133,7 @@
     }
 
     .header-label{
-        font-weight: 700;
+        font-weight: 800;
         font-family: 'Inter', sans-serif;
         font-size: 38px;
         color: #800000;
@@ -198,8 +198,9 @@
     .election-title{
         margin: 0% 0% 0% 3%;
         width: 100%;
-        font-weight: 700;
+        font-weight: 800;
         font-size: 30px;
+        font-family: 'Inter', sans-serif;
     }
     
 </style>
