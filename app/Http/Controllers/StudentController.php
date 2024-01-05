@@ -64,11 +64,11 @@ class StudentController extends Controller
 
         // Check if in Voting Period
 
-        $now = date('Y-m-d H:i');
+        $now = date('Y-m-d H:i:s');
         $votingStart = $electionTable->VotingStart;
         $votingEnd = $electionTable->VotingEnd;
 
-        if ($now < $votingStart) {
+        if ($now <= $votingStart) {
             return redirect()->route('home');
         }
 
@@ -126,11 +126,11 @@ class StudentController extends Controller
 
         // Check if in Voting Period
 
-        $now = date('Y-m-d H:i');
+        $now = date('Y-m-d H:i:s');
         $votingStart = $electionTable->VotingStart;
         $votingEnd = $electionTable->VotingEnd;
 
-        if ($now < $votingStart) {
+        if ($now <= $votingStart) {
             return redirect()->route('home');
         }
 
