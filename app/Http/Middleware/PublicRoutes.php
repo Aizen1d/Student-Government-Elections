@@ -15,7 +15,7 @@ class PublicRoutes
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $token = $request->cookie('jwt_token');
+        $token = $request->cookie('voting_jwt_token');
 
         if ($token) {
             return redirect()->back();
