@@ -3,27 +3,33 @@
     <title>Home - Voting System</title>
 
     <div class="main">
-        <h1 class="header-label">ELECTIONS</h1>
-
-        <template v-if="atleastOneElection && !isElectionsLoading" v-for="(election, index) in electionsData" :key="index">
-            <div v-if="isVotingPeriod(election) && election.course_requirements === student_course" 
-                class="select-election" @click="electionSelected(election)">
-                <div :class="{ 'election': !election.is_student_voted, 'voted-already': election.is_student_voted  }">
-                    <div class="election-content">
-                        <img src="" alt="?" class="organization-logo">
-                        <h1 class="election-title">{{ election.name }}</h1>
-                    </div>
-                </div>
-            </div>
-            <div v-if="activeElectionQuantity === 0" style="text-align: center; margin-top: 3%;">
-                <h2>
-                    No voting period for election at the moment.
-                </h2>
-            </div>
-        </template>
-        <div v-if="!atleastOneElection && !isElectionsLoading">
-            <h1>No voting period for election at the moment.</h1>
+        <div style="text-align: center;">
+            <h1 class="header-label">ELECTIONS</h1>
         </div>
+        
+        <template v-if="!isElectionsLoading">
+            <template v-if="electionsData.elections.AtleastOneAvailableElection">
+                <template v-for="(election, index) in electionsData.elections.data" :key="index">
+                    <div v-if="isVotingPeriod(election) && election.OrganizationMemberRequirement === student_course" 
+                        class="select-election" @click="electionSelected(election)">
+                        <div :class="{ 'election': !election.IsStudentVoted, 'voted-already': election.IsStudentVoted  }">
+                            <div class="election-content">
+                                <img src="" alt="?" class="organization-logo">
+                                <h1 class="election-title">{{ election.ElectionName }}</h1>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </template>
+
+            <!-- Display 'No available elections' if AtleastOneAvailableElection is false -->
+            <template v-else>
+                <div class="no-available-elections" style="text-align: center; margin-top: 3%; font-family: 'Inter', sans-serif;">
+                    <h1 style="font-size: 35px;">(No available elections for you at the moment)</h1>
+                </div>
+            </template>
+        </template>
+
     </div>
 </template>
 
@@ -57,25 +63,7 @@
                 });
                 console.log(`Get all elections successful. Duration: ${response.duration}ms`)
 
-                const elections = response.data.elections.map(election => ({
-                    id: election.ElectionId,
-                    name: election.ElectionName,
-                    type: election.ElectionType,
-                    status: election.ElectionStatus,
-                    voting_start: election.VotingStart,
-                    voting_end: election.VotingEnd,
-                    is_student_voted: election.IsStudentVoted,
-                    course_requirements: election.OrganizationMemberRequirement,
-                }));
-
-                if (response.data.elections.length > 0){
-                    atleastOneElection.value = true;
-                }
-                else {
-                    atleastOneElection.value = false;
-                }
-
-                return elections;
+                return response.data;
             }
 
             const { data: electionsData,
@@ -106,7 +94,7 @@
         },
         methods: {
             electionSelected(election){
-                if (election.is_student_voted) {
+                if (election.IsStudentVoted) {
                     alert('You have already voted for this election.');
                     return;
                 }
@@ -119,17 +107,16 @@
 
                 router.visit('/voting/process', {
                     data: {
-                        id: election.id,
+                        id: election.ElectionId,
                     }
                 })
             },
             isVotingPeriod(election){
                 const now = new Date();
-                const voting_start = new Date(election.voting_start);
-                const voting_end = new Date(election.voting_end);
+                const voting_start = new Date(election.VotingStart);
+                const voting_end = new Date(election.VotingEnd);
 
                 if (now >= voting_start && now < voting_end) {
-                    this.activeElectionQuantity++;
                     return true;
                 }
                 else {
@@ -147,9 +134,11 @@
 
     .header-label{
         font-weight: 700;
-        font-size: 30px;
+        font-family: 'Inter', sans-serif;
+        font-size: 38px;
         color: #800000;
         margin: 0;
+        margin-bottom: 2%;
     }
 
     .select-election{
