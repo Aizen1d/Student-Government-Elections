@@ -6,7 +6,7 @@
     <div class="components mb-4">
         <div class="row">
             <div class="col-6">
-                <h2 class="mx-3">Voters Registration</h2>
+                <h2 class="mx-3">VOTERS REGISTRATION</h2>
             </div>
             <div class="col-6" style="text-align: end;">
                 <ActionButton class="task-button" @click.prevent="redirectToTasks">Queues</ActionButton>

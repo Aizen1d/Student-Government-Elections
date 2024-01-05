@@ -6,7 +6,7 @@
     <div class="components">
         <div class="row">
             <div class="col-6">
-                <h2>Rules & Guidelines</h2>
+                <h2>RULES & GUIDELINES</h2>
             </div>
             <div class="col-6 new">
                 <ActionButton :disabled="new_button_disabled || !can_save" @click="newButtonSelected" class="new-btn">New</ActionButton>
@@ -370,7 +370,7 @@
 
     .components h2{
         font-weight: 800;
-        font-size: 28px;
+        font-size: 30px;
     }
 
     .item-container{

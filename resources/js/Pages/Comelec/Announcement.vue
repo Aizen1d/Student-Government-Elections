@@ -6,7 +6,7 @@
     <div class="components">
         <div class="row">
             <div class="col-6">
-                <h2>Announcements</h2>
+                <h2>ANNOUNCEMENTS</h2>
             </div>
             <div class="col-6 new">
                 <ActionButton :disabled="new_button_disabled || saving || updating || is_loading_attachments" class="new-btn" @click="newButtonSelected">New Announcement</ActionButton>

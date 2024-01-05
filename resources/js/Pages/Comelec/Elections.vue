@@ -6,7 +6,7 @@
     <div class="components">
         <div class="row">
             <div class="col-6">
-                <h2>Elections</h2>
+                <h2>ELECTIONS</h2>
             </div>
             <div class="col-6 new">
                 <ActionButton @click="createElectionRedirect" class="new-btn">Create Election</ActionButton>

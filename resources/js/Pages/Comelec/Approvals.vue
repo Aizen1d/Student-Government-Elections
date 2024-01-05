@@ -6,7 +6,7 @@
     <div class="components">
         <div class="row">
             <div class="col-6">
-                <h2>Approvals</h2>
+                <h2>APPROVALS</h2>
             </div>    
         </div>   
         

@@ -5,7 +5,7 @@
 
     <div class="components">
         <div class="header">
-            <h1 class="page-title">Directory</h1>
+            <h1 class="page-title">DIRECTORY</h1>
         </div>
         <div @click="studentOrganizations" class="select-directory">
             <div class="directory">
@@ -90,7 +90,7 @@
 
     .page-title{
         font-weight: 800;
-        font-size: 28px;
+        font-size: 30px;
         margin: 0%;
         margin-left: 1%;
         font-family: 'Inter', sans-serif;
