@@ -8,10 +8,6 @@
         </h1>
     </div>
 
-    <div v-if="!atLeastOneCandidate && !isCandidatesPerPositionLoading" style="text-align: center;">
-        <h1>No candidates in this election.</h1>
-    </div>
-
     <div class="election-header">
         <h1 class="election-title" v-if="!isCandidatesPerPositionLoading">{{ electionsData.ElectionName }}</h1>
     </div>
@@ -45,9 +41,15 @@
         </div>
     </template>
 
-    <div v-if="atLeastOneCandidate && !isCandidatesPerPositionLoading" class="election-buttons">
+    <div v-if="!atLeastOneCandidate && !isCandidatesPerPositionLoading" style="text-align: center;">
+        <h1 style="font-family: 'Inter', sans-serif;">
+            (No candidates in this election)
+        </h1>
+    </div>
+
+    <div v-if="!isCandidatesPerPositionLoading" class="election-buttons">
         <button class="back-button" @click.prevent="goBack">RETURN</button>
-        <button class="submit-button" @click.prevent="submitVotes">SUBMIT</button>
+        <button v-if="atLeastOneCandidate" class="submit-button" @click.prevent="submitVotes">SUBMIT</button>
     </div>
 </template>
 
@@ -276,10 +278,11 @@
 
     .election-title{
         margin: 0%;
+        font-family: 'Inter', sans-serif;
         text-align: center;
         padding: 1.5% 0%;
-        font-size: 35px;
-        font-weight: 900;
+        font-size: 38px;
+        font-weight: 800;
     }
 
     .position{
