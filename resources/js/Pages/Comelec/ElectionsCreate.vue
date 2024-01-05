@@ -418,8 +418,8 @@
         },
         methods:{
             returnPage() {
-                const confirm = window.confirm('Are you sure you want to cancel and return? inputs will not be saved.');
-                if (!confirm) return;
+                //const confirm = window.confirm('Are you sure you want to cancel and return? inputs will not be saved.');
+                //if (!confirm) return;
                 router.visit('/comelec/elections');
             },
             getNextFiveYears() {
