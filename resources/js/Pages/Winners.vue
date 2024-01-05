@@ -2,7 +2,7 @@
     <title>Winners - COMELEC Portal</title>
     <Navbar></Navbar>
 
-    <div class="main">
+    <div class="main" v-if="!isElectionsLoading && !isWinnersLoading">
         <div class="col" style="margin-left: 5%;">
             <h1 class="path" v-if="!isElectionsLoading">
                 <span class="return" @click="returnPage">{{ electionsData.ElectionName }}</span>&nbsp;>&nbsp;Winners
@@ -14,28 +14,31 @@
             <h2 class="phrase">We extend our sincere congratulations to each of you on your election victories. Your leadership journeys have now officially begun.</h2>
         </div>
 
-        <div v-for="(position, positionIndex) in positionsData" :key="positionIndex">
-            <h1 class="position candidate">{{ position.PositionName }}</h1>
+        <div v-for="(winnerData, position) in winnersData" :key="position">
+            <h1 class="position candidate">{{ position }}</h1>
 
-            <div v-for="(winner, winnerIndex) in winnersData" :key="winnerIndex">
-                <div v-if="winner.position === position.PositionName" class="candidate">
-                    <div class="candidate-information-wrapper">
-                        <div class="candidate-information">
-                            <img :src="winner.display_photo" alt="" class="candidate-photo">
-                            <h1 class="candidate-name">{{ winner.full_name }}</h1>
-                            <h2 class="candidate-affiliation">{{ winner.partylist }}</h2>
-                            <h2 class="candidate-affiliation">{{ winner.votes }} votes</h2>
-                        </div>
+            <h1 class="candidate" v-if="winnerData.is_tied">
+                (Tied)
+            </h1>
+
+            <div v-for="(candidate, candidateIndex) in winnerData.candidates" :key="candidateIndex" class="candidate">
+                <div class="candidate-information-wrapper">
+                    <div class="candidate-information">
+                        <img :src="candidate.display_photo" alt="" class="candidate-photo">
+                        <h1 class="candidate-name">{{ candidate.full_name }}</h1>
+                        <h2 class="candidate-affiliation">{{ candidate.partylist }}</h2>
+                        <h2 class="candidate-affiliation">{{ candidate.votes }} votes</h2>
                     </div>
                 </div>
             </div>
 
             <!-- Display 'No winner' if there's no winner for this position -->
-            <div v-if="!winnersData.some(winner => winner.position === position.PositionName)" class="no-winner">
-                <h1 class="candidate">No winner</h1>
+            <div v-if="winnerData.no_winner" class="no-winner">
+                <h1 class="candidate">
+                    (No winner)
+                </h1>
             </div>
         </div>
-
     </div>
 </template>
 
@@ -137,7 +140,6 @@
             returnPage(){
                 router.visit(`/elections/view?id=${this.electionId}`)
             },
-        
         },
     }
 </script>
