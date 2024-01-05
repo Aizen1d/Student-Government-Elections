@@ -201,9 +201,9 @@
             isAboveVotingStartPeriod() {
                 // Check if current datetime is above voting period
                 const now = new Date();
-                const end = new Date(this.electionData.election.VotingStart);
+                const start = new Date(this.electionData.election.VotingStart);
 
-                return now > end;
+                return start < now;
             },
             isVotingPeriodEnded() {
                 // Check if current datetime is above voting period
