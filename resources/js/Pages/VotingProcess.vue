@@ -18,7 +18,7 @@
             <div class="position-information">
                 <h2 class="position-label">{{ positionName }}</h2>
                 <p class="position-instructions">
-                    Please select {{ candidates[candidateIndex].PositionQuantity > 1 ? 'maximum of' : '' }} ({{ candidates[candidateIndex].PositionQuantity }}) candidate or choose to abstain.
+                    Please select {{ candidates[0].PositionQuantity > 1 ? 'maximum of' : '' }} ({{ candidates[0].PositionQuantity }}) candidate or choose to abstain.
                 </p>
             </div>
 
