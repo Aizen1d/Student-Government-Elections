@@ -2586,53 +2586,68 @@ def gather_winners_by_election_id(election_id: int):
         print("Winners for this election have already been added.")
         return
     
+    # Gather all candidates for a specific election
+    all_candidates_for_election = db.query(Candidates).filter(Candidates.ElectionId == election.ElectionId).all()
+
+    # Sort all candidates by votes in descending order
+    all_candidates_for_election.sort(key=lambda candidate: candidate.Votes, reverse=True)
+
+    # Count the number of candidates for each position
+    num_candidates_per_position = defaultdict(int)
+    for candidate in all_candidates_for_election:
+        num_candidates_per_position[candidate.SelectedPositionName] += 1
+
+    # Get the required number of winners for each position in the current election
+    num_winners_per_position = {position.PositionName: int(position.PositionQuantity) for position in db.query(CreatedElectionPosition).filter(CreatedElectionPosition.ElectionId == election.ElectionId)}
+
+    # Initialize a dictionary to store the candidates for each position
+    candidates_per_position = defaultdict(list)
+    for candidate in all_candidates_for_election:
+        # Check if we have already selected the required number of candidates for this position
+        if len(candidates_per_position[candidate.SelectedPositionName]) < num_winners_per_position[candidate.SelectedPositionName]:
+            candidates_per_position[candidate.SelectedPositionName].append(candidate)
+        elif len(candidates_per_position[candidate.SelectedPositionName]) == num_winners_per_position[candidate.SelectedPositionName] and candidates_per_position[candidate.SelectedPositionName][-1].Votes == candidate.Votes:
+            # If there's a tie for the last spot, add the candidate to the list
+            candidates_per_position[candidate.SelectedPositionName].append(candidate)
+
+    # Get the organization based on the election id
+    organization = db.query(StudentOrganization).filter_by(StudentOrganizationId=election.StudentOrganizationId).first()
+    num_eligible_voters = db.query(Student).filter_by(Course=organization.OrganizationMemberRequirements).count()
+
     if datetime.now() > election.VotingEnd:
-        # Gather all candidates
-        all_candidates = db.query(Candidates).filter(Candidates.ElectionId == election.ElectionId).all()
-
-        # Count the number of candidates for each position
-        candidate_counts = defaultdict(int)
-        for candidate in all_candidates:
-            candidate_counts[candidate.SelectedPositionName] += 1
-
-        # Get the PositionQuantity for each position in the current election
-        position_quantities = {position.PositionName: int(position.PositionQuantity) for position in db.query(CreatedElectionPosition).filter(CreatedElectionPosition.ElectionId == election.ElectionId)}
-
-        # Initialize a dictionary to store the candidates with the highest votes for each position
-        candidates_with_highest_votes = defaultdict(list)
-        for candidate in all_candidates:
-            # Check if we have already selected the required number of candidates for this position
-            if len(candidates_with_highest_votes[candidate.SelectedPositionName]) < position_quantities[candidate.SelectedPositionName]:
-                candidates_with_highest_votes[candidate.SelectedPositionName].append(candidate)
-
-        # Get the organization based on the election id
-        organization = db.query(StudentOrganization).filter_by(StudentOrganizationId=election.StudentOrganizationId).first()
-        eligible_voters = db.query(Student).filter_by(Course=organization.OrganizationMemberRequirements).count()
-
         # Store the winners in the ElectionWinners table
-        for position, candidates in candidates_with_highest_votes.items():
+        for position, candidates in candidates_per_position.items():
             # If there's exactly one candidate for this position, check if the candidate has achieved the required vote threshold
-            if candidate_counts[position] == 1:
+            if num_candidates_per_position[position] == 1:
                 # Calculate the vote threshold
-                vote_threshold = (eligible_voters // 2) + 1  # 50% students + 1 vote constraint
+                vote_threshold = (num_eligible_voters // 2) + 1  # 50% students + 1 vote constraint
 
                 if candidates[0].Votes >= vote_threshold:
                     winner = ElectionWinners(ElectionId=election.ElectionId, 
                                             StudentNumber=candidates[0].StudentNumber, 
                                             SelectedPositionName=position,
                                             Votes=candidates[0].Votes,
+                                            IsTied=False,
                                             created_at=datetime.now(),
                                             updated_at=datetime.now())
                     db.add(winner)
             else:  # There's more than one candidate for this position
-                # The candidate with the highest votes wins
-                winner = ElectionWinners(ElectionId=election.ElectionId, 
-                                        StudentNumber=candidates[0].StudentNumber, 
-                                        SelectedPositionName=position,
-                                        Votes=candidates[0].Votes,
-                                        created_at=datetime.now(),
-                                        updated_at=datetime.now())
-                db.add(winner)
+                # The candidates with the highest votes win
+                max_votes = max(candidate.Votes for candidate in candidates)
+                winners = [candidate for candidate in candidates if candidate.Votes == max_votes]
+
+                 # Check if there's a tie
+                is_tied = len(winners) > num_winners_per_position[position]
+
+                for winner_candidate in winners:
+                    winner = ElectionWinners(ElectionId=election.ElectionId, 
+                                            StudentNumber=winner_candidate.StudentNumber, 
+                                            SelectedPositionName=position,
+                                            Votes=winner_candidate.Votes,
+                                            IsTied=is_tied,
+                                            created_at=datetime.now(),
+                                            updated_at=datetime.now())
+                    db.add(winner)
 
         db.commit()
 
@@ -2642,6 +2657,9 @@ def gather_winners_by_election_id(election_id: int):
 def get_Winners_By_Election_Id(election_id: int, db: Session = Depends(get_db)):
     election = db.query(Election).filter(Election.ElectionId == election_id).first()
 
+    # Get all positions for this election
+    positions = db.query(CreatedElectionPosition).filter(CreatedElectionPosition.ElectionId == election_id).all()
+
     winners = db.query(ElectionWinners).join(
         CreatedElectionPosition, 
         and_(
@@ -2650,9 +2668,12 @@ def get_Winners_By_Election_Id(election_id: int, db: Session = Depends(get_db)):
         )
     ).order_by(CreatedElectionPosition.CreatedElectionPositionId).all()    
 
-    winners_dict = []
+    winners_dict = {}
 
-    # Get the winner candidate details from the Candidates table
+    # Initialize the dictionary with all positions
+    for position in positions:
+        winners_dict[position.PositionName] = {"is_tied": False, "no_winner": True, "candidates": []}
+
     for i, winner in enumerate(winners):
         candidate = db.query(Candidates).filter(Candidates.StudentNumber == winner.StudentNumber, Candidates.ElectionId == election_id).first()
         student = db.query(Student).filter(Student.StudentNumber == winner.StudentNumber).first()
@@ -2665,7 +2686,6 @@ def get_Winners_By_Election_Id(election_id: int, db: Session = Depends(get_db)):
         else:
             candidate_partylist_name = "Independent"
 
-        # Get the candidate photo from cloudinary using the candidate.displayphoto resources by tag in cloudinary
         try:
             display_photo = resources_by_tag(candidate.DisplayPhoto)
             display_photo_url = display_photo["resources"][0]["secure_url"] if display_photo else ""
@@ -2673,16 +2693,16 @@ def get_Winners_By_Election_Id(election_id: int, db: Session = Depends(get_db)):
             print(f"Error fetching DisplayPhoto from Cloudinary: {e}")
             display_photo_url = ""
 
-        winners_dict.append({
+        winners_dict[winner.SelectedPositionName]["is_tied"] = winner.IsTied
+        winners_dict[winner.SelectedPositionName]["no_winner"] = False
+        winners_dict[winner.SelectedPositionName]["candidates"].append({
             "full_name": full_name,
             "votes": winner.Votes,
-            "position": winner.SelectedPositionName,
             "partylist": candidate_partylist_name,
             "display_photo": display_photo_url if display_photo_url else "",
         })
 
     return {"winners": winners_dict}
-        
 
 """ ** POST Methods: All about ElectionWinners Table APIs ** """
 
