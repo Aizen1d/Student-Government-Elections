@@ -47,11 +47,11 @@ class PublicController extends Controller
             return redirect()->route('elections');
         }
 
-        // Check if voting started
         $now = date('Y-m-d H:i');
         $votingStart = $election->VotingStart;
 
-        if ($now > $votingStart) {
+        // if the voting has not started yet, redirect to elections
+        if ($now < $votingStart) {
             return redirect()->route('elections');
         }
 
@@ -76,7 +76,8 @@ class PublicController extends Controller
         $now = date('Y-m-d H:i');
         $votingEnd = $election->VotingEnd;
 
-        if ($now > $votingEnd) {
+        // if the voting has not ended yet, redirect to elections
+        if ($now < $votingEnd) {
             return redirect()->route('elections');
         }
 
