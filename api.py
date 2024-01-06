@@ -1752,16 +1752,28 @@ async def save_CoC(election_id: int = Form(...), student_number: str = Form(...)
     if not code:
         return JSONResponse(status_code=400, content={"error": "Verification code is invalid or has expired."})
     
-    # Check if the student has already filed a CoC for this position and is still pending or approved
-    existing_coc = db.query(CoC).filter(CoC.ElectionId == election_id, CoC.StudentNumber == student_number, CoC.SelectedPositionName == position, CoC.Status.in_(['Pending', 'Approved'])).first()
-    if existing_coc:
-        return JSONResponse(status_code=400, content={"error": "You have already filed a CoC for this position."})
+    # Check if the student has already filed a CoC for this election and not rejected
+    coc = db.query(CoC).filter(CoC.ElectionId == election_id, CoC.StudentNumber == student_number, CoC.Status != 'Rejected').first()
+    if coc:
+        return JSONResponse(status_code=400, content={"error": "You have already filed a CoC for this election."})
     
     # Get the partylist id if the student is running under a partylist base on the partylist name
     get_party_list = db.query(PartyList).filter(PartyList.PartyListName == party_list).first()
 
     if get_party_list:
         party_list = get_party_list.PartyListId
+
+    # Check if the student applied for a partylist and the number of candidates in position (base on position quantity) is already full
+    # To limit the number of candidates in a position if the student is running under a partylist
+    if party_list:
+        # Get the number of candidates in the position
+        get_position = db.query(CoC).filter(CoC.ElectionId == election_id, CoC.PartyListId == party_list, CoC.SelectedPositionName == position).count()
+
+        # Get the position quantity in the CreatedElectionPosition table
+        get_position_quantity = db.query(CreatedElectionPosition).filter(CreatedElectionPosition.ElectionId == election_id, CreatedElectionPosition.PositionName == position).first()
+
+        if get_position >= int(get_position_quantity.PositionQuantity):
+            return JSONResponse(status_code=400, content={"error": "The number of candidates for this position is already full."})
     
     new_coc = CoC(ElectionId=election_id,
                     StudentNumber=student_number,
@@ -2038,7 +2050,10 @@ def get_All_PartyList(db: Session = Depends(get_db)):
             if partylist["ElectionId"]:
                 election = db.query(Election).filter(Election.ElectionId == partylist["ElectionId"]).first()
                 partylist["ElectionName"] = election.ElectionName if election else None
-                partylist["ElectionType"] = election.ElectionType if election else None
+
+                # Get the studentorganizationname from studentorganization table using the election table's studentorganizationid to look at studentorganizationname
+                student_organization = db.query(StudentOrganization).filter(StudentOrganization.StudentOrganizationId == election.StudentOrganizationId).first()
+                partylist["StudentOrganizationName"] = student_organization.OrganizationName if student_organization else None
 
         return {"partylists": partylists}
         
@@ -2140,7 +2155,10 @@ def get_PartyList_By_Election_Id(election_id: int, db: Session = Depends(get_db)
             if partylist["ElectionId"]:
                 election = db.query(Election).filter(Election.ElectionId == partylist["ElectionId"]).first()
                 partylist["ElectionName"] = election.ElectionName if election else None
-                partylist["ElectionType"] = election.ElectionType if election else None
+
+                # Get the studentorganizationname from studentorganization table using the election table's studentorganizationid to look at studentorganizationname
+                student_organization = db.query(StudentOrganization).filter(StudentOrganization.StudentOrganizationId == election.StudentOrganizationId).first()
+                partylist["StudentOrganizationName"] = student_organization.OrganizationName if student_organization else None
 
         return {"partylists": partylists}
         
