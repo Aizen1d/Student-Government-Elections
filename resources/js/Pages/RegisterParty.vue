@@ -18,7 +18,7 @@
                         <h6>Party List Information</h6>
 
                         <label class="form-label" for="name">Party Name {{ party_input_status }}</label>
-                        <input class="form-control margin" type="text" name="name" placeholder="Enter your party's name" @keyup="checkIfPartyNameEligible" :disabled="is_submitting" v-model="party_name">
+                        <input class="form-control margin" type="text" name="name" placeholder="Enter your party's name" @keyup="checkPartyDebounce" :disabled="is_submitting" v-model="party_name">
 
                         <label class="form-label" for="email">Email Address</label>
                         <input class="form-control margin" type="email" name="email" placeholder="Enter your party's email address" :disabled="is_submitting" v-model="email">
@@ -219,6 +219,38 @@
                 image_file.value = file;
             };
 
+            let timeoutId;
+
+            const checkPartyDebounce = () => {
+                if (party_name.value === '') {
+                    party_input_status.value = '';
+                    submittable.value = false;
+                    return;
+                }
+
+                party_input_status.value = '(Checking eligibility..)';
+
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(checkIfPartyNameEligible, 500);
+            };
+
+            const checkIfPartyNameEligible = async () => {
+                await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/partylist/is-taken/${party_name.value}`)
+                    .then((response) => {
+                        if (response.data === true) {
+                            party_input_status.value = '(Already taken)';
+                            submittable.value = false;
+                        }
+                        else {
+                            party_input_status.value = '(Eligible)';
+                            submittable.value = true;
+                        }
+                    })
+                    .catch((error) => {
+                        console.log(error)
+                    });
+            }
+
             return {
                 id,
                 electionName,
@@ -241,6 +273,7 @@
 
                 cellphone_number_filter,
                 handleImageAttachmentFile,
+                checkPartyDebounce
             }
         },
         props: {
@@ -283,29 +316,6 @@
                 localStorage.removeItem(`party_list_image_file_name_${this.id}`);
 
                 localStorage.removeItem(`party_list_video_${this.id}`);
-            },
-            checkIfPartyNameEligible() {
-                if (this.party_name === '') {
-                    this.party_input_status = '';
-                    this.submittable = false;
-                    return;
-                }
-
-                this.party_input_status = 'Checking eligiblity...';
-                axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/partylist/is-taken/${this.party_name}`)
-                    .then((response) => {
-                        if (response.data === true) {
-                            this.party_input_status = '(Already taken)';
-                            this.submittable = false;
-                        }
-                        else {
-                            this.party_input_status = '(Eligible)';
-                            this.submittable = true;
-                        }
-                    })
-                    .catch((error) => {
-                        console.log(error)
-                    });
             },
             validate() {
                 if (this.party_name === '') {
