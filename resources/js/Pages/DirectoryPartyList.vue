@@ -23,11 +23,11 @@
             <tr v-for="(partylist, index) in partylistData" :key="index" @click="selectItem(partylist)">
                 <td style="width: 50%; text-align: left; padding-left: 12%;" class="my-cell">{{ partylist.PartyListName }}</td>
                 <td style="width: 50%; text-align: left; padding-left: 12.5%;" class="my-cell">{{ partylist.ElectionName }}</td>
-                <td style="width: 50%; text-align: left; padding-left: 12.6%;" class="my-cell">{{ partylist.ElectionType }}</td>
+                <td style="width: 50%; text-align: left; padding-left: 12.6%;" class="my-cell">{{ partylist.StudentOrganizationName }}</td>
             </tr>
         </BaseTable>
         <div v-else>
-            <h1 class="my-4">There are no partylists at the moment.</h1>
+            <h1 class="my-4">(There are no partylists at the moment)</h1>
         </div>
     </div>
 </template>
