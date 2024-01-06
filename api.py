@@ -1530,115 +1530,135 @@ class SignatureLine(Flowable):
 
 @router.post("/certification/create", tags=["Certification"])
 def create_Certification(certification_data: CertificationData, db: Session = Depends(get_db)):
-    new_certification = Certifications(Title=certification_data.title,
-                                        ElectionId=certification_data.election_id,
-                                        Date=certification_data.date,
-                                        AdminSignatoryQuantity=certification_data.quantity,
-                                        created_at=datetime.now(),
-                                        updated_at=datetime.now())
-    db.add(new_certification)
-    db.commit()
+    # Fetch the election winners from the ElectionWinners table using the election id and must not tied
+    election_winners = db.query(ElectionWinners).filter(ElectionWinners.ElectionId == certification_data.election_id).filter(ElectionWinners.IsTied == False).all()
 
-    for signatory in certification_data.signatories:
-        new_signatory = CreatedAdminSignatory(CertificationId=new_certification.CertificationId,
-                                    SignatoryName=signatory.name,
-                                    SignatoryPosition=signatory.position,
-                                    created_at=datetime.now(),
-                                    updated_at=datetime.now())
-        db.add(new_signatory)
+    # Iterate over each election winner
+    for winner in election_winners:
+        # Fetch the student from the Student table
+        student = db.query(Student).filter(Student.StudentNumber == winner.StudentNumber).first()
+
+        # Get student full name and consider the middle name
+        winner_full_name = f"{student.FirstName} {student.MiddleName} {student.LastName}" if student.MiddleName else f"{student.FirstName} {student.LastName}"
+
+        # Get student selected position
+        winner_position = winner.SelectedPositionName
+
+        new_certification = Certifications(Title=certification_data.title,
+                                            ElectionId=certification_data.election_id,
+                                            Date=certification_data.date,
+                                            AdminSignatoryQuantity=certification_data.quantity,
+                                            created_at=datetime.now(),
+                                            updated_at=datetime.now())
+        db.add(new_certification)
         db.commit()
 
-    # Create the PDF
-    now = datetime.now()
-    pdf_name = f"Report_{now.strftime('%Y%m%d_%H%M%S')}.pdf"
-    doc = SimpleDocTemplate(pdf_name, pagesize=letter, topMargin=36)
+        for signatory in certification_data.signatories:
+            new_signatory = CreatedAdminSignatory(CertificationId=new_certification.CertificationId,
+                                        SignatoryName=signatory.name,
+                                        SignatoryPosition=signatory.position,
+                                        created_at=datetime.now(),
+                                        updated_at=datetime.now())
+            db.add(new_signatory)
+            db.commit()
 
-    # Get the default style sheet
-    styles = getSampleStyleSheet()
+        # Create the PDF
+        now = datetime.now()
+        pdf_name = f"Report_{now.strftime('%Y%m%d_%H%M%S')}.pdf"
+        doc = SimpleDocTemplate(pdf_name, pagesize=letter, topMargin=36)
 
-    # Create a list to hold the PDF elements
-    elements = []
+        # Get the default style sheet
+        styles = getSampleStyleSheet()
 
-    # Styles
-    styles.add(ParagraphStyle(name="SchoolStyle", fontName="Californian FB", fontSize=18, alignment=TA_CENTER, spaceAfter=10))
-    styles.add(ParagraphStyle(name="BranchStyle", fontSize=16, alignment=TA_CENTER, spaceAfter=18))
-    styles.add(ParagraphStyle(name="TitleStyle", fontName="Times-Roman", bold=True, fontSize=24, alignment=TA_CENTER, spaceAfter=26))
-    styles.add(ParagraphStyle(name="ParagraphStyle", fontName="Times-Roman", fontSize=12, alignment=TA_JUSTIFY, spaceAfter=6, leading=12, firstLineIndent=36))
-    styles.add(ParagraphStyle(name="ParagraphStyle2", fontName="Times-Roman", fontSize=12, alignment=TA_LEFT, spaceAfter=6, leading=12))
+        # Create a list to hold the PDF elements
+        elements = []
 
-    # Add the logo
-    logo = Image("puplogo.png", width=100, height=100)  # Adjust the path and size as needed
-    elements.append(logo)
-    elements.append(Spacer(1, 12))
+        # Styles
+        styles.add(ParagraphStyle(name="SchoolStyle", fontName="Times-Roman", fontSize=18, alignment=TA_CENTER, spaceAfter=10))
+        styles.add(ParagraphStyle(name="BranchStyle", fontSize=16, alignment=TA_CENTER, spaceAfter=18))
+        styles.add(ParagraphStyle(name="TitleStyle", fontName="Times-Roman", bold=True, fontSize=24, alignment=TA_CENTER, spaceAfter=26))
+        styles.add(ParagraphStyle(name="ParagraphStyle", fontName="Times-Roman", fontSize=12, alignment=TA_JUSTIFY, spaceAfter=6, leading=12, firstLineIndent=36))
+        styles.add(ParagraphStyle(name="ParagraphStyle2", fontName="Times-Roman", fontSize=12, alignment=TA_LEFT, spaceAfter=6, leading=12))
 
-    school = Paragraph("Polytechnic University of the Philippines", styles["SchoolStyle"])
-    elements.append(school)
-    elements.append(Spacer(1, 2))
+        # Add the logo
+        logo = Image("puplogo.png", width=100, height=100)  # Adjust the path and size as needed
+        elements.append(logo)
+        elements.append(Spacer(1, 12))
 
-    branch = Paragraph("QUEZON CITY BRANCH", styles["BranchStyle"])
-    elements.append(branch)
-    elements.append(Spacer(1, 12))
+        school = Paragraph("Polytechnic University of the Philippines", styles["SchoolStyle"])
+        elements.append(school)
+        elements.append(Spacer(1, 2))
 
-    date = Paragraph('<para align="right">' + certification_data.date.strftime("%B %d, %Y") + '</para>', styles["Normal"])
-    elements.append(date)
-    elements.append(Spacer(1, 24))
+        branch = Paragraph("QUEZON CITY BRANCH", styles["BranchStyle"])
+        elements.append(branch)
+        elements.append(Spacer(1, 12))
 
-    title = Paragraph("<b>OATH OF OFFICE</b>", styles["TitleStyle"])
-    elements.append(title)
-    elements.append(Spacer(1, 12))
+        date = Paragraph('<para align="right">' + certification_data.date.strftime("%B %d, %Y") + '</para>', styles["Normal"])
+        elements.append(date)
+        elements.append(Spacer(1, 24))
 
-    # Add the first part of the content (justified)
-    text = f'''
-    \tI, <b>{certification_data.signatories[0].name.upper()}</b>, having been elected as {certification_data.signatories[0].position} of
-    the Supreme Student Council of the Polytechnic University of
-    the Philippines, Quezon City do solemnly swear that:
-    '''
-    paragraph = Paragraph(text, styles["ParagraphStyle"])
-    elements.append(paragraph)
-    elements.append(Spacer(1, 12))
+        title = Paragraph("<b>OATH OF OFFICE</b>", styles["TitleStyle"])
+        elements.append(title)
+        elements.append(Spacer(1, 12))
 
-    text = f'''
-    I will maintain allegiance to the Republic of the Philippines
-    I will abide by laws of the Supreme Student Council and the
-            Polytechnic University Of The Philippines;
-    I will perform my duties and responsibilities as {certification_data.signatories[0].position},
-            and conduct myself as a true professional according to best
-            of my duty knowledge and discretion.
-    
-    So help me God.
-    '''
-    paragraph = Paragraph(text, styles["ParagraphStyle2"])
-    paragraph_table = Table([[text]], colWidths=[300], hAlign='CENTER')  # Adjust the column width as needed
-    elements.append(paragraph_table)
-    elements.append(Spacer(1, 12))
+        # Add the first part of the content (justified)
+        text = f'''
+        \tI, <b>{winner_full_name}</b>, having been elected as <b>{winner_position}</b> of
+        the Supreme Student Council of the Polytechnic University of
+        the Philippines, Quezon City do solemnly swear that:
+        '''
+        paragraph = Paragraph(text, styles["ParagraphStyle"])
+        elements.append(paragraph)
+        elements.append(Spacer(1, 12))
 
-    # Add the signatures (right-aligned with a line for the signature)
-    for i, signatory in enumerate(certification_data.signatories):
-        # Signature line and name
+        # Add the second part of the content
+        text = f'''
+            I will maintain allegiance to the Republic of the Philippines<br/>
+            I will abide by laws of the Supreme Student Council and the<br/>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Polytechnic University Of The Philippines;<br/>
+            I will perform my duties and responsibilities as <b>{winner_position}</b>,<br/>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;and conduct myself as a true professional according to<br/>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;best of my duty knowledge and discretion.<br/>
+
+            So help me God.
+            '''
+        paragraph = Paragraph(text, styles["ParagraphStyle2"])
+        paragraph_table = Table([[paragraph]], colWidths=[300], hAlign='CENTER')  # Adjust the column width as needed
+        elements.append(paragraph_table)
+        elements.append(Spacer(1, 28))
+
+        # Add signature of the current winner and his position
         signature_line = SignatureLine(130)  # Adjust the width as needed
-        signature_name = Paragraph('<para align="center">' + signatory.name + '<br/>' + signatory.position + '</para>', styles["Normal"])
+        signature_name = Paragraph('<para align="center">' + winner_full_name + '<br/>' + winner_position + '</para>', styles["Normal"])
         signature_table = Table([[signature_line], [signature_name]], colWidths=[140], hAlign='RIGHT')  # Adjust the column width as needed
         elements.append(signature_table)
         elements.append(Spacer(1, 28))
 
-    # Build the PDF
-    doc.build(elements)
+        # Add the signatures (right-aligned with a line for the signature)
+        for i, signatory in enumerate(certification_data.signatories):
+            # Signature line and name
+            signature_line = SignatureLine(130)  # Adjust the width as needed
+            signature_name = Paragraph('<para align="center">' + signatory.name + '<br/>' + signatory.position + '</para>', styles["Normal"])
+            signature_table = Table([[signature_line], [signature_name]], colWidths=[140], hAlign='RIGHT')  # Adjust the column width as needed
+            elements.append(signature_table)
+            elements.append(Spacer(1, 28))
 
-    # Upload to cloudinary
-    upload_result = cloudinary.uploader.upload(pdf_name, 
-                           resource_type = "raw", 
-                           public_id = f"InsertData/Reports/{pdf_name}",
-                           tags=[pdf_name])
-    
-    # Delete the local file
-    os.remove(pdf_name)
+        # Build the PDF
+        doc.build(elements)
+
+        # Upload to cloudinary
+        upload_result = cloudinary.uploader.upload(pdf_name, 
+                               resource_type = "raw", 
+                               public_id = f"Directory/Certifications/{pdf_name}",
+                               tags=[f'certification_{new_certification.CertificationId}'])
+        
+        # Delete the local file
+        os.remove(pdf_name)
 
     # Return the responses and a URL to download the PDF
     return JSONResponse({
-        "message": "Certification created successfully",
-        "pdf_url": upload_result['secure_url']
+        "message": "Certifications created successfully"
     })
-
 
 #################################################################
 ## Organizations APIs ## 
