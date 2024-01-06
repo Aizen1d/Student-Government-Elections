@@ -73,7 +73,9 @@
                 <div class="note">
                     <span>Set the current organization officers.</span>
                     <Tooltip class="mx-3">
-                        <slot>Enter the student number of the desired officer.</slot>
+                        <slot>
+                            Enter the student number of the desired officer. When you create election, and select this organization, these positions will reflect on the positions of the election.
+                        </slot>
                     </Tooltip>
                 </div>
                 
