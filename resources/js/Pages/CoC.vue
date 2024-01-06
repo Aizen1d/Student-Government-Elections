@@ -76,7 +76,7 @@
 
                         <div class="image">
                             <img v-if="display_photo_base_64" :src="display_photo_base_64" alt="" class="pic" draggable="false">
-                            <img v-else src="../../images/dog_placeholder.jpg" alt="" class="pic" draggable="false">
+                            <img v-else src="../../images/profile_placeholder.png" alt="" class="pic" draggable="false">
                         </div>
 
                         <div class="row marge">
@@ -97,7 +97,7 @@
                         <h6>Certification of Grades</h6>
 
                         <div v-if="certification_of_grades_base_64">
-                            <img :src="certification_of_grades_base_64" alt="Certification of Grades" style="width: 500px; height: auto; margin-left: 11.5%; margin-top: 1%;" >
+                            <img :src="certification_of_grades_base_64" alt="Certification of Grades" style="width: 90%; height: auto; margin-left: 5%; margin-top: 1%;" >
                         </div>
                         
                         <div class="row my-4">
@@ -532,8 +532,10 @@
                         })
                     })
                     .catch((error) => {
-                        alert(error.response.data.error)
                         console.log(error)
+
+                        const errorMessage = error.response.data.error;
+                        alert(errorMessage)
                     })
                     .finally(() => {
                         this.is_submitting = false;
