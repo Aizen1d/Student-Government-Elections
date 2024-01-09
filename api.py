@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends, APIRouter, UploadFile, File, Form
+from fastapi import FastAPI, HTTPException, Depends, APIRouter, UploadFile, File, Form, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse
 
@@ -98,7 +98,7 @@ router = APIRouter(prefix="/api/v1")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=['http://localhost:8000', 'http://127.0.0.1:8000', 'http://127.0.0.1:7500', 'http://127.0.0.1:7000'], # Must change to appropriate frontend URL (local or production)
+    allow_origins=[os.getenv('ELECTION_MANAGEMENT_SYSTEM'), os.getenv('COMELEC_PORTAL'), os.getenv('VOTING_SYSTEM')], # Must change to appropriate frontend URL (local or production)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -1519,6 +1519,65 @@ def get_All_Certification(db: Session = Depends(get_db)):
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while fetching all certifications from the database"})
 
+def remove_file(path: str):
+    os.remove(path)
+
+@router.get("/certification/preview/{id}", tags=["Certification"])
+def preview_Certification(id: int, db: Session = Depends(get_db)):
+    certification = db.query(Certifications).get(id)
+
+    if not certification:
+        return JSONResponse(status_code=404, content={"detail": "Certification not found"})
+
+    try:
+        asset_id = certification.AssetId
+        response = cloudinary.api.resource_by_asset_id(asset_id)
+
+        if 'secure_url' in response:
+            pdf_certificate = response['secure_url']
+
+            return {"pdf": pdf_certificate}
+        else:
+            print("No resources found")
+            return {"pdf": ''}
+    except Exception as e:
+        print(f"Error fetching pdf from Cloudinary: {e}")
+        return {"pdf": ''}
+
+@router.get("/certification/download/{id}", tags=["Certification"])
+def download_Certification(id: int, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    certification = db.query(Certifications).get(id)
+
+    if not certification:
+        return JSONResponse(status_code=404, content={"detail": "Certification not found"})
+
+    try:
+        asset_id = certification.AssetId
+        response = cloudinary.api.resource_by_asset_id(asset_id)
+
+        if 'secure_url' in response:
+            pdf_certificate = response['secure_url']
+
+            # Download the pdf
+            pdf = requests.get(pdf_certificate)
+
+            # Save the pdf with student number as filename
+            filename = f"{certification.StudentNumber}.pdf"
+            with open(filename, 'wb') as f:
+                f.write(pdf.content)
+
+            # Schedule the file to be deleted after the response is sent
+            background_tasks.add_task(remove_file, filename)
+
+            # Return the pdf
+            return FileResponse(filename, media_type="application/pdf", filename=filename)
+        else:
+            print("No resources found")
+            return {"pdf": ''}
+    except Exception as e:
+        print(f"Error fetching pdf from Cloudinary: {e}")
+        return {"pdf": ''}
+
 """ ** POST Methods: Certifications Table APIs ** """
 class SignatureLine(Flowable):
     def __init__(self, width):
@@ -1546,8 +1605,10 @@ def create_Certification(certification_data: CertificationData, db: Session = De
 
         new_certification = Certifications(Title=certification_data.title,
                                             ElectionId=certification_data.election_id,
+                                            StudentNumber=student.StudentNumber,
                                             Date=certification_data.date,
                                             AdminSignatoryQuantity=certification_data.quantity,
+                                            AssetId='', # Initialize first
                                             created_at=datetime.now(),
                                             updated_at=datetime.now())
         db.add(new_certification)
@@ -1652,6 +1713,9 @@ def create_Certification(certification_data: CertificationData, db: Session = De
                                public_id = f"Directory/Certifications/{pdf_name}",
                                tags=[f'certification_{new_certification.CertificationId}'])
         
+        new_certification.AssetId = upload_result['asset_id']
+        db.commit()
+
         # Delete the local file
         os.remove(pdf_name)
 
