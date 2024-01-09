@@ -401,6 +401,30 @@ class OrganizationMember(Base):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
+    
+class ElectionAppeals(Base):
+    __tablename__ = "ElectionAppeals"
+
+    ElectionAppealsId = Column(Integer, primary_key=True)
+    StudentNumber = Column(String(15), unique=True)
+    AppealDetails = Column(Text)
+    AppealResponse = Column(Text)
+    AppealStatus = Column(String)
+    AttachmentAssetId = Column(String)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    def to_dict(self):
+        return {
+            "ElectionAppealsId": self.ElectionAppealsId,
+            "StudentNumber": self.StudentNumber,
+            "AppealDetails": self.AppealDetails,
+            "AppealResponse": self.AppealResponse,
+            "AppealStatus": self.AppealStatus,
+            "AttachmentAssetId": self.AttachmentAssetId,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
 
 #########################################################
 """ Comelec Portal Table Models """
