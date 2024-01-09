@@ -213,8 +213,10 @@ class Certifications(Base):
     CertificationId = Column(Integer, primary_key=True)
     Title = Column(String)
     ElectionId = Column(Integer, ForeignKey('Election.ElectionId'))
+    StudentNumber = Column(String(15), ForeignKey('Student.StudentNumber'))
     Date = Column(Date)
     AdminSignatoryQuantity = Column(String)
+    AssetId = Column(String)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -223,8 +225,10 @@ class Certifications(Base):
             "CertificationId": self.CertificationId,
             "Title": self.Title,
             "ElectionId": self.ElectionId,
+            "StudentNumber": self.StudentNumber,
             "Date": self.Date.isoformat() if self.Date else None,
             "AdminSignatoryQuantity": self.AdminSignatoryQuantity,
+            "AssetId": self.AssetId,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
