@@ -41,7 +41,7 @@ from passlib.context import CryptContext
 from cloudinary.api import resources_by_tag, delete_resources_by_tag, delete_folder
 from services import send_verification_code_email, send_pass_code_queue_email, send_pass_code_manual_email, send_coc_status_email, send_partylist_status_email
 
-from models import Student, Announcement, Rule, Guideline, AzureToken, Election, SavedPosition, CreatedElectionPosition, Code, StudentPassword, PartyList, CoC, InsertDataQueues, Candidates, RatingsTracker, VotingsTracker, ElectionAnalytics, ElectionWinners, Certifications, CreatedAdminSignatory, StudentOrganization, OrganizationOfficer, OrganizationMember
+from models import Student, Announcement, Rule, Guideline, AzureToken, Election, SavedPosition, CreatedElectionPosition, Code, StudentPassword, PartyList, CoC, InsertDataQueues, Candidates, RatingsTracker, VotingsTracker, ElectionAnalytics, ElectionWinners, Certifications, CreatedAdminSignatory, StudentOrganization, OrganizationOfficer, OrganizationMember, ElectionAppeals
 #################################################################
 """ Settings """
 
@@ -2829,13 +2829,47 @@ def get_Winners_By_Election_Id(election_id: int, db: Session = Depends(get_db)):
 
 
 #################################################################
-## RatingsTracker APIs ## 
+## ElectionAppeals APIs ## 
+class ElectionAppealsData(BaseModel):
+    student_number: str
+    appeal_details: str
+    attachment: str
 
-""" RatingsTracker Table APIs """
+""" ElectionAppeals Table APIs """
 
-""" ** GET Methods: RatingsTracker Table APIs ** """
+""" ** GET Methods: ElectionAppeals Table APIs ** """
 
-""" ** POST Methods: All about RatingsTracker Table APIs ** """
+""" ** POST Methods: All about ElectionAppeals Table APIs ** """
+@router.post("/election-appeals/submit", tags=["ElectionAppeals"])
+def save_Election_Appeals(election_appeals_data: ElectionAppealsData, db: Session = Depends(get_db)):
+    # Check if the student number exists in the database
+    student = db.query(Student).filter(Student.StudentNumber == election_appeals_data.student_number).first()
+
+    if not student:
+        return JSONResponse(status_code=404, content={"error": "Student number does not exist."})
+    
+    # Add a new record in the ElectionAppeals table
+    new_appeal = ElectionAppeals(StudentNumber=election_appeals_data.student_number,
+                                        AppealDetails=election_appeals_data.appeal_details,
+                                        AppealStatus='Pending',
+                                        created_at=datetime.now(),
+                                        updated_at=datetime.now())
+    
+    db.add(new_appeal)
+    db.commit()
+
+    if election_appeals_data.attachment:
+        response = cloudinary.uploader.upload(election_appeals_data.attachment, 
+                                            public_id=f"Appeals/appeal_{new_appeal.ElectionAppealsId}",
+                                            tags=[f'appeal_{new_appeal.ElectionAppealsId}'])
+        
+        asset_id = response["asset_id"]
+
+        new_appeal.AttachmentAssetId = asset_id
+        db.commit()
+
+    return {"response": "success"}
+
 
 #################################################################
 app.include_router(router)
