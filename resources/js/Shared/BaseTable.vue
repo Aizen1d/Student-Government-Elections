@@ -46,7 +46,7 @@
     
     .my-table {
         font-size: 18px;
-        font-family: Arial, sans-serif;
+        font-family: 'Inter', sans-serif;
         border-collapse: collapse;
     }
 
@@ -94,6 +94,7 @@
     .my-table thead tr {
         color: #ffffff;
         background-color: #B90321 !important;
+        font-family:Arial, Helvetica, sans-serif;
     }
 
     .active-row {
