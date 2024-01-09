@@ -30,6 +30,8 @@
             <h1 class="my-5">No elections are currently happening at the moment.</h1>
         </div>
     </div>
+
+    <Appeal></Appeal>
 </template>
 
 <script>
@@ -37,6 +39,7 @@
     import Navbar from '../Shared/Navbar.vue'
     import BaseContainer from '../Shared/BaseContainer.vue'
     import BaseTable from '../Shared/BaseTable.vue'
+    import Appeal from '../Shared/Appeal.vue'
 
     import { ref } from 'vue'
     import axios from 'axios'
@@ -93,6 +96,7 @@
             Navbar,
             BaseContainer,
             BaseTable,
+            Appeal,
         },
         methods:{
             selectItem(item){
