@@ -19,7 +19,7 @@ cloudinary.config(
   secure=True,
 )
 
-SQLALCHEMY_DATABASE_URL = "postgresql://postgres:123@localhost/SGE_db"
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL
