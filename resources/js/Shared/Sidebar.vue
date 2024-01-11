@@ -90,10 +90,12 @@ export default {
                     <span>Directory</span>
                 </Link>
 
-                <a href="" class="main list-group-item py-2"  aria-expanded="true">
+                <Link href="/comelec/appeal-review" 
+                    :class="{ 'active': $inertia.page.url.startsWith('/comelec/appeal-review') }" 
+                    class="main list-group-item py-2">
                     <img class="side-icon" src="../../images/icons/appeal.svg" alt="Icon" height="35" width="35">
                     <span>Appeal Review</span>
-                </a>
+                </Link>
 
                 <a href="" class="main list-group-item py-2"  aria-expanded="true">
                     <img class="side-icon" src="../../images/icons/reports.svg" alt="Icon" height="35" width="35">
