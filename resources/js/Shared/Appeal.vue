@@ -12,7 +12,7 @@
             <textarea v-model="appeal_details" :disabled="submitting" class="form-control margin details" type="text" name="desc"></textarea>
 
             <label class="form-label">Upload Attachment <span style="font-family: Arial, Helvetica, sans-serif; font-size: 14px;">(Optional. 3mb max)</span> <ToolTip class="mx-2"><slot>If you have multiple images to provide, please compile it in pdf.</slot></ToolTip></label>
-            <input @change="updateAttachment" :disabled="submitting" type="file" accept="image/*,.pdf" style="border: 1px solid #c2c2c2;" name="attachment" class="form-control">
+            <input ref="attachment" @change="updateAttachment" :disabled="submitting" type="file" accept="image/*,.pdf" style="border: 1px solid #c2c2c2;" name="attachment" class="form-control">
 
             <div class="appeal-buttons">
                 <button class="cancel-button" :disabled="submitting" @click.prevent="closeModal">Cancel</button>
@@ -64,7 +64,9 @@
             clearInputs(){
                 this.student_number = '';
                 this.appeal_details = '';
-                this.attachment = '';
+                
+                this.attachment = null;
+                this.$refs.attachment.value = '';
             },
             updateAttachment(event) {
                 const reader = new FileReader();
