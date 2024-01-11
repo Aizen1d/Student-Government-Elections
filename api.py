@@ -39,7 +39,7 @@ import requests
 
 from passlib.context import CryptContext
 from cloudinary.api import resources_by_tag, delete_resources_by_tag, delete_folder
-from services import send_verification_code_email, send_pass_code_queue_email, send_pass_code_manual_email, send_coc_status_email, send_partylist_status_email
+from services import send_verification_code_email, send_pass_code_queue_email, send_pass_code_manual_email, send_coc_status_email, send_partylist_status_email, send_appeal_response_email
 
 from models import Student, Announcement, Rule, Guideline, AzureToken, Election, SavedPosition, CreatedElectionPosition, Code, StudentPassword, PartyList, CoC, InsertDataQueues, Candidates, RatingsTracker, VotingsTracker, ElectionAnalytics, ElectionWinners, Certifications, CreatedAdminSignatory, StudentOrganization, OrganizationOfficer, OrganizationMember, ElectionAppeals
 #################################################################
@@ -2838,6 +2838,55 @@ class ElectionAppealsData(BaseModel):
 """ ElectionAppeals Table APIs """
 
 """ ** GET Methods: ElectionAppeals Table APIs ** """
+@router.get("/election-appeals/all", tags=["ElectionAppeals"])
+def get_All_Election_Appeals(db: Session = Depends(get_db)):
+    appeals = db.query(ElectionAppeals).order_by(ElectionAppeals.ElectionAppealsId).all()
+
+    appeals_with_student = []
+    for i, appeal in enumerate(appeals):
+        student = db.query(Student).filter(Student.StudentNumber == appeal.StudentNumber).first()
+        appeal_dict = appeal.to_dict()
+
+        try:
+            if appeal.AttachmentAssetId:
+                attachment = cloudinary.api.resource_by_asset_id(appeal.AttachmentAssetId)
+                appeal_dict["AttachmentLink"] = attachment["secure_url"] if attachment else ""
+
+        except Exception as e:
+            print(f"Error fetching Attachment from Cloudinary: {e}")
+            appeal_dict["AttachmentLink"] = ""
+
+        appeal_dict["Student"] = student.to_dict() if student else {}
+        appeals_with_student.append(appeal_dict)
+
+    return {"appeals": appeals_with_student}
+
+@router.get("/election-appeals/{id}", tags=["ElectionAppeals"])
+def get_Election_Appeals_By_Id(id: int, db: Session = Depends(get_db)):
+    appeal = db.query(ElectionAppeals).get(id)
+
+    if not appeal:
+        return JSONResponse(status_code=404, content={"detail": "Appeal not found"})
+
+    student = db.query(Student).filter(Student.StudentNumber == appeal.StudentNumber).first()
+    appeal_dict = appeal.to_dict()
+
+    # Get the attachment from cloudinary using the candidate.displayphoto asset id in cloudinary
+    try:
+        if appeal.AttachmentAssetId:
+            attachment = cloudinary.api.resource_by_asset_id(appeal.AttachmentAssetId)
+            appeal_dict["Attachment"] = attachment["secure_url"] if attachment else ""
+
+            # Get the name of the attachment
+            appeal_dict["AttachmentName"] = attachment['secure_url'].split('/')[-1]
+
+    except Exception as e:
+        print(f"Error fetching Attachment from Cloudinary: {e}")
+        appeal_dict["Attachment"] = ""
+
+    appeal_dict["Student"] = student.to_dict() if student else {}
+
+    return {"appeal": appeal_dict}
 
 """ ** POST Methods: All about ElectionAppeals Table APIs ** """
 @router.post("/election-appeals/submit", tags=["ElectionAppeals"])
@@ -2870,6 +2919,34 @@ def save_Election_Appeals(election_appeals_data: ElectionAppealsData, db: Sessio
 
     return {"response": "success"}
 
+class ElectionAppealsRespondData(BaseModel):
+    id: int
+    subject: str
+    response: str
+
+@router.post("/election-appeals/respond", tags=["ElectionAppeals"])
+def save_Election_Appeals_Respond(data: ElectionAppealsRespondData, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    # Check if the appeal exists in the database
+    appeal = db.query(ElectionAppeals).get(data.id)
+
+    if not appeal:
+        return JSONResponse(status_code=404, content={"error": "Appeal does not exist."})
+
+    # Update the appeal status in the ElectionAppeals table
+    appeal.AppealEmailSubject = data.subject
+    appeal.AppealResponse = data.response
+    appeal.AppealStatus = 'Responded'
+    appeal.updated_at = datetime.now()
+
+    db.commit()
+
+    # Get the email of student
+    student = db.query(Student).filter(Student.StudentNumber == appeal.StudentNumber).first()
+    student_email = student.EmailAddress
+
+    background_tasks.add_task(send_appeal_response_email(student_email, data.subject, data.response, data.id))
+
+    return {"response": "success"}
 
 #################################################################
 app.include_router(router)
