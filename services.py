@@ -13,6 +13,9 @@ import os
 EMAIL = os.getenv("EMAIL")
 PASSWORD = os.getenv("PASSWORD")
 
+#########################################################
+""" Send email verification code to student"""
+
 def send_verification_code_email(student_number, student_email, code):
     # Set up the SMTP server
     server = smtplib.SMTP('smtp.gmail.com', 587)
@@ -44,6 +47,9 @@ def send_verification_code_email(student_number, student_email, code):
     # Send the email
     server.send_message(msg)
     server.quit()
+
+#########################################################
+""" Send email pass code to student from excel/csv file"""
 
 def send_pass_code_queue_email(student_number, student_email, pass_code, queue_id):
     try:
@@ -97,6 +103,9 @@ def send_pass_code_queue_email(student_number, student_email, pass_code, queue_i
 
         db.commit()
 
+#########################################################
+""" Send email pass code to student from manual API"""
+
 def send_pass_code_manual_email(student_number, student_email, pass_code):
     try:
         # Set up the SMTP server
@@ -129,6 +138,9 @@ def send_pass_code_manual_email(student_number, student_email, pass_code):
 
     except Exception as e:
         print(e)
+
+#########################################################
+""" Send email to status of candidacy application """
 
 def send_coc_status_email(student_number, student_email, status, role, election_name):
     # Set up the SMTP server
@@ -179,6 +191,9 @@ def send_coc_status_email(student_number, student_email, status, role, election_
     server.send_message(msg)
     server.quit()
 
+#########################################################
+""" Send email to status of partylist application """
+
 def send_partylist_status_email(party_email, status, partylist_name, election_name):
     # Set up the SMTP server
     server = smtplib.SMTP('smtp.gmail.com', 587)
@@ -221,6 +236,40 @@ def send_partylist_status_email(party_email, status, partylist_name, election_na
     else:
         body = reject
 
+    msg.attach(MIMEText(body, 'html'))
+
+    # Send the email
+    server.send_message(msg)
+    server.quit()
+
+#########################################################
+""" Send email to appeal response from student """
+
+def send_appeal_response_email(student_email, subject, body_response, ticket_number):
+    # Set up the SMTP server
+    server = smtplib.SMTP('smtp.gmail.com', 587)
+    server.starttls()
+    server.login(EMAIL, PASSWORD)
+
+    # Create the email
+    msg = MIMEMultipart()
+    msg['From'] = EMAIL
+    msg['To'] = student_email
+    msg['Subject'] = subject
+
+    body_message_template = f"Your request ticket (#{ticket_number}) has been received, after reviewing your appeal, we have the following response:"
+
+    body = f"""
+        <html>
+        <body>
+            <p>Thank you for contacting SGE support team.</p>
+            <p>{body_message_template}</p>
+            <p style="margin-top: 0.2em; margin-bottom: 0.2em;">{body_response}</p>
+        </body>
+        </html>
+    """
+    
+    # Attach the body to the email
     msg.attach(MIMEText(body, 'html'))
 
     # Send the email
