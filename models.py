@@ -408,6 +408,7 @@ class ElectionAppeals(Base):
     ElectionAppealsId = Column(Integer, primary_key=True)
     StudentNumber = Column(String(15), unique=True)
     AppealDetails = Column(Text)
+    AppealEmailSubject = Column(String)
     AppealResponse = Column(Text)
     AppealStatus = Column(String)
     AttachmentAssetId = Column(String)
@@ -419,6 +420,7 @@ class ElectionAppeals(Base):
             "ElectionAppealsId": self.ElectionAppealsId,
             "StudentNumber": self.StudentNumber,
             "AppealDetails": self.AppealDetails,
+            "AppealEmailSubject": self.AppealEmailSubject,
             "AppealResponse": self.AppealResponse,
             "AppealStatus": self.AppealStatus,
             "AttachmentAssetId": self.AttachmentAssetId,
