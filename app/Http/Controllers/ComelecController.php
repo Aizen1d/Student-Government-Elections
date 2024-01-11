@@ -169,23 +169,4 @@ class ComelecController extends Controller
     { 
         return inertia('Comelec/AppealReview');
     }
-
-    public function appealReviewView(Request $request) 
-    { 
-        $id = $request->id;
-
-        if (!$id) {
-            return redirect()->route('comelec.appeal.review');
-        }
-
-        $checkIfExisting = ElectionAppeals::where('ElectionAppealsId', $id)->first();
-
-        if (!$checkIfExisting) {
-            return redirect()->route('comelec.appeal.review');
-        }
-
-        return inertia('Comelec/AppealReviewView', [
-            'id' => $id,
-        ]);
-    }
 }
