@@ -1,7 +1,10 @@
 <template>
     <nav class="navbar navbar-expand-lg nav navbar-dark">
-        <div class="container-fluid">
-            <h1 class="system mx-5 my-2">PUPQC COMELEC Portal</h1>
+        <div class="navbar-contents">
+            <div>
+                <img src="../../images/Navbar/puplogo.png" alt="" class="puplogo">
+                <img src="../../images/Navbar/portal.png" alt="" class="pcplogo">
+            </div>
 
             <div class="collapse navbar-collapse sections">
                 <ul class="navbar-nav">
@@ -63,35 +66,44 @@
 </script>
 
 <style scoped>
-    .active{
-        color: #eace2c !important;
-    }
     .nav{
-        background-color: #B90321;
-        padding: 1% 0 1% 0;
+        background-color: #ffffff;
+        box-shadow: 0px 3px 5px rgba(167, 165, 165, 0.5);
+        padding: 0.6% 0%;
     }
 
-    .system{
-        color: white;
-        font-size: 23px;
-        font-family: 'Source Sans Pro Black', sans-serif;
-        font-weight: 800;
+    .active{
+        color: #B90321 !important;
+    }
+
+    .navbar-contents{
+        margin: 0% 8%;
+        display: flex;
+        align-items: center;
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .puplogo{
+        width: 58px;
+    }
+
+    .pcplogo{
+        width: 200px;
+        margin: 0px 30px;
     }
 
     .content{
-        color: white;
+        color: black;
         font-size: 18px;
-        font-family: 'Source Sans Pro Black', sans-serif;
     }
 
-    .content:active,
-    .content:hover,
-    .content:focus{
-        color: #eace2c;
+    .content:hover{
+        color: #800000;
     }
 
     .sections{
         justify-content: end !important;
-    }
+}
 
 </style>
