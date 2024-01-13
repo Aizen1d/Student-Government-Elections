@@ -42,7 +42,7 @@
                 <span class="header-title">RECENT ANNOUNCEMENTS</span>
             </div>
             <div>
-                <button class="view-button">View All</button>
+                <button class="view-button" @click.prevent="redirectToAllAnnouncements">View All</button>
             </div>
         </div>
         
@@ -142,6 +142,9 @@
             ImageSkeleton
         },
         methods: {
+            redirectToAllAnnouncements() {
+                router.visit('/announcements');
+            },
             displaySelectedRecentAnnouncement(id) {
                 router.visit(`/announcements/view?id=${id}`);
             },
