@@ -2,98 +2,133 @@
     <title>Elections View - COMELEC Portal</title>
     <Navbar></Navbar>
 
-    <div v-if="isElectionLoading"></div>
-    <div v-else class="main">
+    <main class="main-margin" v-if="isElectionSuccess">
+        <h1 class="current-page">
+            <span class="header" @click.prevent="returnPage">ONGOING ELECTIONS</span> 
+            <span class="arrow"> ></span>
+            {{ electionData.election.ElectionName }} 
+        </h1>
 
-        <div class="row">
-            <div class="col-4">
-                <h1 class="path">
-                    <span class="return" @click="returnPage">Elections</span>&nbsp;>&nbsp;{{ electionData.election.ElectionName }}
-                </h1>
+        <div class="election">
+            <div class="election-wrapper">
+                <div class="election-header">
+                    <div class="centered">
+                        <img :src="electionData.organization_logo" alt="" class="election-logo">
+                        <span class="election-title">{{ electionData.election.ElectionName }}</span>
+                        <span class="election-label">{{ electionData.student_organization_name }}</span>
+                        <span class="election-label">{{ electionData.election.Semester }} of S.Y {{ electionData.election.SchoolYear }}</span>
+                        <div class="end">
+                            <button class="header-button" @click.prevent="seeCandidates">
+                                <img src="../../images/Elections/voters.svg" alt="" class="header-svg">
+                            </button>
 
-                <div class="my-2">
-                    <h1 class="py-1 election-label">{{ electionData.election.Semester }} of S.Y. {{ electionData.election.SchoolYear }}</h1>
-                    <h1 class="election-label">{{ electionData.student_organization_name }} Organization</h1>
+                            <button class="header-button mx-3" @click.prevent="seeRankings" :disabled="!isAboveVotingStartPeriod">
+                                <img src="../../images/Elections/rank.svg" alt="" class="header-svg" :class="{ 'isRankingsDisabled': !isAboveVotingStartPeriod }">
+                            </button>
+
+                            <button class="header-button" @click.prevent="seeWinners" :disabled="!isVotingPeriodEnded">
+                                <img src="../../images/Elections/result.svg" alt="" class="header-svg result" :class="{ 'isWinnersDisabled': !isVotingPeriodEnded }">
+                            </button>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div class="col-8" style="text-align: end;">
-                <ActionButton class="mx-2 px-5 action-button" @click="seeCandidates" :disabled="false">Candidates</ActionButton>
-                <ActionButton class="mx-2 px-5 action-button" @click="fileCoc" :disabled="!isFilingPeriod">File a COC</ActionButton>
-                <ActionButton class="mx-2 px-5 action-button" @click="registerParty" :disabled="!isFilingPeriod">Register Party</ActionButton>
-                <div class="my-3"></div>
-                <ActionButton class="mx-2 px-5 action-button" @click="seePartylists" :disabled="false">Partylists</ActionButton>
-                <ActionButton class="mx-2 px-5 action-button" @click="seeRankings" :disabled="!isAboveVotingStartPeriod">Rankings</ActionButton>
-                <ActionButton class="mx-2 px-5 action-button" @click="seeWinners" :disabled="!isVotingPeriodEnded">Winners</ActionButton>
+
+                <hr class="line">
+
+                <div class="card-set">
+                    <div class="card" @mouseenter="toggleCardHover('candidate')" @mouseleave="toggleCardHover('candidate')">
+                        <div class="card-wrapper">
+                            <div class="card-information">
+                                <img src="../../images/Elections/candidate.svg" alt="" class="card-svg">
+                                <div v-if="!checkCardIfHovered('candidate')" class="count">
+                                    <span class="quantity">{{ electionData.number_of_candidates }}</span>
+                                    <span class="quantity-label">Candidates</span>
+                                </div>
+                                <div v-else class="count">
+                                    <div @click.prevent="fileCoc(election)" style="cursor: pointer;" class="select"><span class="action"> File a CoC</span></div>
+                                    <div @click.prevent="viewCandidates(election)" style="cursor: pointer;" class="select"><span class="action"> View Candidates</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card" @mouseenter="toggleCardHover('party')" @mouseleave="toggleCardHover('party')">
+                        <div class="card-wrapper">
+                            <div class="card-information">
+                                <img src="../../images/Elections/party.svg" alt="" class="card-svg">
+                                <div v-if="!checkCardIfHovered('party')" class="count">
+                                    <span class="quantity">{{ electionData.number_of_partylists }}</span>
+                                    <span class="quantity-label">Partylists</span>
+                                </div>
+                                <div v-else class="count">
+                                    <div @click.prevent="registerParty(election)" style="cursor: pointer;" class="select"><span class="action"> Register Party List</span></div>
+                                    <div @click.prevent="viewPartylists(election)" style="cursor: pointer;" class="select"><span class="action"> View Party Lists</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-wrapper">
+                            <div class="card-information">
+                                <img src="../../images/Elections/position.svg" alt="" class="card-svg">
+                                <div class="count">
+                                    <span class="quantity">{{ electionData.number_of_positions }}</span>
+                                    <span class="quantity-label">Positions</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <h1 class="title">Election Timeline</h1>
+
+                <div class="timeline">
+                    <div class="timeline-wrapper">
+                        <ul class="timeline-line">
+                            <li class="period" :class="{'active': hasStarted(electionData.election.CoCFilingStart)}">
+                                <span class="period-name">FILING PERIOD</span>
+                                <span class="period-dates">{{ getDateTime(electionData.election.CoCFilingStart) }}</span>
+                                <span class="period-dates">to</span>
+                                <span class="period-dates">{{ getDateTime(electionData.election.CoCFilingEnd) }}</span>
+                            </li>
+                            <li class="period" :class="{'active': hasStarted(electionData.election.CampaignStart)}">
+                                <span class="period-name">CAMPAIGN PERIOD</span>
+                                <span class="period-dates">{{ getDateTime(electionData.election.CampaignStart) }}</span>
+                                <span class="period-dates">to</span>
+                                <span class="period-dates">{{ getDateTime(electionData.election.CampaignEnd) }}</span>
+
+                            </li>
+                            <li class="period" :class="{'active': hasStarted(electionData.election.VotingStart)}">
+                                <span class="period-name">VOTING PERIOD</span>
+                                <span class="period-dates">{{ getDateTime(electionData.election.VotingStart) }}</span>
+                                <span class="period-dates">to</span>
+                                <span class="period-dates">{{ getDateTime(electionData.election.VotingEnd) }}</span>
+                            </li>
+                            <li class="period" :class="{'active': hasStarted(electionData.election.AppealStart)}">
+                                <span class="period-name">APPEAL PERIOD</span>
+                                <span class="period-dates">{{ getDateTime(electionData.election.AppealStart) }}</span>
+                                <span class="period-dates">to</span>
+                                <span class="period-dates">{{ getDateTime(electionData.election.AppealEnd) }}</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h1 class="title" v-if="electionData.positions.length > 1">Positions</h1>
+                <h1 class="title" v-else>Position</h1>
+
+                <div class="position-set">
+                    <div class="position" v-for="(position, index) in electionData.positions">
+                        <div class="position-wrapper">
+                            <div class="position-information">
+                                <span class="quantity">{{ position.PositionQuantity }}</span>
+                                <span>{{ position.PositionName }}</span>
+                            </div> 
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-
-        <hr>
-
-        <div class="timeline">
-            <h1>Election Timeline</h1>
-            <div class="card text-center">
-                <div class="card-body">
-                    <h6 class="card-title">ELECTION PERIOD</h6>
-                    <p class="card-text">{{ formattedElectionData.ElectionStart }}
-                        <br> to <br>{{ formattedElectionData.ElectionEnd }}
-                    </p>
-                </div>
-            </div>
-            
-            <div class="row my-4">
-                <div class="col-xl-3 col-sm-6d-flex">
-                    <div class="card text-center">
-                        <div class="card-body">
-                            <h6 class="card-title">FILING PERIOD</h6>
-                            <p class="card-text">{{ formattedElectionData.CoCFilingStart }}
-                                <br> to <br>{{ formattedElectionData.CoCFilingEnd }}</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xl-3 col-sm-6d-flex">
-                    <div class="card text-center">
-                        <div class="card-body">
-                            <h6 class="card-title">CAMPAIGN PERIOD</h6>
-                            <p class="card-text">{{ formattedElectionData.CampaignStart }}
-                                <br> to <br>{{ formattedElectionData.CampaignEnd }}</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xl-3 col-sm-6d-flex">
-                    <div class="card text-center">
-                        <div class="card-body">
-                            <h6 class="card-title">VOTING PERIOD</h6>
-                            <p class="card-text">{{ formattedElectionData.VotingStart }}
-                                <br> to <br>{{ formattedElectionData.VotingEnd }}</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xl-3 col-sm-6d-flex">
-                    <div class="card text-center">
-                        <div class="card-body">
-                            <h6 class="card-title">APPEAL PERIOD</h6>
-                            <p class="card-text">{{ formattedElectionData.AppealStart }}
-                                <br> to <br>{{ formattedElectionData.AppealEnd }}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <hr>
-            
-            <div class="positions">
-                <h1 v-if="electionData.positions.length <= 1">
-                    Position and Winner Quantity
-                </h1>
-                <h1 v-else>
-                    Positions and Winner Quantity
-                </h1>
-                <ul v-for="(position, index) in electionData.positions" :key="index">
-                    <li>{{ position.PositionName }} ({{ position.PositionQuantity }})</li>
-                </ul>  
-            </div>
-        </div>
-    </div>
+    </main>
 </template>
 
 <script>
@@ -105,11 +140,17 @@
     import { ref, watch, watchEffect } from 'vue'
     import { useQuery } from "@tanstack/vue-query";
     import { router } from '@inertiajs/vue3';
-
+    
     export default {
         setup(props) {
             const id = ref(Number(props.id))
-            let formattedElectionData = ref(null);
+            const isCardHovered = ref([]);
+
+            isCardHovered.value.push({
+                id: id.value,
+                candidate: false,
+                party: false,
+            })
 
             const fetchElectionView = async () => {
                 const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/election/view/${id.value}`)
@@ -126,59 +167,14 @@
                         queryFn: fetchElectionView,
                     })
 
-            const getPartylistsOnThisElection = async () => {
-                const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/partylist/election/${id.value}`)
-                console.log(`Get partylists on election with id ${id.value} successful. Duration: ${response.duration}ms`)
-
-                return response.data.partylists;
-            }
-
-            const { data: partylistsData,
-                    isLoading: isPartylistsLoading,
-                    isSuccess: isPartylistsSuccess,
-                    isError: isPartylistsError, } =
-                    useQuery({
-                        queryKey: [`getPartylistsOnThisElection-${id.value}`],
-                        queryFn: getPartylistsOnThisElection,
-                    })
-
-            const formatDate = (dateString) => {
-                const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
-                return dateString ? new Date(dateString).toLocaleString('en-US', options) : '';
-            }
-
-            watchEffect(() => {
-                if (isElectionSuccess.value) {
-                    formattedElectionData.value = {
-                        ...electionData.value,
-                        ElectionStart: formatDate(electionData.value.election.ElectionStart),
-                        ElectionEnd: formatDate(electionData.value.election.ElectionEnd),
-                        CoCFilingStart: formatDate(electionData.value.election.CoCFilingStart),
-                        CoCFilingEnd: formatDate(electionData.value.election.CoCFilingEnd),
-                        CampaignStart: formatDate(electionData.value.election.CampaignStart),
-                        CampaignEnd: formatDate(electionData.value.election.CampaignEnd),
-                        VotingStart: formatDate(electionData.value.election.VotingStart),
-                        VotingEnd: formatDate(electionData.value.election.VotingEnd),
-                        AppealStart: formatDate(electionData.value.election.AppealStart),
-                        AppealEnd: formatDate(electionData.value.election.AppealEnd),
-                    };
-                }
-            })
-
             return {
                 id,
+                isCardHovered,
 
                 electionData,
                 isElectionLoading,
                 isElectionSuccess,
                 isElectionError,
-
-                partylistsData,
-                isPartylistsLoading,
-                isPartylistsSuccess,
-                isPartylistsError,
-
-                formattedElectionData,
             }
         },
         components:{
@@ -217,6 +213,56 @@
             returnPage(){
                 router.visit('/elections')
             },
+            fileCoc(election){
+                router.visit('/elections/view/file-coc', {
+                    data: {
+                        id: this.id,
+                    }
+                })
+            },
+            registerParty(election){
+                router.visit('/elections/view/register-party', {
+                    data: {
+                        id: this.id,
+                    }
+                })
+            },
+            viewCandidates(election){
+                router.visit('/directory/candidates/view', {
+                    data: {
+                        id: this.id,
+                    }
+                })
+            },
+            viewPartylists(election){
+                router.visit('/directory/partylists/view', {
+                    data: {
+                        id: this.id,
+                    }
+                })
+            },
+            getDateTime(date){
+                let getDate = new Date(date);
+
+                let options = { 
+                    month: 'long', 
+                    day: 'numeric', 
+                    year: 'numeric', 
+                    hour: 'numeric', 
+                    minute: 'numeric', 
+                    hour12: true 
+                };
+
+                let formattedDate = getDate.toLocaleDateString('en-US', options);         
+                
+                return formattedDate;
+            },
+            hasStarted(date) {
+                let now = new Date();
+                let start = new Date(date);
+
+                return now >= start;
+            },
             seeCandidates(){
                 router.visit(`/directory/candidates/view`, {
                     data: {
@@ -224,27 +270,6 @@
                     }
                 })
             },  
-            fileCoc(){
-                router.visit('/elections/view/file-coc', {
-                    data: {
-                        id: this.id,
-                    }
-                })
-            },
-            registerParty(){
-                router.visit('/elections/view/register-party', {
-                    data: {
-                        id: this.id,
-                    }
-                })
-            },
-            seePartylists(){
-                if (this.partylistsData.length < 1) {
-                    return alert('There are no partylists registered for this election yet.')
-                }
-
-                router.visit('/directory/partylists')
-            },
             seeRankings(){
                 router.visit('/elections/view/rankings', {
                     data: {
@@ -259,94 +284,273 @@
                     }
                 })
             },
+            toggleCardHover(card){
+                this.isCardHovered[card] = !this.isCardHovered[card];
+            },
+            checkCardIfHovered(card){
+                return this.isCardHovered[card]
+            },
         },
     }
 </script>
 
 <style scoped>
-    .return{
-        font-weight: 800;
-        font-size: 30px;
-        color: #B90321;
+    .main-margin{
+        margin: 0% 8%;
     }
 
-    .return:hover{
+    .current-page{
+        margin: 1.5% 0%;
+        font-size: 28px;
+        font-weight: bold;
+        color: #800000 !important;
+    }
+
+    .arrow{
+        font-size: 28px;
+        font-weight: bold;
+        color: black !important;
+    }
+
+    .header{
+        margin: 1.5% 0%;
+        font-size: 28px;
+        font-weight: bold;
+        color: black !important;
+    }
+
+    .header:hover{
         cursor: pointer;
         text-decoration: underline;
     }
 
-    .path{
-        font-weight: 800;
+    .centered{
+        display: flex;
+        align-items: center;
+    }
+
+    .end{
+        margin-left: auto;
+    }
+
+    .election{
+        background-color: #ffffff;
+        box-shadow: 0px 3px 5px rgba(167, 165, 165, 0.5);
+        border-radius: 6px;
+        margin: 1.5% 0%;
+    }
+
+    .election-wrapper{
+        padding: 2%;
+    }
+
+    .election-header{
+        align-items: center;
+    }
+
+    .election-logo{
+        width: 50px;
+    }
+
+    .election-title{
         font-size: 30px;
-        color: black;
+        font-weight: bold;
+        color: #800000;
+        margin: 0% 1.5%;
     }
 
     .election-label{
-        font-weight: lighter;
-        font-size: 16px;
-        color: rgb(20, 20, 20);
-    }
-    .action-button{
-        width: 13rem !important;
-        height: 2.7rem !important;
+        margin: 0% 1%;
     }
 
-    .card{
-        border: none;
-        border-radius: 10px;
-        background-color: #F5F8F9;
-        box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.07), 0 6px 20px 0 rgba(0, 0, 0, 0.1);  
-    }
-    .main{
-        margin: 3% 5%;
-        font-family: 'Source Sans Pro', sans-serif;
+    .header-svg{
+        width: 35px;
     }
 
-    .btns{
+    .result{
+        filter: invert(74%) sepia(72%) saturate(2485%) hue-rotate(349deg) brightness(104%) contrast(88%);
+    }
+
+    .header-button{
+        border: transparent;
+        background-color: transparent;
+        align-items: center;
+        padding: 0%;
+    }
+
+    .line{
+        border: 0;
+        height: 2px;
+        background: rgb(249,249,249);
+        background: linear-gradient(90deg, rgba(249,249,249,1) 0%, rgba(217,217,217,1) 50%, rgba(249,249,249,1) 100%);
+        margin: 2% 0%;
+    }
+
+    .card-set{
         display: flex;
+        align-items: center;
         justify-content: space-between;
     }
 
-    .btns button{
-        font-size: 16px;
-        width: 10.9375em;
-        height: 3.15em;
+    .card{
+        width: 32%;
+        border-radius: 0%;
         border: transparent;
-        border-radius: 10px;
-        background-color: #850000;
-        box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.09), 0 6px 20px 0 rgba(0, 0, 0, 0.09);  
-        color: white;
-        font-family: 'Source Sans Pro', sans-serif;
-        transition: background-color 0.12s ease-in-out;
+        background-color: #ffffff;
+        box-shadow: 0px 3px 5px rgba(167, 165, 165, 0.5);
     }
 
-    .btns button:hover{
-        cursor: pointer;
-        background-color: #9b0000    
+    .card-wrapper{
+        padding: 3%;
     }
 
-    .btns button:disabled{
-        background-color: #d9d9d9;
+    .card-information{
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 0% 3%;
+    }
+
+    .card-svg{
+        width: 100px;
+    }
+
+    .count{
+        display: flex;
+        flex-direction: column;
+        text-align: end;
+    }
+
+    .quantity{
+        font-size: 50px;
+    }
+
+    .card:hover{
+        background-color: #F2F2F2;
+        
+        .card-svg{
+            filter: invert(35%) sepia(0%) saturate(0%) hue-rotate(178deg) brightness(94%) contrast(87%);
+        }
+    }
+
+    .select{
         color: black;
-        box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.05), 0 6px 20px 0 rgba(0, 0, 0, 0.07);  
+        text-decoration: none;
+        margin: 9% 0%;
     }
 
-    .timeline h6{
-        font-weight: 900;
-    }
-
-    .timeline h1{
-        margin: 1% 0%;
-        font-weight: 800;
-        font-size: 25px;
-    }
-
-    .positions li{
-        margin-top: 1%;
-        line-height: 110%;
-
-        font-weight: lighter;
-        font-size: 18px;
+    .select:hover{
+        font-weight: bold;
         color: black;
+    }
+
+    .title{
+        font-size: 22px;
+        color: #800000;
+        font-weight: bold;
+        margin: 1.5% 0%;
+    }
+
+    .timeline{
+        margin: 3% 0%;
+    }
+
+    .timeline-line{
+        display: flex;
+        justify-content: space-between;
+        position: relative;
+        padding-right: 32px;
+    }
+
+    .timeline-wrapper{
+        width: 100%;
+    }
+
+    .period{
+        list-style-type: none;
+        width: 25%;
+        position: relative;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+    }
+
+    .period::before{
+        content: " ";
+        line-height: 30px;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        border: 1px solid #800000;
+        display: block;
+        text-align: center;
+        margin: 0 auto 10px;
+        background-color: white;
+        z-index: 1;
+    }
+
+    .period::after{
+        content: "";
+        position: absolute;
+        width: 100%;
+        height: 2px;
+        background-color: #ddd;
+        top: 25px;
+        left: -50%;
+        z-index: 0;
+    }
+
+    .period-name{
+        font-weight: bold;
+    }
+
+    .period:first-child:after{
+        content: none;
+    }
+
+    .period.active{
+        z-index: 1;
+    }
+
+    .period.active:before{
+        border-color: #800000;
+        background-color: #800000
+    }
+
+    .period.active:after{
+        background-color: #800000;
+    }
+
+    .position-set{
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .position{
+        margin: 0.5% 1%;
+        width: 150px;
+        background-color: #ffffff;
+        box-shadow: 0px 3px 5px rgba(167, 165, 165, 0.5);
+    }
+
+    .position-wrapper{
+        padding: 2.5%;
+    }
+
+    .position-information{
+        display: flex;
+        align-items: center;
+        flex-direction: column;
+    }
+
+    .isRankingsDisabled:disabled{
+        color: #800000;
+    }
+
+    .isWinnersDisabled:disabled{
+        color: #800000;
     }
 </style>
