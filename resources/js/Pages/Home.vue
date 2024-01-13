@@ -2,146 +2,74 @@
     <title>Home - COMELEC Portal</title>
     <Navbar></Navbar>
 
-    <div>
-        <div class="main">
-            <img src="../../images/banner.jpg" class="main-ann" alt="">
+    <main>
+        <div class="banner">
+            <img src="../../images/Home/banner.jpg" alt="" class="banner-img">
         </div>
 
-        <div class="ongoing-elections">
-            <div class="header ongoing">
-                <h1>ONGOING ELECTIONS</h1>
-            </div>
-
-            <div id="carouselExampleIndicators" class="carousel slide">
-                <div class="carousel-indicators">
-                    <button type="button" v-for="(image, index) in images" 
-                        data-bs-target="#carouselExampleIndicators"
-                        :data-bs-slide-to="index" 
-                        :class="{ active: index === 0 }" 
-                        :key="index"
-                        :aria-label="'Slide ' + (index + 1)">
-                    </button>
-                </div>
-
-                <div class="elections">
-                    <div class="row election active">
-                        <div class="col-3">
-                            <div class="logo">
-                                <img src="../../images/Home/puplogo.png" alt="" width="250px">
-                            </div>
-                        </div>
-                        <div class="col-9 election-info">
-                            <div class="">
-                                <p class="type">SSC</p>
-                                <h1>The Great SSC Vote-Off SY 2023!</h1>
-                                <p class="">The filing and registration period for our upcoming election starts on <strong>October 14, 2023</strong>, 
-                                    and ends on <strong>October 20, 2023</strong>. We look forward to an engaging and fair election. 
-                                    Let’s make our voices heard! Remember, every vote counts.
-                                </p>
-                            </div>
-                        </div>
+        <div class="features">
+            <div class="features-wrapper">
+                <a href="" class="select-feature">
+                    <div class="feature-information">
+                        <img src="../../images/Home/student.png" alt="" class="feature-img">
+                        <span class="feature-title">FILE FOR CANDIDACY</span>
+                        <span class="feature-description">Step up, be the leader your school deserves.</span>
                     </div>
-                </div>  
-
-                <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="prev">
-                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                    <span class="visually-hidden">Previous</span>
-                </button>
-                <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="next">
-                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                    <span class="visually-hidden">Next</span>
-                </button>
+                </a>
+                
+                <a href="" class="select-feature">
+                    <div class="feature-information">
+                        <img src="../../images/Home/team.png" alt="" class="feature-img">
+                        <span class="feature-title">REGISTER YOUR PARTY</span>
+                        <span class="feature-description">Create your crew, let your collective voices echo.</span>
+                    </div>
+                </a>
+    
+                <a href="" class="select-feature">
+                    <div class="feature-information">
+                        <img src="../../images/Home/talk.png" alt="" class="feature-img">
+                        <span class="feature-title">FILE AN APPEAL</span>
+                        <span class="feature-description">Stand tall, question the status quo for what’s right.</span>
+                    </div>
+                </a>
             </div>
         </div>
 
-        <div class="ann">
-            <div class="row header" style="display: flex;">
-                <div class="col">
-                    <h1>RECENT ANNOUNCEMENTS</h1>
-                </div>
-                <div class="col view">
-                    <Link href="/announcements">VIEW ALL →</Link>
-                </div>
+        <hr class="line">
+        
+        <div class="header">
+            <div>
+                <span class="header-title">RECENT ANNOUNCEMENTS</span>
             </div>
-
-            <ImageSkeleton v-if="isRecentLoading" 
+            <div>
+                <button class="view-button">View All</button>
+            </div>
+        </div>
+        
+        <ImageSkeleton v-if="isRecentLoading" 
                             :loading="isRecentLoading" 
-                            :itemCount="3" 
+                            :itemCount="2" 
                             :borderRadius="'10px'"
                             :imageWidth="'27vw'" 
                             :imageHeight="'40vh'"
                             :containerMargin="'0% 1.7%'"
                             :itemMargin="'1em'">
-            </ImageSkeleton>
-            <div v-else class="announcements">
-                <div class="row" v-for="(recent, index) in recentData" :key="index">
-                    <div class="col-11 mx-4">
-                        <div class="announcement" style="cursor: pointer;" @click.prevent="displaySelectedRecentAnnouncement(recent.id)">
-                            <a style="text-decoration: none;">
-                            <div class="pic">
-                                <img v-if="recent.images.length > 0" :src="recent.images[0].url" alt="">
-                                <img v-else src="" alt="">
-                            </div>
-                            <div class="infor" style="text-decoration: none;">
-                                <span>{{ recent.announcement_type.toUpperCase()  }}</span>
-                                <h1>{{ recent.title }}</h1>
-                                <p class="inform">{{ recent.body }}</p>
-                            </div>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-
-        <div class="coc">
-            <div class="coc-info">
-                <div class="row g-5">
-                    <div class="col-6">
-                        <div class="coc-pic">
-                            <img src="../../images/Home/coc.jpg" alt="" width="400px">
-                        </div>
-                    </div>
-                    <div class="col-6 vertical">
-                        <div class="info">
-                            <h1>CAMPUS LEADERSHIP: COC NOW OR NEVER!</h1>
-
-                            <p class="py-4">Ready to embark on this epic journey of leading our beloved university? 
-                                Your COC is your ticket to the adventure – seize it now and let the campus transformation begin!
-                            </p>
-
-                            <button @click.prevent="redirectToElection">Ready, Set, COC: Transform the Campus!</button>
-                        </div>
+        </ImageSkeleton>
+        <div v-else class="announcements">
+            <div class="announcements-wrapper">
+                <div v-for="(recent, index) in recentData" :key="index" class="select-announcement" style="cursor: pointer;" @click.prevent="displaySelectedRecentAnnouncement(recent.id)">
+                    <div class="announcement-information">
+                        <img class="announcement-img" v-if="recent.images.length > 0" :src="recent.images[0].url" alt="">
+                        <img class="announcement-img" v-else src="" alt="?">
+                        <span class="announcement-title">{{ recent.title }}</span>
+                        <span class="announcement-date">{{ formatDate(recent.created_at) }}</span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="register">
-            <div class="reg-info">
-                <div class="row g-5">
-                    <div class="col-6 vertical">
-                        <div class="r-info">
-                            <h1>REGISTER YOUR PARTY, IGNITE THE HEAT!</h1>
-
-                            <p class="py-4">Ready to ignite the political fire? Register your dynamic party list, 
-                                and let's set the school ablaze with your passionate campaign. 
-                                Register now!
-                            </p>
-
-                            <button @click.prevent="redirectToElection">Ignite Now: Register Your Party!</button>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="reg-pic">
-                            <img src="../../images/Home/register.jpg" alt="" width="400px">
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+        <hr class="line">
+    </main>
 </template>
 
 <script>
@@ -180,6 +108,7 @@
                     announcement_type: announcement.AnnouncementType,
                     attachment_type: announcement.AttachmentType,
                     images: announcement.images,
+                    created_at: announcement.created_at,
                 }))
 
                 return announcements.slice(0, 3)
@@ -219,227 +148,157 @@
             redirectToElection() {
                 router.visit('/elections');
             },
+            formatDate(date) {
+                return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            },
         }
     }
 
 </script>
 
 <style scoped>
-    .main{
-        height: 850px;
-    }
 
-    .main-ann{
-        width: 100%;
-        height: 70%;
-        object-fit: cover;
-    }
+.banner{
+    height: 600px;
+}
 
-    .ongoing-elections{
-        margin-top: -12% !important;
-        margin: 0% 3%;
-    }
+.banner-img{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
 
-    .election{
-        background-image: url('../../images/Home/pupqc1-r.png');
-        background-repeat: no-repeat;
-        background-attachment: fixed;
-        background-size: cover;
-        margin: 2% 0%;
-        height: 320px;
-        object-fit: cover;
-    }
+.features{
+    margin: 2.5% 0%;
+}
 
-    .logo{
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 100%;
-    }
+.features-wrapper{
+    margin: 0% 8%;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+}
 
-    .election-info{
-        display: flex;
-        align-items: center;
-        height: 100%;
-        width: 70%;
-        font-family: 'Source Sans Pro', sans-serif;
-        color: #F2F2F2;
-    }
+.select-feature{
+    text-decoration: none;
+    color: black;
+}
 
-    .election-info p.type{
-        font-size: 20px;
-        letter-spacing: 3px;
+.select-feature:hover{
+    color: black;
+    .feature-information{
+        transform: translateY(-10px);
     }
+}
 
-    .election-info h1{
-        font-size: 40px;
-        font-weight: 700;
-        margin: 1.5% 0%;
+.feature-information{
+    background-color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    width: 300px;
+    height: 300px;
+    border-radius: 5px;
+    box-shadow: 0px 3px 5px rgba(167, 165, 165, 0.5);
+    transition: transform 0.4s ease;
+}
+
+.feature-img{
+    height: 150px;
+}
+
+.feature-title{
+    font-weight: bold;
+    font-size: 22px;
+    margin-top: 20px;
+}
+
+.feature-description{
+    text-align: center;
+    font-size: 18px;
+    margin: 0px 30px;
+}
+
+.line{
+    border: 0;
+    height: 2px;
+    background: rgb(249,249,249);
+    background: linear-gradient(90deg, rgba(249,249,249,1) 0%, rgba(217,217,217,1) 50%, rgba(249,249,249,1) 100%);
+}
+
+.header{
+    margin-top: 2.5% !important;
+    margin: 0% 8%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.header-title{
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.view-button{
+    border: transparent;
+    background-color: transparent;
+    font-size: 20px;
+}
+
+.view-button:hover{
+    color: #800000;
+}
+
+.announcements{
+    margin-top: 0.5%;
+    margin-bottom: 1.5%;
+}
+
+.announcements-wrapper{
+    margin: 0% 8%;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.select-announcement{
+    text-decoration: none;
+    color: black;
+    margin: 1% 0.98%;
+}
+
+.select-announcement:hover{
+    color: black;
+    .announcement-information{
+        transform: scale(1.009);
     }
+}
 
-    .election-info p{
-        font-size: 24px;
-        margin-bottom: 0%;
-    }
+.announcement-information{
+    display: flex;
+    justify-content: center;
+    align-items: start;
+    flex-direction: column;
+    box-shadow: 0px 3px 5px rgba(167, 165, 165, 0.5);
+    transition: transform 0.4s ease;
+    width: 500px;
+}
 
-    .carousel-indicators{
-        margin-bottom: 0%;
-        margin-bottom: 0.25%;
-    }
+.announcement-img{
+    width: 500px;
+    height: 273px;
+    object-fit: cover;
+}
 
-    .carousel-control-prev, .carousel-control-next{
-        width: 70px;
-    }
+.announcement-title{
+    font-weight: bold;
+    font-size: 18px;
+    margin: 0px 5px
+}
 
-    .coc, .register{
-        background-color: #F5F8F9;
-        margin: 10% 0%;
-    }
-
-    .coc-info, .reg-info{
-        margin: 0% 3% 0% 3%;
-        padding: 5% 0%;
-
-    }
-
-    .coc-pic img, .reg-pic img{
-        width: 100%;
-        height: 50vh;
-        object-fit: cover;
-        border-radius: 7px;
-    }
-
-    .info{
-        margin-left: 3%;
-    }
-
-    .r-info{
-        margin-right: 3%;
-    }
-
-    .info h1, .r-info h1{
-        font-family: 'Source Sans Pro Black', sans-serif;
-        font-weight: 800;
-        font-size: 50px;
-        color: #880000;
-    }
-
-    .info p, .r-info p{
-        font-size: 30px;
-    }
-
-    .info button, .r-info button{
-        width: 100%;
-        padding: 3% 0%;
-        font-size: 30px;
-        border: transparent;
-        background-color: #880000;
-        color: white;
-    }
-
-    .vertical{
-        display: flex;
-        align-items: center;
-    }
-
-    .ann{
-        margin: 3% 2.5%;
-    }
-
-    .announcement a{
-        display: flex;
-        width: 550px;
-        height: 362px;
-    }
-
-    .announcements{
-        display: flex; 
-        justify-content: flex-start;
-        flex-wrap: wrap;
-        margin: 0% 0.2%;
-    }
-
-    .announcement{
-        width: 34.375em; /* 550px/16 */
-        height: 22.625em; /* 362px/16 */
-        padding: 0.625em; /* 10px/16 */
-        position: relative;
-        background-color: #880000;
-        border-top-right-radius: 8%;
-        border-bottom-left-radius: 7%;
-    }
-
-    .announcement .pic img {
-        transition: transform .3s !important;
-    }
-
-    .announcement:hover .pic img {
-        transform: scale(1.035) !important;
-    }
-
-    .announcement a::before {
-        content: ""; /* This is necessary for the pseudo-element to show */
-        position: absolute; /* This allows the pseudo-element to be positioned absolutely within the .announcement element */
-        top: 0;
-        bottom: 0;
-        left: 1.25em; /* 20px/16, Adjust this to move the outline to the right */
-        right: 0;
-        z-index: 1;
-    }
-
-    .announcement img{
-        width: 15vw;
-        height: 40vh;
-        object-fit: cover;
-        border-radius: 7%;
-        margin-left: 2%;
-        margin-top: 2%;
-    }
-
-    .header{
-        margin: 1.5% 0%;
-    }
-
-    .header h1{
-        font-size: 20px;
-        letter-spacing: 3px;
-        font-weight: 800;
-    }
-
-    .view{
-        text-align: end;
-    }
-
-    .header a{
-        border: transparent;
-        font-size: 15px;
-        letter-spacing: 3px;
-        font-weight: 500;
-        background-color: transparent;
-        text-decoration: none;
-        color: #470a0a;
-    }
-
-    .infor{
-        margin: 0% 3%;
-        font-family: 'Source Sans Pro', sans-serif;
-        color: #ffffff;
-    }
-
-    .infor span{
-        font-size: 16px;
-    }
-
-    .infor h1{
-        font-size: 20px;
-        font-weight: bold;
-        margin-top: 1.5%;
-    }
-
-    .infor p{
-        height: 215px;
-        width: auto;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
+.announcement-date{
+    font-size: 18px;
+    margin: 0px 5px
+}
 </style>
