@@ -813,48 +813,64 @@ class ElectionDelete(BaseModel):
 """ ** GET Methods: All about election APIs ** """
 @router.get("/election/all", tags=["Election"])
 def get_All_Election(db: Session = Depends(get_db)):
-    try:
-        elections = db.query(Election).order_by(Election.ElectionId).all()
-        elections_with_creator = []
+    elections = db.query(Election).order_by(Election.ElectionId).all()
+    elections_with_creator = []
 
-        for i, election in enumerate(elections):
-            creator = db.query(Student).filter(Student.StudentNumber == election.CreatedBy).first()
-            election_dict = election.to_dict(i+1)
-            election_dict["CreatedByName"] = (creator.FirstName + ' ' + (creator.MiddleName + ' ' if creator.MiddleName else '') + creator.LastName) if creator else ""
-            
-            # Get the StudentOrganizationName of the election from the StudentOrganization table
-            student_organization = db.query(StudentOrganization).filter(StudentOrganization.StudentOrganizationId == election.StudentOrganizationId).first()
-            election_dict["StudentOrganizationName"] = student_organization.OrganizationName if student_organization else ""
+    for i, election in enumerate(elections):
+        creator = db.query(Student).filter(Student.StudentNumber == election.CreatedBy).first()
+        election_dict = election.to_dict(i+1)
+        election_dict["CreatedByName"] = (creator.FirstName + ' ' + (creator.MiddleName + ' ' if creator.MiddleName else '') + creator.LastName) if creator else ""
 
-            # Get the OrganizationMemberRequirement of the election from the StudentOrganization table
-            student_organization = db.query(StudentOrganization).filter(StudentOrganization.StudentOrganizationId == election.StudentOrganizationId).first()
-            election_dict["OrganizationMemberRequirement"] = student_organization.OrganizationMemberRequirements if student_organization else ""
-           
-            # Get the CreatedElectionPositions of the election then append it to the election_dict
-            positions = db.query(CreatedElectionPosition).filter(CreatedElectionPosition.ElectionId == election.ElectionId).all()
-            election_dict["Positions"] = [position.to_dict(i+1) for i, position in enumerate(positions)]
+        # Get the StudentOrganizationName of the election from the StudentOrganization table
+        student_organization = db.query(StudentOrganization).filter(StudentOrganization.StudentOrganizationId == election.StudentOrganizationId).first()
+        election_dict["StudentOrganizationName"] = student_organization.OrganizationName if student_organization else ""
+        
+        # Get the student organization logo from cloudinary using the student organization id in the election
+        try:
+            organization_logo = resources_by_tag(student_organization.OrganizationLogo)
+            election_dict["OrganizationLogo"] = organization_logo["resources"][0]["secure_url"] if organization_logo else ""
+        except Exception as e:
+            print(f"Error fetching image from Cloudinary: {e}")
+            election_dict["OrganizationLogo"] = ""
 
-            # Determine what election period
-            now = datetime.now()
-            if now < election.CoCFilingStart:
-                election_dict["ElectionPeriod"] = "Pre-Election"
-            elif now >= election.CoCFilingStart and now <= election.CoCFilingEnd:
-                election_dict["ElectionPeriod"] = "Filing Period"
-            elif now >= election.CampaignStart and now <= election.CampaignEnd:
-                election_dict["ElectionPeriod"] = "Campaign Period"
-            elif now >= election.VotingStart and now <= election.VotingEnd:
-                election_dict["ElectionPeriod"] = "Voting Period"
-            elif now >= election.AppealStart and now <= election.AppealEnd:
-                election_dict["ElectionPeriod"] = "Appeal Period"
-            else:
-                election_dict["ElectionPeriod"] = "Post-Election"
+        # Get the OrganizationMemberRequirement of the election from the StudentOrganization table
+        student_organization = db.query(StudentOrganization).filter(StudentOrganization.StudentOrganizationId == election.StudentOrganizationId).first()
+        election_dict["OrganizationMemberRequirement"] = student_organization.OrganizationMemberRequirements if student_organization else ""
 
-            elections_with_creator.append(election_dict)
+        # Get the number of candidates in the election
+        candidates = db.query(Candidates).filter(Candidates.ElectionId == election.ElectionId).all()
+        election_dict["NumberOfCandidates"] = len(candidates)
+        
+        # Get the number of partylists in the election
+        partylits = db.query(PartyList).filter(PartyList.ElectionId == election.ElectionId).all()
+        election_dict["NumberOfPartylists"] = len(partylits)
 
-        return {"elections": elections_with_creator}
+        # Get the number of positions in the election
+        positions = db.query(CreatedElectionPosition).filter(CreatedElectionPosition.ElectionId == election.ElectionId).all()
+        election_dict["NumberOfPositions"] = len(positions)
+        
+        # Get the CreatedElectionPositions of the election then append it to the election_dict
+        election_dict["Positions"] = [position.to_dict(i+1) for i, position in enumerate(positions)]
 
-    except:
-        return JSONResponse(status_code=500, content={"detail": "Error while fetching all elections from the database"})
+        # Determine what election period
+        now = datetime.now()
+        if now < election.CoCFilingStart:
+            election_dict["ElectionPeriod"] = "Pre-Election"
+        elif now >= election.CoCFilingStart and now <= election.CoCFilingEnd:
+            election_dict["ElectionPeriod"] = "Filing Period"
+        elif now >= election.CampaignStart and now <= election.CampaignEnd:
+            election_dict["ElectionPeriod"] = "Campaign Period"
+        elif now >= election.VotingStart and now <= election.VotingEnd:
+            election_dict["ElectionPeriod"] = "Voting Period"
+        elif now >= election.AppealStart and now <= election.AppealEnd:
+            election_dict["ElectionPeriod"] = "Appeal Period"
+        else:
+            election_dict["ElectionPeriod"] = "Post-Election"
+
+        elections_with_creator.append(election_dict)
+
+    return {"elections": elections_with_creator}
+
 
 @router.get("/election/all/is-student-voted", tags=["Election"])
 def get_All_Election_Is_Student_Voted(student_number: str, db: Session = Depends(get_db)):
@@ -913,6 +929,20 @@ def get_Election_By_Id(id: int, db: Session = Depends(get_db)):
 
         if not election:
             return JSONResponse(status_code=404, content={"detail": "Election not found"})
+        
+        student_organization = db.query(StudentOrganization).filter(StudentOrganization.StudentOrganizationId == election.StudentOrganizationId).first()
+        
+        # Get the student organization logo from cloudinary using the student organization id in the election
+        try:
+            organization_logo = resources_by_tag(student_organization.OrganizationLogo)
+            organization_logo = organization_logo["resources"][0]["secure_url"] if organization_logo else ""
+        except Exception as e:
+            print(f"Error fetching image from Cloudinary: {e}")
+            organization_logo = ""
+
+        NumberOfCandidates = db.query(Candidates).filter(Candidates.ElectionId == election.ElectionId).count()
+        NumberOfPartylists = db.query(PartyList).filter(PartyList.ElectionId == election.ElectionId).count()
+        NumberOfPositions = db.query(CreatedElectionPosition).filter(CreatedElectionPosition.ElectionId == election.ElectionId).count()
 
         positions = db.query(CreatedElectionPosition).filter(CreatedElectionPosition.ElectionId == id).order_by(CreatedElectionPosition.CreatedElectionPositionId).all()
         student_organization_name = db.query(StudentOrganization).filter(StudentOrganization.StudentOrganizationId == election.StudentOrganizationId).first().OrganizationName
@@ -921,6 +951,10 @@ def get_Election_By_Id(id: int, db: Session = Depends(get_db)):
 
         election_count = db.query(Election).count()
         return {"election": election.to_dict(election_count),
+                "organization_logo": organization_logo,
+                "number_of_candidates": NumberOfCandidates,
+                "number_of_partylists": NumberOfPartylists,
+                "number_of_positions": NumberOfPositions,
                 "student_organization_name": student_organization_name,
                 "organization_member_requirement": organiztion_member_requirement,
                 "positions": [position.to_dict(i+1) for i, position in enumerate(positions)]
