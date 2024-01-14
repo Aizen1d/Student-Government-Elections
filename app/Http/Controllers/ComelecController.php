@@ -169,4 +169,14 @@ class ComelecController extends Controller
     { 
         return inertia('Comelec/AppealReview');
     }
+
+    public function reports() 
+    { 
+        return inertia('Comelec/Reports');
+    }
+
+    public function appointments() 
+    { 
+        return inertia('Comelec/Appointments');
+    }
 }

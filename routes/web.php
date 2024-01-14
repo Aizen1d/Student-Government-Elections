@@ -104,6 +104,12 @@ Route::group(['middleware' => 'check.auth.comelec'], function () {
 
     Route::get('/comelec/appeal-review', [ComelecController::class, 'appealReview'])
         ->name('comelec.appeal.review');
+
+    Route::get('/comelec/reports', [ComelecController::class, 'reports'])
+        ->name('comelec.reports');
+
+    Route::get('/comelec/appointments', [ComelecController::class, 'appointments'])
+        ->name('comelec.appointments');
 });
 
 // Routes that are protected by JWT token and must be authenticated as organization user
