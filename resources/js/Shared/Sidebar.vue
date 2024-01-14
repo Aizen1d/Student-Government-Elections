@@ -97,15 +97,19 @@ export default {
                     <span>Appeal Review</span>
                 </Link>
 
-                <a href="" class="main list-group-item py-2"  aria-expanded="true">
+                <Link href="/comelec/reports"
+                    :class="{ 'active': $inertia.page.url.startsWith('/comelec/reports') }"  
+                    class="main list-group-item py-2">
                     <img class="side-icon" src="../../images/icons/reports.svg" alt="Icon" height="35" width="35">
                     <span>Reports</span>
-                </a>
+                </Link>
                 
-                <a href="" class="main list-group-item py-2"  aria-expanded="true">
+                <Link href="/comelec/appointments" 
+                    :class="{ 'active': $inertia.page.url.startsWith('/comelec/appointments') }"  
+                    class="main list-group-item py-2">
                     <img class="side-icon" src="../../images/icons/appointments.svg" alt="?" height="35" width="35">
                     <span>Appointments</span>
-                </a>
+                </Link>
             </template>
             </div>
         </div>
