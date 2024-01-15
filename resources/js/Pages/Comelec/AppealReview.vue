@@ -122,6 +122,7 @@
             const student_name = ref('');
             const appeal_details = ref('');
             const attachment = ref('');
+            const attachment_link = ref('');
 
             const appeal_ticket_number = ref('');
             const appeal_subject = ref('');
@@ -168,6 +169,7 @@
                 appeal_subject.value = appeal.AppealEmailSubject;
                 appeal_status.value = appeal.AppealStatus; 
                 appeal_response.value = appeal.AppealResponse;
+                attachment_link.value = appeal.Attachment;
 
                 return appeal;
             };
@@ -197,6 +199,7 @@
                 student_name,
                 appeal_details,
                 attachment,
+                attachment_link,
                 
                 appeal_ticket_number,
                 appeal_subject,
@@ -241,8 +244,8 @@
                 if (!appeal || !this.attachment || this.attachment === 'Loading..' || this.attachment === 'No attachment') {
                     return;
                 }
-
-                const attachment_url = appeal.AttachmentLink
+                
+                const attachment_url = this.attachment_link;
                 window.open(attachment_url, '_blank')
             },
             validateInputs() {
