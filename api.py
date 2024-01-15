@@ -2881,15 +2881,6 @@ def get_All_Election_Appeals(db: Session = Depends(get_db)):
         student = db.query(Student).filter(Student.StudentNumber == appeal.StudentNumber).first()
         appeal_dict = appeal.to_dict()
 
-        try:
-            if appeal.AttachmentAssetId:
-                attachment = cloudinary.api.resource_by_asset_id(appeal.AttachmentAssetId)
-                appeal_dict["AttachmentLink"] = attachment["secure_url"] if attachment else ""
-
-        except Exception as e:
-            print(f"Error fetching Attachment from Cloudinary: {e}")
-            appeal_dict["AttachmentLink"] = ""
-
         appeal_dict["Student"] = student.to_dict() if student else {}
         appeals_with_student.append(appeal_dict)
 
@@ -2981,6 +2972,87 @@ def save_Election_Appeals_Respond(data: ElectionAppealsRespondData, background_t
     background_tasks.add_task(send_appeal_response_email(student_email, data.subject, data.response, data.id))
 
     return {"response": "success"}
+
+#################################################################
+## SGEReports APIs ## 
+
+""" SGEReports Table APIs """
+
+""" ** GET Methods: SGEReports Table APIs ** """
+@router.get("/reports/election/{id}", tags=["Reports"])
+def get_Reports_By_Election_Id(id: int, db: Session = Depends(get_db)):
+    election = db.query(Election).filter(Election.ElectionId == id).first()
+    election_data = {}  # Changed from [] to {}
+
+    student_organization = db.query(StudentOrganization).filter(StudentOrganization.StudentOrganizationId == election.StudentOrganizationId).first()
+    
+    try:
+        logo = resources_by_tag(student_organization.OrganizationLogo)
+        election_data["StudentOrganizationLogo"] = logo["resources"][0]["secure_url"] if logo else ""
+    except Exception as e:
+        print(f"Error fetching Logo from Cloudinary: {e}")
+        election_data["StudentOrganizationLogo"] = ""
+
+    election_data['StudentOrganizationName'] = student_organization.OrganizationName
+    election_data['ElectionName'] = election.ElectionName
+    election_data['Semester'] = election.Semester
+    election_data['SchoolYear'] = election.SchoolYear
+    election_data['CourseRequirement'] = student_organization.OrganizationMemberRequirements
+
+    now = datetime.now()
+    if now < election.CoCFilingStart:
+        election_data["ElectionPeriod"] = "Pre-Election"
+    elif now >= election.CoCFilingStart and now <= election.CoCFilingEnd:
+        election_data["ElectionPeriod"] = "Filing Period"
+    elif now >= election.CampaignStart and now <= election.CampaignEnd:
+        election_data["ElectionPeriod"] = "Campaign Period"
+    elif now >= election.VotingStart and now <= election.VotingEnd:
+        election_data["ElectionPeriod"] = "Voting Period"
+    elif now >= election.AppealStart and now <= election.AppealEnd:
+        election_data["ElectionPeriod"] = "Appeal Period"
+    else:
+        election_data["ElectionPeriod"] = "Post-Election"
+
+    # Count all candidates for this election
+    num_candidates = db.query(Candidates).filter(Candidates.ElectionId == id).count()
+    election_data['NumberOfCandidates'] = num_candidates    
+
+    # Count all partylists for this election
+    num_partylists = db.query(PartyList).filter(PartyList.ElectionId == id).count()
+    election_data['NumberOfPartylists'] = num_partylists
+
+    # Count all voters population for this election
+    num_voters = db.query(Student).filter(Student.Course == student_organization.OrganizationMemberRequirements).count()
+    election_data['NumberOfVoters'] = num_voters
+
+    # Count all voters who voted for this election
+    active_voters = db.query(VotingsTracker).filter(VotingsTracker.ElectionId == id).count()
+    election_data['NumberOfActiveVoters'] = active_voters
+
+    # Count all voters who did not vote for this election
+    inactive_voters = num_voters - active_voters
+    election_data['NumberOfInactiveVoters'] = inactive_voters
+
+    # Count each voters course distribution for this election
+    course_distribution = db.query(Student.Course, func.count(Student.Course)).filter(Student.Course == student_organization.OrganizationMemberRequirements).group_by(Student.Course).all()
+    course_distribution_dict = [{course: count} for course, count in course_distribution]
+    election_data['CourseDistribution'] = course_distribution_dict
+
+    # Count approved and rejected coc
+    approved_coc = db.query(CoC).filter(CoC.ElectionId == id, CoC.Status == 'Approved').count()
+    election_data['ApprovedCoC'] = approved_coc
+
+    rejected_coc = db.query(CoC).filter(CoC.ElectionId == id, CoC.Status == 'Rejected').count()
+    election_data['RejectedCoC'] = rejected_coc
+
+    # Count approved and rejected partylist
+    approved_partylist = db.query(PartyList).filter(PartyList.ElectionId == id, PartyList.Status == 'Approved').count()
+    election_data['ApprovedPartylist'] = approved_partylist
+
+    rejected_partylist = db.query(PartyList).filter(PartyList.ElectionId == id, PartyList.Status == 'Rejected').count()
+    election_data['RejectedPartylist'] = rejected_partylist
+
+    return {"election": election_data}
 
 #################################################################
 app.include_router(router)
