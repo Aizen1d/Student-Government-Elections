@@ -1,27 +1,54 @@
 <template>
     <title>Announcements View - COMELEC Portal</title>
     <Navbar></Navbar>
-    <div>
-        <div class="main">
-            <h3 class="return" @click="returnPage">Return to lists</h3>
-            
-            <ImageSkeleton v-if="isAnnouncementLoading" 
-                            :loading="isAnnouncementLoading" 
-                            :itemCount="1" 
-                            :borderRadius="'10px'"
-                            :imageWidth="'88vw'" 
-                            :imageHeight="'70vh'"
-                            :containerMargin="'3% 0%'"
-                            :itemMargin="'1em'">
-            </ImageSkeleton>
-            <Carousel v-else :images="images" :interval="5000"></Carousel>
+    
+    <main class="main-margin">
+        <h1 class="current-page">
+            <span class="header" @click.prevent="returnPage">ANNOUNCEMENTS</span> 
+            <span class="arrow"> ></span>
+            View Announcement
+        </h1>
+
+        <div class="announcement">
+            <div class="announcement-wrapper">
+                <div class="announcement-information">
+                    <div class="row">
+                        <div class="col-6">
+                            <ImageSkeleton v-if="isAnnouncementLoading" 
+                                    :loading="isAnnouncementLoading" 
+                                    :itemCount="1" 
+                                    :borderRadius="'10px'"
+                                    :imageWidth="'30vw'" 
+                                    :imageHeight="'50vh'"
+                                    :containerMargin="'3% 0%'"
+                                :itemMargin="'1em'">
+                            </ImageSkeleton>
+                            <Carousel v-else :images="images" :interval="3500"></Carousel>
+                        </div>
+                        
+                        <div class="col-6">
+                            <div class="announcement-details">
+                                <span class="announcement-title">{{ title }}</span>
+                                <ToolTip class="mx-3">
+                                    <slot>Announcement's carousel can select to next/prev or use left/right arrow keys</slot>
+                                </ToolTip>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span class="announcement-type">{{ announcement_type.toUpperCase() }}</span>
+                                    <span class="announcement-date">{{ toDate(created_at) }}</span>
+                                </div>
+                                <p class="announcement-content">
+                                    {{ body }}
+                                </p>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="info">
-            <p class="type">{{ announcement_type.toUpperCase() }}</p>
-            <h1>{{ title }}</h1>
-            <p>{{ body }}</p>
-        </div>
-    </div>
+    </main>
+
+    <Appeal></Appeal>
 </template>
 
 <script>
@@ -29,6 +56,8 @@
     import Navbar from '../Shared/Navbar.vue'
     import Carousel from '../Shared/Carousel.vue'
     import ImageSkeleton from '../Skeletons/ImageSkeleton.vue'
+    import ToolTip from '../Shared/ToolTip.vue'
+    import Appeal from '../Shared/Appeal.vue'
 
     import { ref, watchEffect } from 'vue'
     import { useAnnouncementStore } from '../Stores/AnnouncementStore'
@@ -46,6 +75,7 @@
             const attachment_type = ref('');
             const title = ref('');
             const body = ref('');
+            const created_at = ref('');
             const images = ref([]);
 
             const currentIndex = ref(0);
@@ -78,6 +108,7 @@
                     attachment_type.value = announcementData.value.AttachmentType;
                     title.value = announcementData.value.AnnouncementTitle;
                     body.value = announcementData.value.AnnouncementBody;
+                    created_at.value = announcementData.value.created_at;
                     images.value = announcementData.value.images;
                 }
             });
@@ -89,6 +120,7 @@
                 attachment_type,
                 title,
                 body,
+                created_at,
                 images,
                 currentIndex,
 
@@ -103,6 +135,8 @@
             Navbar,
             Carousel,
             ImageSkeleton,
+            ToolTip,
+            Appeal,
         },
         props: {
             id: '',
@@ -127,60 +161,84 @@
                     this.currentIndex = 0;
                 }
             },
+            toDate(date) {
+                return new Date(date).toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+            },
         },
     }
 </script>
 
 <style scoped>
-    .return{
-        margin-top: 2%;
-        margin-bottom: -2%;
-        font-size: 20px;
-        letter-spacing: 3px;
-        font-weight: 800;
+    .main-margin{
+        margin: 0% 8%;
     }
 
-    .return:hover{
+    .current-page{
+        margin: 1.5% 0%;
+        font-size: 28px;
+        font-weight: bold;
+        color: #800000 !important;
+    }
+
+    .arrow{
+        font-size: 28px;
+        font-weight: bold;
+        color: black !important;
+    }
+
+    .header{
+        margin: 1.5% 0%;
+        font-size: 28px;
+        font-weight: bold;
+        color: black !important;
+    }
+
+    .header:hover{
         cursor: pointer;
         text-decoration: underline;
     }
 
-    .main, .info{
-        margin: 0% 5%;  
+    .announcement{
+        background-color: #ffffff;
+        box-shadow: 0px 3px 5px rgba(167, 165, 165, 0.5);
+        border-radius: 6px;
     }
 
-    .carousel-inner{
-        margin: 4% 0%;
+    .announcement-wrapper{
+        padding: 2%;
     }
 
-    .carousel-item{
-        height: 700px;
-        background-color: rgba(208, 208, 208, 0.7);
-    }
-
-    .carousel-item img {
+    .announcement-information{
+        display: flex;
         width: 100%;
-        height: 100%;
-        object-fit: contain; /* This makes the image scale while maintaining its aspect ratio */
-        object-position: center; /* This centers the image within its container */
     }
 
-    .info{
-        font-family: 'Source Sans Pro', sans-serif;
-        margin-bottom: 4%;
+    .announcement-details{
+        width: 100%;
+        margin-left: 2%;
     }
 
-    .info p.type{
+    .announcement-title{
+        font-size: 25px;
+        font-weight: bold;
+    }
+
+    .announcement-type{
         font-size: 18px;
-        margin-top: -1.5%;
     }
 
-    .info h1{
-        font-weight: 700;
-        margin: 1.5% 0%;
+    .announcement-date{
+        font-size: 18px;
     }
 
-    .info p{
-        font-size: 20px;
+    .announcement-content{
+        font-size: 18px;
+        text-indent: 70px;
+        margin-top: 20px;
+        text-align: justify;
     }
 </style>
