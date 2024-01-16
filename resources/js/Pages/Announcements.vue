@@ -1,48 +1,47 @@
 <template>
     <title>Announcements - COMELEC Portal</title>
     <Navbar></Navbar>
-    <div>
-        <div class="main">
-            <div class="header my-5">
-                <h1></h1>
-            </div>
+        
+    <main class="main-margin">
+        <h1 class="header">ANNOUNCEMENTS > <span class="current-page">{{ type.toUpperCase() }}</span></h1>
 
-            <div class="choices-container mb-3">
+        <div class="category-list">
+            <div class="category-list-wrapper">
                 <Link href="/announcements?type=all"
-                    class="choice" :class="{ 'active': $inertia.page.url === '/announcements?type=all' || $inertia.page.url === '/announcements' }">ALL</Link>
+                    class="select category" :class="{ 'active': $inertia.page.url === '/announcements?type=all' || $inertia.page.url === '/announcements' }">ALL</Link>
                 <Link href="/announcements?type=elections" 
-                    class="choice" :class="{ 'active': $inertia.page.url === '/announcements?type=elections' }">ELECTIONS</Link>
+                    class="select category" :class="{ 'active': $inertia.page.url === '/announcements?type=elections' }">ELECTIONS</Link>
                 <Link href="/announcements?type=debates" 
-                    class="choice" :class="{ 'active': $inertia.page.url === '/announcements?type=debates' }">DEBATES</Link>
+                    class="select category" :class="{ 'active': $inertia.page.url === '/announcements?type=debates' }">DEBATES</Link>
                 <Link href="/announcements?type=open_forums" 
-                    class="choice" :class="{ 'active': $inertia.page.url === '/announcements?type=open_forums' }">OPEN FORUMS</Link>
+                    class="select category" :class="{ 'active': $inertia.page.url === '/announcements?type=open_forums' }">OPEN FORUMS</Link>
                 <Link href="/announcements?type=educational_programs" 
-                    class="choice" :class="{ 'active': $inertia.page.url === '/announcements?type=educational_programs' }">EDUCATIONAL PROGRAMS</Link>
+                    class="select category" :class="{ 'active': $inertia.page.url === '/announcements?type=educational_programs' }">EDUCATIONAL PROGRAMS</Link>
                 <Link href="/announcements?type=results" 
-                    class="choice" :class="{ 'active': $inertia.page.url === '/announcements?type=results' }">RESULTS</Link>
+                    class="select category" :class="{ 'active': $inertia.page.url === '/announcements?type=results' }">RESULTS</Link>
             </div>
         </div>
 
+        <hr class="line">
+
         <AnnouncementsSkeleton v-if="hasFetchedAnnouncements" :loading="isAnnouncementLoading" :itemCount="3">
-            <div class="list">
-                <div class="row" v-for="(announcement, index) in announcementData" :key="index">
-                    <div class="col-11 column-list">
-                        <div class="announcement">
-                            <div class="pic">
-                                <img @click.prevent="onAnnouncementClick(announcement)" v-if="announcement.images.length > 0" :src="announcement.images[0].url" alt="">
-                                <img v-else src="" alt="">
-                            </div>
-                            <div class="info">
-                                <p>{{ announcement.announcement_type.toUpperCase() }}</p>
-                                <h1>{{ announcement.title }}</h1>
-                            </div>
+            <div class="announcements">
+                <div class="announcements-wrapper">
+                    <div class="select-announcement" v-for="(announcement, index) in announcementData" :key="index">
+                        <div class="announcement-information">
+                            <img :src="announcement.images[0].url" @click.prevent="onAnnouncementClick(announcement)" v-if="announcement.images.length > 0" class="announcement-img">
+                            <img v-else src="" alt="?" class="announcement-img">
+
+                            <span class="announcement-title">{{ announcement.title }}</span>
+                            <span class="announcement-date">"{{ announcement.announcement_type.toUpperCase() }}"</span>
+                            <span class="announcement-date">{{ toDate(announcement.created_at) }}</span>
                         </div>
                     </div>
                 </div>
             </div>
         </AnnouncementsSkeleton>
 
-    </div>
+    </main>
 </template>
 
 <script>
@@ -101,6 +100,7 @@
                             body: announcement.AnnouncementBody,
                             announcement_type: announcement.AnnouncementType,
                             attachment_type: announcement.AttachmentType,
+                            created_at: announcement.created_at,
                             images,
                         };
                     })
@@ -146,87 +146,127 @@
                             id: item.id 
                         }
                 });
-            }
+            },
+            toDate(date) {
+                console.log(date)
+                return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+            },
         }
     }
 </script>
 
 <style scoped>
-.main, .list{
-    margin: 0% 5%;
-}
+    .main-margin{
+        margin: 0% 8%;
+    }
 
-.header h1{
-    font-size: 38px;
-    letter-spacing: 1px;
-    font-weight: 800;
-}
+    .current-page{
+        color: #800000;
+    }
 
-.choices-container{
-    font-family: 'Source Sans Pro', sans-serif;
-    font-size: 16px;
-    font-weight: 700;
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    padding: 1% 3%;
-    background-color: #B90321;
-}
+    .header{
+        margin: 1.5% 0%;
+        font-size: 28px;
+        font-weight: bold;
+    }
 
-.active{
-    color: #eace2c !important;
-}
+    .category-list{
+        background-color: #ffffff;
+        box-shadow: 0px 3px 5px rgba(167, 165, 165, 0.5);
+        border-radius: 6px;
+    }
 
-.choice{
-    color: lightgray;
-    text-decoration: none;
-}
+    .category-list-wrapper{
+        padding: 1.5%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 0% 1%;
+    }
 
-.choice:hover{
-    color: #eace2c;
-}
+    .select{
+        text-decoration: none;
+        color: black;
+    }
 
-.announcement{
-    width: 100%;
-    margin-top: 2em;
-    margin-bottom: 2em;
-}
+    .select:hover,
+    .select:active{
+        color: #800000;
+        font-weight: bold;
+    }
 
-.pic img{
-    width: 100%;
-    height: 33vh;
-    object-fit: cover;
-    transition: transform .25s ease-out;
-    border-radius: 1%;
-}
+    .active{
+        color: #800000;
+        font-weight: bold;
+    }
 
-.pic img:hover{
-    transform: scale(1.030);
-    cursor: pointer;
-}
+    .category{
+        font-size: 18px;
+        margin: 0%;
+    }
 
-.info{
-    margin: 0% 2%;
-}
+    .line{
+        border: 0;
+        height: 2px;
+        background: rgb(249,249,249);
+        background: linear-gradient(90deg, rgba(249,249,249,1) 0%, rgba(217,217,217,1) 50%, rgba(249,249,249,1) 100%);
+        margin: 2% 0%;
+    }
 
-.info p{
-    font-size: 16px;
-    margin-top: 2%;
-}
+    .announcements{
+        margin-top: 0.5%;
+        margin-bottom: 1.5%;
+    }
 
-.info h1{
-    margin-top: -2.5%;
-    font-size: 20px;
-    font-weight: bold;
-}
+    .announcements-wrapper{
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
 
-.list{
-    display: flex;
-    justify-content: flex-start;
-    flex-wrap: wrap;
-}
+    .select-announcement{
+        text-decoration: none;
+        color: black;
+        margin: 0% 1.5%;
+        margin-bottom: 2%;
+    }
 
-.column-list{
-    margin-left: 5.5%;
-}
+    .select-announcement:hover{
+        color: black;
+        .announcement-information{
+            transform: scale(1.009);
+        }
+    }
+
+    .announcement-information{
+        display: flex;
+        justify-content: center;
+        align-items: start;
+        flex-direction: column;
+        background-color: white;
+        box-shadow: 0px 3px 5px rgba(167, 165, 165, 0.5);
+        transition: transform 0.4s ease;
+        width: 500px;
+    }
+
+    .announcement-information:hover{
+        cursor: pointer;
+    }
+
+    .announcement-img{
+        width: 500px;
+        height: 273px;
+        object-fit: cover;
+    }
+
+    .announcement-title{
+        font-weight: bold;
+        font-size: 18px;
+        margin: 0px 5px
+    }
+
+    .announcement-date{
+        font-size: 18px;
+        margin: 0px 5px
+    }
 </style>
