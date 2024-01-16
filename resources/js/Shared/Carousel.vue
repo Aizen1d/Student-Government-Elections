@@ -36,15 +36,14 @@
     }
 
     .carousel-item{
-        height: 700px;
-        background-color: rgba(208, 208, 208, 0.7);
+        height: 500px;
+        background-color: #800000;
     }
 
     .carousel-item img {
         width: 100%;
         height: 100%;
         object-fit: contain; /* This makes the image scale while maintaining its aspect ratio */
-        object-position: center; /* This centers the image within its container */
     }
 </style>
   
