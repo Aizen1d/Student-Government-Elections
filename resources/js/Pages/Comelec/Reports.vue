@@ -140,47 +140,73 @@
         </div>
 
         <div class="header">
-            <h1 class="page-title" style="margin-top: 2%;">Candidates</h1>
+            <h1 class="page-title" style="margin-top: 2%;">Selected Election Candidates</h1>
         </div>
 
-        <div class="row" style="margin-left: -1%;">
-            <div class="col-12">
-                <BaseContainer :height="'auto'" :maxHeight="'600px'" style="padding-left: 25px; padding-top: 25px; padding-bottom: 20px; width: 101.5%;">
+        <div class="row" style="margin-top: 15px; margin-left: -23px;">
+            <div class="col-6" style="padding-right: 1.15%;">
+                <BaseContainer :height="'485px'" :maxHeight="'600px'">
                     <div class="row">
                         <div class="col-4" style="display: flex; align-items: center;">
-                            <select class="form-select" aria-label="Default select example" v-model="select_election_input" @change="electionInputChanged">
-                                <option value="" disabled hidden selected>Select Election</option>
-                                <option v-if="!isElectionsDataLoading" v-for="(election, index) in electionsData" :key="index" :value="election.ElectionId">
-                                    {{ election.ElectionName }}
+                            <select class="form-select" aria-label="Default select example" v-model="select_candidate_input" @change="candidateInputChanged">
+                                <option value="" disabled hidden selected>Select Candidate</option>
+                                <option v-for="(candidate, index) in candidates_list" :key="index" :value="candidate.StudentNumber">
+                                    {{ candidate.FullName }}
                                 </option>
                             </select>
                         </div>
-
                         <hr class="line">
-
                     </div>
+
                     <div class="row">
-                        <div class="col-6" style="display: flex; align-items: center;">
-                                <div class="candidate-wrapper">
-                                    <div class="candidate-information">
-                                        <img src="../../../images/candidate2.jpg" alt="" class="candidate-img">
-                                        <div class="candidate-description">
-                                            <div class="spacing">
-                                                <span class="candidate-name">David Daniel D. Reataza</span>
-                                            </div>
-                                            <span class="etc">Independent</span>
-                                            <span class="etc">BSIT 3-1</span>
-                                            <span class="motto">“Empowering Students, Building Futures”</span>
-                                            <span class="platform-label">PLATFORM:</span>
-                                            <p class="platform">
-                                                Academic Excellence: Advocate for resources and programs that enhance the academic experience and help students reach their full potential.
-                                            </p>
+                        <div class="col-12" style="display: flex; align-items: center;">
+                            <div class="candidate-wrapper">
+                                <div class="candidate-information">
+                                    <img :src="selected_candidate_image" alt="" class="candidate-img">
+                                    <div class="candidate-description">
+                                        <div class="spacing">
+                                            <span class="candidate-name">{{ selected_candidate_name }}</span>
                                         </div>
+                                        <span class="etc">{{ selected_candidate_partylist }}</span>
+                                        <span class="etc">BSIT 3-1</span>
+                                        <span class="motto">“{{ selected_candidate_motto }}”</span>
+                                        <span class="platform-label">PLATFORM:</span>
+                                        <p class="platform">
+                                            Academic Excellence: Advocate for resources and programs that enhance the academic experience and help students reach their full potential.
+                                        </p>
                                     </div>
                                 </div>
+                            </div>
                         </div>
-                        <div class="col-6" style="display: flex; align-items: center;">
-                            
+                    </div>
+                </BaseContainer>
+            </div>
+            <div class="col-6" style="padding-left: 1.15%;">
+                <BaseContainer :height="'485px'" :maxHeight="'600px'">
+                    <div class="col-12" style="display: flex; align-items: center;">
+                        <div class="chart-container">
+                            <canvas id="candidate-votes-chart" style="margin-top: 2.5%;"></canvas>
+                        </div>
+                    </div>
+                </BaseContainer>
+            </div>
+        </div>
+
+        <div class="row" style="margin-top: 15px; margin-left: -23px;">
+            <div class="col-6" style="padding-right: 1.15%;">
+                <BaseContainer :height="'auto'" :maxHeight="'600px'">
+                    <div class="col-12">
+                        <div class="chart-container">
+                            <canvas id="candidate-votes-by-course" style="margin-top: 2.5%;"></canvas>
+                        </div>
+                    </div>
+                </BaseContainer>
+            </div>
+            <div class="col-6" style="padding-left: 1.15%;">
+                <BaseContainer :height="'auto'" :maxHeight="'600px'">
+                    <div class="col-12">
+                        <div class="chart-container">
+                            <canvas id="candidate-ratings" style="margin-top: 2.5%;"></canvas>
                         </div>
                     </div>
                 </BaseContainer>
@@ -221,6 +247,23 @@
             const selected_election_candidates = ref('');
             const selected_election_partylist = ref('');
             const selected_election_voters_population = ref('');
+            
+            // Candidate stuffs
+            const candidates_list = ref([]);
+            const select_candidate_input = ref('');
+            
+            const selected_candidate_name = ref('');
+            const selected_candidate_image = ref('');
+            const selected_candidate_partylist = ref('');
+            const selected_candidate_course_year_section = ref('');
+            const selected_candidate_motto = ref('');
+            const selected_candidate_platform = ref('');
+
+            watch(select_election_input, (newValue, oldValue) => {
+                if (newValue !== oldValue) {
+                    console.log('Election input changed');
+                }
+            });
 
             const fetchElections = async () => {
                 const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/election/all`);
@@ -239,6 +282,9 @@
                         queryKey: ['fetchElections'],
                         queryFn: fetchElections,
                     });
+
+
+            // Chart stuffs
 
             const instance_voter_turnout = null;
             const data_voter_turnout = ref([
@@ -333,6 +379,102 @@
                     borderColor: 'rgba(255, 99, 132, 1)' 
                 },
             ];
+
+            const instance_candidate_votes = null;
+            const data_candidate_votes = [
+                { 
+                    value: 22, 
+                    label: 'Votes', 
+                    color: '#C9FFC5', 
+                    borderColor: '#70AD47'
+                },
+                { 
+                    value: 19, 
+                    label: 'Abstained', 
+                    color: 'rgba(255, 99, 132, 0.4)', 
+                    borderColor: 'rgba(255, 99, 132, 1)' 
+                },
+            ];
+
+            const instance_candidate_votes_by_course = null;
+            const data_candidate_votes_by_course = [
+                { 
+                    value: 22, 
+                    label: 'BBTLEDHE', 
+                    color: '#C9FFC5', // Green
+                    borderColor: '#70AD47'
+                },
+                { 
+                    value: 19, 
+                    label: 'BSBAHRM', 
+                    color: 'rgba(255, 99, 132, 0.4)', // Red
+                    borderColor: 'rgba(255, 99, 132, 1)' 
+                },
+                {
+                    value: 19,
+                    label: 'BSBA-MM',
+                    color: 'rgba(255, 159, 64, 0.4)', // Orange
+                    borderColor: 'rgba(255, 159, 64, 1)'
+                },
+                {
+                    value: 19,
+                    label: 'BSENTREP',
+                    color: 'rgba(75, 192, 192, 0.4)', // Teal
+                    borderColor: 'rgba(75, 192, 192, 1)'
+                },
+                {
+                    value: 19,
+                    label: 'BSIT',
+                    color: 'rgba(54, 162, 235, 0.4)', // Blue
+                    borderColor: 'rgba(54, 162, 235, 1)'
+                },
+                {
+                    value: 19,
+                    label: 'BPAPFM',
+                    color: 'rgba(255, 235, 79, 0.4)', // Yellow
+                    borderColor: 'rgba(255, 235, 59, 1)' 
+                },
+                {
+                    value: 19,
+                    label: 'DOMTMOM',
+                    color: 'rgba(153, 102, 255, 0.4)', // Purple
+                    borderColor: 'rgba(153, 102, 255, 1)'
+                }
+            ];
+
+            const instance_candidate_ratings = null;
+            const data_candidate_ratings = [
+                { 
+                    value: 22, 
+                    label: '1 Star', 
+                    color: 'yellow', // Green
+                    borderColor: '#70AD47'
+                },
+                { 
+                    value: 19, 
+                    label: '2 Stars', 
+                    color: 'yellow', // Red
+                    borderColor: 'rgba(255, 99, 132, 1)' 
+                },
+                {
+                    value: 19,
+                    label: '3 Stars',
+                    color: 'yellow', // Orange
+                    borderColor: 'rgba(255, 159, 64, 1)'
+                },
+                {
+                    value: 19,
+                    label: '4 Stars',
+                    color: 'yellow', // Teal
+                    borderColor: 'rgba(75, 192, 192, 1)'
+                },
+                {
+                    value: 19,
+                    label: '5 Stars',
+                    color: 'yellow', // Blue
+                    borderColor: 'rgba(54, 162, 235, 1)'
+                },
+            ];
             
             return {
                 select_election_input,
@@ -346,6 +488,15 @@
                 selected_election_candidates,
                 selected_election_partylist,
                 selected_election_voters_population,
+
+                candidates_list,
+                select_candidate_input,
+                selected_candidate_name,
+                selected_candidate_image,
+                selected_candidate_partylist,
+                selected_candidate_course_year_section,
+                selected_candidate_motto,
+                selected_candidate_platform,
 
                 electionsData,
                 isElectionsDataLoading,
@@ -362,6 +513,15 @@
 
                 instance_partylist,
                 data_partylist,
+
+                instance_candidate_votes,
+                data_candidate_votes,
+
+                instance_candidate_votes_by_course,
+                data_candidate_votes_by_course,
+
+                instance_candidate_ratings,
+                data_candidate_ratings,
             }
         },
         components: {
@@ -378,6 +538,10 @@
 
             const coc_chart = document.getElementById('coc-chart');
             const partylist_chart = document.getElementById('partylist-chart');
+
+            const candidate_votes_chart = document.getElementById('candidate-votes-chart');
+            const candidate_votes_by_course_chart = document.getElementById('candidate-votes-by-course');
+            const candidate_ratings_chart = document.getElementById('candidate-ratings');
 
             Chart.register(ChartDataLabels);
 
@@ -523,7 +687,7 @@
             });
 
             this.instance_coc = new Chart(coc_chart, {
-                type: 'pie',
+                type: 'polarArea',
                 data: {
                     labels: this.data_coc.map(item => item.label),
                     datasets: [{
@@ -532,7 +696,6 @@
                         backgroundColor: this.data_coc.map(item => item.color),
                         borderColor: this.data_coc.map(item => item.borderColor),
                         borderWidth: 1,
-                        hoverOffset: 20
                     }]
                 },
                 options: {
@@ -592,7 +755,7 @@
             });
 
             this.instance_partylist = new Chart(partylist_chart, {
-                type: 'pie',
+                type: 'polarArea',
                 data: {
                     labels: this.data_partylist.map(item => item.label),
                     datasets: [{
@@ -601,7 +764,6 @@
                         backgroundColor: this.data_partylist.map(item => item.color),
                         borderColor: this.data_partylist.map(item => item.borderColor),
                         borderWidth: 1,
-                        hoverOffset: 20
                     }]
                 },
                 options: {
@@ -659,6 +821,220 @@
                     },
                 },
             });
+
+            this.instance_candidate_votes = new Chart(candidate_votes_chart, {
+                type: 'doughnut',
+                data: {
+                    labels: this.data_candidate_votes.map(item => item.label),
+                    datasets: [{
+                        label: 'Total',
+                        data: this.data_candidate_votes.map(item => item.value),
+                        backgroundColor: this.data_candidate_votes.map(item => item.color),
+                        borderColor: this.data_candidate_votes.map(item => item.borderColor),
+                        borderWidth: 1,
+                        hoverOffset: 20
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    tooltips: {
+                        enabled: true
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Votes',
+                            font: {
+                                size: 15,
+                                family: 'Inter',
+                            },
+                            padding: {
+                                bottom: 20
+                            },
+                            align: 'middle'
+                        },
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                boxWidth: 15,
+                                boxHeight: 8,
+                                padding: 20,
+                                font: {
+                                    size: 15,
+                                }
+                            }
+                        },
+                        datalabels: {
+                            formatter: this.getPercentageInGraph,
+                            color: 'black',
+                            font: {
+                                size: 13,
+                            }
+                        }
+                    },
+                    layout: {
+                        padding: {
+                            bottom(candidate_votes_chart) {
+                                const chart = candidate_votes_chart.chart;
+                                let pb = 0;
+                                    chart.data.datasets.forEach(function(el) {
+                                    const hOffset = el.hoverOffset || 0;
+                                    pb = Math.max(hOffset / 2 + 5, pb)
+                                });
+                                
+                                return pb + 10;
+                            },
+                        },
+                    },
+                },
+            });
+
+            this.instance_candidate_votes_by_course = new Chart(candidate_votes_by_course_chart, {
+                type: 'radar',
+                data: {
+                    labels: this.data_candidate_votes_by_course.map(item => item.label),
+                    datasets: [{
+                        label: '',
+                        data: [5, 7, 3, 10, 5, 12, 8],
+                        backgroundColor: '#FFC971',
+                        borderColor: '#EA9100',
+                        pointBackgroundColor: '#D2262D',
+                        pointBorderColor: '#D2262D',
+                        intensity: .1,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    tooltips: {
+                        enabled: true
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Votes by Course',
+                            font: {
+                                size: 15,
+                                family: 'Inter',
+                            },
+                            padding: {
+                                bottom: 20
+                            },
+                            align: 'middle'
+                        },
+                        legend: {
+                            display: false,
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                boxWidth: 15,
+                                boxHeight: 8,
+                                padding: 20,
+                                font: {
+                                    size: 15,
+                                    family: 'Inter',
+                                }
+                            }
+                        },
+                        datalabels: {
+                            display: false,
+                            color: 'black',
+                            font: {
+                                size: 13,
+                            }
+                        }
+                    },
+                    layout: {
+                        padding: {
+                            bottom(candidate_votes_by_course_chart) {
+                                const chart = candidate_votes_by_course_chart.chart;
+                                let pb = 0;
+                                    chart.data.datasets.forEach(function(el) {
+                                    const hOffset = el.hoverOffset || 0;
+                                    pb = Math.max(hOffset / 2 + 5, pb)
+                                });
+                                
+                                return pb + 10;
+                            },
+                        }
+                    },
+                },
+            });
+
+            this.instance_candidate_ratings = new Chart(candidate_ratings_chart, {
+                type: 'line',
+                data: {
+                    labels: this.data_candidate_ratings.map(item => item.label),
+                    datasets: [{
+                        label: '',
+                        data: [5, 7, 3, 10, 5, 12, 8],
+                        borderColor: '#03ABFF',
+                        pointBackgroundColor: '#0088CC',
+                        pointBorderColor: '#0088CC',
+                        tension: .5,
+                        borderWidth: 3,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    tooltips: {
+                        enabled: true
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Ratings',
+                            font: {
+                                size: 15,
+                                family: 'Inter',
+                            },
+                            padding: {
+                                bottom: 20
+                            },
+                            align: 'middle'
+                        },
+                        legend: {
+                            display: false,
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                boxWidth: 15,
+                                boxHeight: 8,
+                                padding: 20,
+                                font: {
+                                    size: 15,
+                                    family: 'Inter',
+                                }
+                            }
+                        },
+                        datalabels: {
+                            display: false,
+                            color: 'black',
+                            font: {
+                                size: 13,
+                            }
+                        }
+                    },
+                    layout: {
+                        padding: {
+                            bottom(candidate_ratings_chart) {
+                                const chart = candidate_ratings_chart.chart;
+                                let pb = 0;
+                                    chart.data.datasets.forEach(function(el) {
+                                    const hOffset = el.hoverOffset || 0;
+                                    pb = Math.max(hOffset / 2 + 5, pb)
+                                });
+                                
+                                return pb + 10;
+                            },
+                        }
+                    },
+                },
+            });
+
         },
         created() {
             watchEffect(() => {
@@ -713,6 +1089,20 @@
                     this.selected_election_candidates = election.NumberOfCandidates;
                     this.selected_election_partylist = election.NumberOfPartylists;
                     this.selected_election_voters_population = election.NumberOfVoters;
+
+                    this.candidates_list = [];
+                    election.Candidates.forEach(candidate => {
+                        if (candidate) {
+                            this.candidates_list.push(candidate);
+                        }
+                    });
+
+                    // Select candidate
+
+                    if (election.Candidates.length > 0) {
+                        this.select_candidate_input = election.Candidates[0].StudentNumber;
+                        this.candidateInputChanged();
+                    }
 
                     // update voter turnout chart
 
@@ -791,6 +1181,17 @@
 
                     this.instance_partylist.data.datasets[0].data = this.data_partylist.map(item => item.value);
                     this.instance_partylist.update();
+                })
+            },
+            async candidateInputChanged() {
+                await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/reports/election/${this.select_election_input}/candidate/${this.select_candidate_input}`)
+                .then((response) => {
+                    const candidate = response.data.candidate;
+
+                    this.selected_candidate_name = candidate.FullName;
+                    this.selected_candidate_image = candidate.DisplayPhoto;
+                    this.selected_candidate_partylist = candidate.Partylist;
+                    this.selected_candidate_motto = candidate.Motto;
                 })
             },
         }
@@ -945,7 +1346,7 @@
 
     .candidate-img{
         width: 220px;
-        height: 300px;
+        height: 350px;
         object-fit: cover;
     }
 
