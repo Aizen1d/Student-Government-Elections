@@ -3040,19 +3040,77 @@ def get_Reports_By_Election_Id(id: int, db: Session = Depends(get_db)):
 
     # Count approved and rejected coc
     approved_coc = db.query(CoC).filter(CoC.ElectionId == id, CoC.Status == 'Approved').count()
-    election_data['ApprovedCoC'] = approved_coc
+    election_data['NumberOfApprovedCoC'] = approved_coc
 
     rejected_coc = db.query(CoC).filter(CoC.ElectionId == id, CoC.Status == 'Rejected').count()
-    election_data['RejectedCoC'] = rejected_coc
+    election_data['NumberOfRejectedCoC'] = rejected_coc
 
     # Count approved and rejected partylist
     approved_partylist = db.query(PartyList).filter(PartyList.ElectionId == id, PartyList.Status == 'Approved').count()
-    election_data['ApprovedPartylist'] = approved_partylist
+    election_data['NumberOfApprovedPartylist'] = approved_partylist
 
     rejected_partylist = db.query(PartyList).filter(PartyList.ElectionId == id, PartyList.Status == 'Rejected').count()
-    election_data['RejectedPartylist'] = rejected_partylist
+    election_data['NumberOfRejectedPartylist'] = rejected_partylist
+
+    # Return all candidates, fullname, student number
+    candidates = db.query(Candidates).filter(Candidates.ElectionId == id).order_by(Candidates.CandidateId).all()
+    candidates_dict = []
+    for candidate in candidates:
+        student = db.query(Student).filter(Student.StudentNumber == candidate.StudentNumber).first()
+        candidates_dict.append({
+            "FullName": student.FirstName + " " + student.MiddleName + " " + student.LastName if student.MiddleName else student.FirstName + " " + student.LastName,
+            "StudentNumber": student.StudentNumber,
+        })
+
+    election_data['Candidates'] = candidates_dict
 
     return {"election": election_data}
+
+@router.get("/reports/election/{election_id}/candidate/{student_number}", tags=["Reports"])
+def get_Reports_By_Election_Id_And_Candidate_StudentNumber(election_id: int, student_number: str, db: Session = Depends(get_db)):
+    # Get the candidate info from coc
+    coc = db.query(CoC).filter(CoC.ElectionId == election_id, CoC.StudentNumber == student_number).first()
+    coc_dict = {}
+
+    # Get the fullname of the candidate
+    student = db.query(Student).filter(Student.StudentNumber == student_number).first()
+    coc_dict["FullName"] = student.FirstName + " " + student.MiddleName + " " + student.LastName if student.MiddleName else student.FirstName + " " + student.LastName
+    
+    # Get the display photo from cloudinary using the candidate.displayphoto resources by tag in cloudinary
+    try:
+        display_photo = resources_by_tag(coc.DisplayPhoto)
+        coc_dict["DisplayPhoto"] = display_photo["resources"][0]["secure_url"] if display_photo else ""
+    except Exception as e:
+        print(f"Error fetching DisplayPhoto from Cloudinary: {e}")
+        coc_dict["DisplayPhoto"] = ""
+
+    # Get the partylist name of the candidate
+    partylist = db.query(PartyList).filter(PartyList.PartyListId == coc.PartyListId).first()
+    
+    if partylist:
+        coc_dict["PartyListName"] = partylist.PartyListName
+    else:
+        coc_dict["PartyListName"] = "Independent"
+
+    # (SOON) Get candidate course, year and section
+
+    # Get the motto 
+    coc_dict["Motto"] = coc.Motto
+
+    # (SOON) Get candidate platform
+
+    # Get candidate votes 
+    candidate = db.query(Candidates).filter(Candidates.ElectionId == election_id, Candidates.StudentNumber == student_number).first()
+    coc_dict["Votes"] = candidate.Votes
+
+    # (SOON) Get candidate abstains
+
+    # (SOON) Get votes per course (Can be specified by VotingTrackers table but course is not included in the table Student and structure will change so keep this for now)
+
+    # (SOON) Get candidate ratings
+    
+    return {"candidate": coc_dict}
+
 
 #################################################################
 app.include_router(router)
