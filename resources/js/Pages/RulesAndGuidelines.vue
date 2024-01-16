@@ -2,30 +2,45 @@
     <title>Rules & Guidelines - COMELEC Portal</title>
     <Navbar></Navbar>
 
-    <div class="container-fluid main">
-        <div class="sector mx-5">
-            <h1 class="my-4 rules-label">RULES</h1>
-            
-            <div class="details" v-if="isRuleSucess" v-for="(rule, index) in rulesData.rules" :key="index">
-                <span>Rule #{{ rule.count }} {{ rule.RuleTitle }}</span>
-                <p class="my-2">{{ rule.RuleBody }}</p>
+    <main class="main-margin">
+        <h1 class="header">RULES</h1>
+
+        <div class="rule-list" v-if="isRuleSucess" v-for="(rule, index) in rulesData.rules" :key="index">
+            <div class="rule">
+                <div class="rule-wrapper">
+                    <span class="rule-title">Rule .{{ rule.count }} {{ rule.RuleTitle }}</span>
+
+                    <hr class="line">
+
+                    <p class="rule-content">{{ rule.RuleBody }}</p>
+                </div>
             </div>
         </div>
 
-        <div class="sector mx-5">
-            <h1 class="my-4 guidelines-label">GUIDELINES</h1>
+        <hr class="divider">
 
-            <div class="details" v-if="isGuidelineSucess" v-for="(guideline, index) in guidelinesData.guidelines" :key="index">
-                <span>Guideline #{{ guideline.count }} {{ guideline.GuidelineTitle }}</span>
-                <p class="my-2">{{ guideline.GuidelineBody }}</p>
+        <h1 class="header">GUIDELINES</h1>
+
+        <div class="rule-list" v-if="isGuidelineSucess" v-for="(guideline, index) in guidelinesData.guidelines" :key="index">
+            <div class="rule">
+                <div class="rule-wrapper">
+                    <span class="rule-title">Rule .{{ guideline.count }} {{ guideline.GuidelineTitle }}</span>
+
+                    <hr class="line">
+
+                    <p class="rule-content">{{ guideline.GuidelineBody }}</p>
+                </div>
             </div>
         </div>
-    </div>
+    </main>
+
+    <Appeal></Appeal>
 </template>
 
 <script>
     import Navbar from "../Shared/Navbar.vue";
     import Standards from "../Shared/Standards.vue";
+    import Appeal from "../Shared/Appeal.vue";
 
     import { useQuery } from "@tanstack/vue-query";
     import { ref } from "vue";
@@ -77,41 +92,59 @@
         components: {
             Navbar,
             Standards,
+            Appeal,
         },
     };
 </script>
 
 <style scoped>
-.main {
+.main-margin{
+    margin: 0% 8%;
+}
+
+.header{
+    margin: 1.5% 0%;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.rule{
+    background-color: #ffffff;
+    box-shadow: 0px 3px 5px rgba(167, 165, 165, 0.5);
+    border-radius: 6px;
+    margin: 1.5% 0%;
+}
+
+.rule-wrapper{
+    padding: 2%;
+}
+
+.rule-title{
+    font-weight: bold;
     font-size: 20px;
-    margin-top: 3%;
+    margin: 0%;
 }
 
-.main h1 {
-    font-size: 20px;
-    letter-spacing: 3px;
-    font-weight: 800;
+.line{
+    border: 0;
+    height: 2px;
+    background: rgb(249,249,249);
+    background: linear-gradient(90deg, rgba(249,249,249,1) 0%, rgba(217,217,217,1) 50%, rgba(249,249,249,1) 100%);
+    margin: 1% 0%;
 }
 
-.sector {
-    margin: 3% 0 3% 0;
+.divider{
+    border: 0;
+    height: 2px;
+    background: rgb(249,249,249);
+    background: linear-gradient(90deg, rgba(249,249,249,1) 0%, rgba(217,217,217,1) 50%, rgba(249,249,249,1) 100%);
+    margin: 3% 0%;
 }
 
-.rules-label {
-    font-size: 1.5em !important;
-    letter-spacing: 0.2em !important;
-}
 
-.guidelines-label {
-    font-size: 1.5em !important;
-    letter-spacing: 0.2em !important;
-}
-
-.details {
-    margin-top: 2%;
-}
-
-.details span {
-    font-weight: 700;
+.rule-content{
+    margin: 0%;
+    font-size: 18px;
+    text-indent: 70px;
 }
 </style>
