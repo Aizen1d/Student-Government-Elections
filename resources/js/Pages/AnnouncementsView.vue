@@ -26,11 +26,11 @@
                             <Carousel v-else :images="images" :interval="3500"></Carousel>
                         </div>
                         
-                        <div class="col-6">
+                        <div class="col-6" v-if="!isAnnouncementLoading">
                             <div class="announcement-details">
                                 <span class="announcement-title">{{ title }}</span>
                                 <ToolTip class="mx-3">
-                                    <slot>Announcement's carousel can select to next/prev or use left/right arrow keys</slot>
+                                    <slot>Control the image carousel by clicking left/right carousel buttons or keyboard arrow keys</slot>
                                 </ToolTip>
                                 <div style="display: flex; justify-content: space-between;">
                                     <span class="announcement-type">{{ announcement_type.toUpperCase() }}</span>
