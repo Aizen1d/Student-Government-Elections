@@ -7,7 +7,7 @@
 
 <style>
     html{
-        background-color: #F4F6F9;
+        background-color: #e6e9ed;
     }
 
     body{
