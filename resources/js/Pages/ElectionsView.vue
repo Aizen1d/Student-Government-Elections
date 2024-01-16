@@ -129,12 +129,15 @@
             </div>
         </div>
     </main>
+
+    <Appeal></Appeal>
 </template>
 
 <script>
     import Standards from '../Shared/Standards.vue'
     import Navbar from '../Shared/Navbar.vue'
     import ActionButton from '../Shared/ActionButton.vue'
+    import Appeal from '../Shared/Appeal.vue'
 
     import axios from 'axios'
     import { ref, watch, watchEffect } from 'vue'
@@ -181,6 +184,7 @@
             Standards,
             Navbar,
             ActionButton,
+            Appeal,
         },
         props: {
             id: '',

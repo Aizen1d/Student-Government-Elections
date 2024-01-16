@@ -42,12 +42,15 @@
         </AnnouncementsSkeleton>
 
     </main>
+
+    <Appeal></Appeal>
 </template>
 
 <script>
     import Standards from '../Shared/Standards.vue'
     import Navbar from '../Shared/Navbar.vue'
     import AnnouncementsSkeleton from '../Skeletons/AnnouncementsSkeleton.vue'
+    import Appeal from '../Shared/Appeal.vue'
 
     import axios from 'axios'
     import { router } from '@inertiajs/vue3'
@@ -135,6 +138,7 @@
             Navbar,
             Link,
             AnnouncementsSkeleton,
+            Appeal,
         },
         props:{
             type: String,
