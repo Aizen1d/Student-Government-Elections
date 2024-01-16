@@ -26,32 +26,34 @@
                 <hr :class="isOpen(election.ElectionId) ? 'line' : 'line-hidden'">
 
                 <div class="card-set">
-                    <div class="card" @mouseenter="toggleCardHover(election, 'candidate')" @mouseleave="toggleCardHover(election, 'candidate')">
+                    <div class="card" @mouseenter="toggleCardHover(election, 'candidate', 'enter')" @mouseleave="toggleCardHover(election, 'candidate', 'leave')">
                         <div class="card-wrapper">
                             <div class="card-information">
+                                <span v-if="!checkCardIfHovered(election, 'candidate')" class="quantity-label" style="color: #800000; font-size: 14px;">HOVER FOR MORE INFO</span>
                                 <img src="../../images/Elections/candidate.svg" alt="" class="card-svg">
                                 <div v-if="!checkCardIfHovered(election, 'candidate')" class="count">
                                     <span class="quantity">{{ election.NumberOfCandidates }}</span>
                                     <span class="quantity-label">Candidates</span>
                                 </div>
                                 <div v-else class="count">
-                                    <div @click.prevent="fileCoc(election)" style="cursor: pointer;" class="select"><span class="action"> File a CoC</span></div>
-                                    <div @click.prevent="viewCandidates(election)" style="cursor: pointer;" class="select"><span class="action"> View Candidates</span></div>
+                                    <div @click.prevent="fileCoc(election)" style="cursor: pointer; font-size: 14px;" class="select"><span class="action"> CLICK TO FILE COC</span></div>
+                                    <div @click.prevent="viewCandidates(election)" style="cursor: pointer; font-size: 14px;" class="select"><span class="action"> CLICK TO VIEW CANDIDATES</span></div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="card" @mouseenter="toggleCardHover(election, 'party')" @mouseleave="toggleCardHover(election, 'party')">
+                    <div class="card" @mouseenter="toggleCardHover(election, 'party', 'enter')" @mouseleave="toggleCardHover(election, 'party', 'leave')">
                         <div class="card-wrapper">
                             <div class="card-information">
+                                <span v-if="!checkCardIfHovered(election, 'party')" class="quantity-label" style="color: #800000; font-size: 14px;">HOVER FOR MORE INFO</span>
                                 <img src="../../images/Elections/party.svg" alt="" class="card-svg">
                                 <div v-if="!checkCardIfHovered(election, 'party')" class="count">
                                     <span class="quantity">{{ election.NumberOfPartylists }}</span>
                                     <span class="quantity-label">Partylists</span>
                                 </div>
                                 <div v-else class="count">
-                                    <div @click.prevent="registerParty(election)" style="cursor: pointer;" class="select"><span class="action"> Register Party List</span></div>
-                                    <div @click.prevent="viewPartylists(election)" style="cursor: pointer;" class="select"><span class="action"> View Party Lists</span></div>
+                                    <div @click.prevent="registerParty(election)" style="cursor: pointer; font-size: 14px;" class="select"><span class="action"> CLICK TO FILE PARTYLIST</span></div>
+                                    <div @click.prevent="viewPartylists(election)" style="cursor: pointer; font-size: 14px;" class="select"><span class="action"> CLICK TO VIEW PARTYLISTS</span></div>
                                 </div>
                             </div>
                         </div>
@@ -244,9 +246,15 @@
                 const index = this.showElection.findIndex(e => e.id === election.ElectionId);
                 this.showElection[index].open = !this.showElection[index].open;
             },
-            toggleCardHover(election, card){
+            toggleCardHover(election, card, action){
                 const index = this.isCardHovered.findIndex(e => e.id === election.ElectionId);
-                this.isCardHovered[index][card] = !this.isCardHovered[index][card];
+                
+                if (action === 'enter'){
+                    this.isCardHovered[index][card] = true;
+                }
+                else if (action === 'leave'){
+                    this.isCardHovered[index][card] = false;
+                }
             },
             checkCardIfHovered(election, card){
                 // Make sure election card is open
@@ -401,14 +409,12 @@
     }
 
     .select{
-        color: black;
         text-decoration: none;
-        margin: 9% 0%;
     }
 
     .select:hover{
         font-weight: bold;
-        color: black;
+        color: #9a0000;
     }
 
     .title{

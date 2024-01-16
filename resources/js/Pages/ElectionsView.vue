@@ -36,32 +36,34 @@
                 <hr class="line">
 
                 <div class="card-set">
-                    <div class="card" @mouseenter="toggleCardHover('candidate')" @mouseleave="toggleCardHover('candidate')">
+                    <div class="card" @mouseenter="toggleCardHover('candidate', 'enter')" @mouseleave="toggleCardHover('candidate', 'leave')">
                         <div class="card-wrapper">
                             <div class="card-information">
+                                <span v-if="!checkCardIfHovered('candidate')" class="quantity-label" style="color: #800000; font-size: 14px;">HOVER FOR MORE INFO</span>
                                 <img src="../../images/Elections/candidate.svg" alt="" class="card-svg">
                                 <div v-if="!checkCardIfHovered('candidate')" class="count">
                                     <span class="quantity">{{ electionData.number_of_candidates }}</span>
                                     <span class="quantity-label">Candidates</span>
                                 </div>
                                 <div v-else class="count">
-                                    <div @click.prevent="fileCoc(election)" style="cursor: pointer;" class="select"><span class="action"> File a CoC</span></div>
-                                    <div @click.prevent="viewCandidates(election)" style="cursor: pointer;" class="select"><span class="action"> View Candidates</span></div>
+                                    <div @click.prevent="fileCoc(election)" style="cursor: pointer; font-size: 14px;" class="select"><span class="action"> CLICK TO FILE COC</span></div>
+                                    <div @click.prevent="viewCandidates(election)" style="cursor: pointer; font-size: 14px;" class="select"><span class="action"> CLICK TO VIEW CANDIDATES</span></div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="card" @mouseenter="toggleCardHover('party')" @mouseleave="toggleCardHover('party')">
+                    <div class="card" @mouseenter="toggleCardHover('party', 'enter')" @mouseleave="toggleCardHover('party', 'leave')">
                         <div class="card-wrapper">
                             <div class="card-information">
+                                <span v-if="!checkCardIfHovered('party')" class="quantity-label" style="color: #800000; font-size: 14px;">HOVER FOR MORE INFO</span>
                                 <img src="../../images/Elections/party.svg" alt="" class="card-svg">
                                 <div v-if="!checkCardIfHovered('party')" class="count">
                                     <span class="quantity">{{ electionData.number_of_partylists }}</span>
                                     <span class="quantity-label">Partylists</span>
                                 </div>
                                 <div v-else class="count">
-                                    <div @click.prevent="registerParty(election)" style="cursor: pointer;" class="select"><span class="action"> Register Party List</span></div>
-                                    <div @click.prevent="viewPartylists(election)" style="cursor: pointer;" class="select"><span class="action"> View Party Lists</span></div>
+                                    <div @click.prevent="registerParty(election)" style="cursor: pointer; font-size: 14px;" class="select"><span class="action"> CLICK TO FILE PARTYLIST</span></div>
+                                    <div @click.prevent="viewPartylists(election)" style="cursor: pointer; font-size: 14px;" class="select"><span class="action"> CLICK TO VIEW PARTYLISTS</span></div>
                                 </div>
                             </div>
                         </div>
@@ -288,8 +290,13 @@
                     }
                 })
             },
-            toggleCardHover(card){
-                this.isCardHovered[card] = !this.isCardHovered[card];
+            toggleCardHover(card, action){
+                if (action == 'enter'){
+                    this.isCardHovered[card] = true;
+                }
+                else if (action == 'leave'){
+                    this.isCardHovered[card] = false;
+                }
             },
             checkCardIfHovered(card){
                 return this.isCardHovered[card]
@@ -438,14 +445,12 @@
     }
 
     .select{
-        color: black;
         text-decoration: none;
-        margin: 9% 0%;
     }
 
     .select:hover{
         font-weight: bold;
-        color: black;
+        color: #9a0000;
     }
 
     .title{
