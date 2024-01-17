@@ -10,7 +10,7 @@ Session = sessionmaker(bind=engine)
 session = Session()
 
 class Student(Base):
-    __tablename__ = "Student"
+    __tablename__ = "SGEStudent"
     
     StudentId = Column(Integer, primary_key=True)
     StudentNumber = Column(String(15), unique=True)
@@ -44,15 +44,15 @@ class Student(Base):
         }
     
 class Election(Base):
-    __tablename__ = "Election"
+    __tablename__ = "SGEElection"
     
     ElectionId = Column(Integer, primary_key=True)
     ElectionName = Column(String)
-    StudentOrganizationId = Column(Integer, ForeignKey('StudentOrganization.StudentOrganizationId'))
+    StudentOrganizationId = Column(Integer, ForeignKey('SGEStudentOrganization.StudentOrganizationId'))
     ElectionStatus = Column(String)
     SchoolYear = Column(String)
     Semester = Column(String)
-    CreatedBy = Column(String)
+    CreatedBy = Column(String, ForeignKey('SGEStudent.StudentNumber'))
 
     ElectionStart = Column(DateTime)
     ElectionEnd = Column(DateTime)
@@ -95,10 +95,10 @@ class Election(Base):
         }
     
 class CreatedElectionPosition(Base):
-    __tablename__ = "CreatedElectionPosition"
+    __tablename__ = "SGECreatedElectionPosition"
     
     CreatedElectionPositionId = Column(Integer, primary_key=True)
-    ElectionId = Column(Integer)
+    ElectionId = Column(Integer, ForeignKey('SGEElection.ElectionId'))
     PositionName = Column(String)
     PositionQuantity = Column(String)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -116,7 +116,7 @@ class CreatedElectionPosition(Base):
         }
     
 class SavedPosition(Base):
-    __tablename__ = "SavedPosition"
+    __tablename__ = "SGESavedPosition"
     
     SavedPositionId = Column(Integer, primary_key=True)
     PositionName = Column(String)
@@ -132,7 +132,7 @@ class SavedPosition(Base):
         }
     
 class Announcement(Base):
-    __tablename__ = "Announcement"
+    __tablename__ = "SGEAnnouncement"
     
     AnnouncementId = Column(Integer, primary_key=True)
     AnnouncementType = Column(String)
@@ -168,7 +168,7 @@ class Announcement(Base):
 
 
 class Rule(Base):
-    __tablename__ = "Rules"
+    __tablename__ = "SGERules"
     
     RuleId = Column(Integer, primary_key=True)
     RuleTitle = Column(String)
@@ -188,7 +188,7 @@ class Rule(Base):
         }
 
 class Guideline(Base):
-    __tablename__ = "Guidelines"
+    __tablename__ = "SGEGuidelines"
     
     GuideId = Column(Integer, primary_key=True)
     GuidelineTitle = Column(String)
@@ -208,12 +208,12 @@ class Guideline(Base):
         }
     
 class Certifications(Base):
-    __tablename__ = "Certifications"
+    __tablename__ = "SGECertifications"
     
     CertificationId = Column(Integer, primary_key=True)
     Title = Column(String)
-    ElectionId = Column(Integer, ForeignKey('Election.ElectionId'))
-    StudentNumber = Column(String(15), ForeignKey('Student.StudentNumber'))
+    ElectionId = Column(Integer, ForeignKey('SGEElection.ElectionId'))
+    StudentNumber = Column(String(15), ForeignKey('SGEStudent.StudentNumber'))
     Date = Column(Date)
     AdminSignatoryQuantity = Column(String)
     AssetId = Column(String)
@@ -234,10 +234,10 @@ class Certifications(Base):
         }
     
 class CreatedAdminSignatory(Base):
-    __tablename__ = "CreatedAdminSignatory"
+    __tablename__ = "SGECreatedAdminSignatory"
     
     CreatedAdminSignatoryId = Column(Integer, primary_key=True)
-    CertificationId = Column(Integer, ForeignKey('Certifications.CertificationId'))
+    CertificationId = Column(Integer, ForeignKey('SGECertifications.CertificationId'))
     SignatoryName = Column(String)
     SignatoryPosition = Column(String)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -253,29 +253,11 @@ class CreatedAdminSignatory(Base):
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
 
-class AzureToken(Base):
-    __tablename__ = "AzureToken"
-
-    id = Column(Integer, primary_key=True, index=True)
-    access_token = Column(String)
-    refresh_token = Column(String)
-    expires_at = Column(Float)
-    token_updates = Column(Integer, default=0)  # New column to track token updates
-
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "access_token": self.access_token,
-            "refresh_token": self.refresh_token,
-            "expires_at": self.expires_at,
-            "token_updates": self.token_updates  # Include the new column in the dictionary
-        }
-
 class Code(Base):
-    __tablename__ = "Code"
+    __tablename__ = "SGECode"
 
     CodeId = Column(Integer, primary_key=True)
-    StudentNumber = Column(String(15), ForeignKey('Student.StudentNumber'), unique=True)
+    StudentNumber = Column(String(15), ForeignKey('SGEStudent.StudentNumber'), unique=True)
     CodeValue = Column(Text)
     CodeType = Column(String)
     CodeExpirationDate = Column(DateTime)
@@ -293,25 +275,8 @@ class Code(Base):
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }
     
-class StudentPassword(Base):
-    __tablename__ = "StudentPassword"
-
-    StudentPasswordId = Column(Integer, primary_key=True)
-    StudentNumber = Column(String(15), ForeignKey('Student.StudentNumber'), unique=True)
-    Password = Column(String)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-
-    def to_dict(self):
-        return {
-            "StudentPasswordId": self.StudentPasswordId,
-            "StudentNumber": self.StudentNumber,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None
-        }
-    
 class InsertDataQueues(Base):
-    __tablename__ = "InsertDataQueues"
+    __tablename__ = "SGEInsertDataQueues"
 
     QueueId = Column(Integer, primary_key=True)
     QueueName = Column(String)
@@ -335,7 +300,7 @@ class InsertDataQueues(Base):
         }
     
 class StudentOrganization(Base):
-    __tablename__ = "StudentOrganization"
+    __tablename__ = "SGEStudentOrganization"
     
     StudentOrganizationId = Column(Integer, primary_key=True)
     OrganizationLogo = Column(String)
@@ -343,8 +308,8 @@ class StudentOrganization(Base):
     OrganizationMemberRequirements = Column(String)
     AdviserImage = Column(String)
     AdviserName = Column(String)
-    Vision = Column(String)
-    Mission = Column(String)
+    Vision = Column(String, nullable=True)
+    Mission = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -363,11 +328,11 @@ class StudentOrganization(Base):
         }
 
 class OrganizationOfficer(Base):
-    __tablename__ = "OrganizationOfficer"
+    __tablename__ = "SGEOrganizationOfficer"
 
     OrganizationOfficerId = Column(Integer, primary_key=True)
-    StudentOrganizationId = Column(Integer, ForeignKey('StudentOrganization.StudentOrganizationId'))
-    StudentNumber = Column(String(15), unique=True)
+    StudentOrganizationId = Column(Integer, ForeignKey('SGEStudentOrganization.StudentOrganizationId'))
+    StudentNumber = Column(String(15), ForeignKey('SGEStudent.StudentNumber'), unique=True)
     Image = Column(String)
     Position = Column(String)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -385,11 +350,11 @@ class OrganizationOfficer(Base):
         }
 
 class OrganizationMember(Base):
-    __tablename__ = "OrganizationMember"
+    __tablename__ = "SGEOrganizationMember"
 
     OrganizationMemberId = Column(Integer, primary_key=True)
-    StudentOrganizationId = Column(Integer, ForeignKey('StudentOrganization.StudentOrganizationId'))
-    StudentNumber = Column(String(15), unique=True)
+    StudentOrganizationId = Column(Integer, ForeignKey('SGEStudentOrganization.StudentOrganizationId'))
+    StudentNumber = Column(String(15), ForeignKey('SGEStudent.StudentNumber'), unique=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -403,15 +368,15 @@ class OrganizationMember(Base):
         }
     
 class ElectionAppeals(Base):
-    __tablename__ = "ElectionAppeals"
+    __tablename__ = "SGEElectionAppeals"
 
     ElectionAppealsId = Column(Integer, primary_key=True)
-    StudentNumber = Column(String(15), unique=True)
+    StudentNumber = Column(String(15), ForeignKey('SGEStudent.StudentNumber'))
     AppealDetails = Column(Text)
-    AppealEmailSubject = Column(String)
-    AppealResponse = Column(Text)
-    AppealStatus = Column(String)
-    AttachmentAssetId = Column(String)
+    AppealEmailSubject = Column(String, nullable=True)
+    AppealResponse = Column(Text, nullable=True)
+    AppealStatus = Column(String, default="Pending")
+    AttachmentAssetId = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -430,17 +395,27 @@ class ElectionAppeals(Base):
 
 #########################################################
 """ Comelec Portal Table Models """
+class Comelec(Base):
+    __tablename__ = "SGEComelec"
+
+    ComelecId = Column(Integer, primary_key=True)
+    StudentNumber = Column(String(15), ForeignKey('SGEStudent.StudentNumber'), unique=True)
+    Password = Column(Text)
+    Position = Column(String)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
 class CoC(Base):
-    __tablename__ = "CoC"
+    __tablename__ = "SGECoC"
 
     CoCId = Column(Integer, primary_key=True)
-    ElectionId = Column(Integer, ForeignKey('Election.ElectionId'))
-    StudentNumber = Column(String(15), ForeignKey('Student.StudentNumber'), unique=True)
+    ElectionId = Column(Integer, ForeignKey('SGEElection.ElectionId'))
+    StudentNumber = Column(String(15), ForeignKey('SGEStudent.StudentNumber'))
     VerificationCode = Column(String)
-    Motto = Column(String)
+    Motto = Column(String, nullable=True)
+    Platform = Column(Text)
     PoliticalAffiliation = Column(String)
-    PartyListId = Column(Integer, ForeignKey('PartyList.PartyListId'), nullable=True)
+    PartyListId = Column(Integer, ForeignKey('SGEPartyList.PartyListId'), nullable=True)
     SelectedPositionName = Column(String)
     DisplayPhoto = Column(String)
     CertificationOfGrades = Column(String)
@@ -456,6 +431,7 @@ class CoC(Base):
             "StudentNumber": self.StudentNumber,
             "VerificationCode": self.VerificationCode,
             "Motto": self.Motto,
+            "Platform": self.Platform,
             "PoliticalAffiliation": self.PoliticalAffiliation,
             "PartyListId": self.PartyListId,
             "SelectedPositionName": self.SelectedPositionName,
@@ -467,10 +443,10 @@ class CoC(Base):
         }
 
 class PartyList(Base):
-    __tablename__ = "PartyList"
+    __tablename__ = "SGEPartyList"
 
     PartyListId = Column(Integer, primary_key=True)
-    ElectionId = Column(Integer, ForeignKey('Election.ElectionId'))
+    ElectionId = Column(Integer, ForeignKey('SGEElection.ElectionId'))
     PartyListName = Column(String)
     Description = Column(String)
     Platforms = Column(String)
@@ -478,8 +454,8 @@ class PartyList(Base):
     CellphoneNumber = Column(String)
     Vision = Column(String)
     Mission = Column(String)
-    ImageAttachment = Column(String)
-    VideoAttachment = Column(String)
+    ImageAttachment = Column(String, nullable=True)
+    VideoAttachment = Column(String, nullable=True)
     Status = Column(String)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
@@ -504,17 +480,23 @@ class PartyList(Base):
         }
     
 class Candidates(Base):
-    __tablename__ = "Candidates"
+    __tablename__ = "SGECandidates"
 
     CandidateId = Column(Integer, primary_key=True)
-    StudentNumber = Column(String(15), ForeignKey('Student.StudentNumber'), unique=True)
-    ElectionId = Column(Integer, ForeignKey('Election.ElectionId'))
-    PartyListId = Column(Integer, ForeignKey('PartyList.PartyListId'), nullable=True)
+    StudentNumber = Column(String(15), ForeignKey('SGEStudent.StudentNumber'))
+    ElectionId = Column(Integer, ForeignKey('SGEElection.ElectionId'))
+    PartyListId = Column(Integer, ForeignKey('SGEPartyList.PartyListId'), nullable=True)
     SelectedPositionName = Column(String)
     DisplayPhoto = Column(String)
+    Votes = Column(Integer, default=0)
+    TimesAbstained = Column(Integer, default=0)
     Rating = Column(Integer, default=0)
     TimesRated = Column(Integer, default=0)
-    Votes = Column(Integer, default=0)
+    OneStar = Column(Integer, default=0)
+    TwoStar = Column(Integer, default=0)
+    ThreeStar = Column(Integer, default=0)
+    FourStar = Column(Integer, default=0)
+    FiveStar = Column(Integer, default=0)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -529,16 +511,22 @@ class Candidates(Base):
             "Rating": self.Rating,
             "TimesRated": self.TimesRated,
             "Votes": self.Votes,
+            "TimesAbstained": self.TimesAbstained,
+            "OneStar": self.OneStar,
+            "TwoStar": self.TwoStar,
+            "ThreeStar": self.ThreeStar,
+            "FourStar": self.FourStar,
+            "FiveStar": self.FiveStar,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }
     
 class RatingsTracker(Base):
-    __tablename__ = "RatingsTracker"
+    __tablename__ = "SGERatingsTracker"
 
     RatingsTrackerId = Column(Integer, primary_key=True)
-    StudentNumber = Column(String(15), ForeignKey('Student.StudentNumber'), unique=True)
-    ElectionId = Column(Integer, ForeignKey('Election.ElectionId'))
+    StudentNumber = Column(String(15), ForeignKey('SGEStudent.StudentNumber'), unique=True)
+    ElectionId = Column(Integer, ForeignKey('SGEElection.ElectionId'))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -552,28 +540,32 @@ class RatingsTracker(Base):
         }
     
 class VotingsTracker(Base):
-    __tablename__ = "VotingsTracker"
+    __tablename__ = "SGEVotingsTracker"
 
     VotingsTrackerId = Column(Integer, primary_key=True)
-    StudentNumber = Column(String(15), ForeignKey('Student.StudentNumber'), unique=True)
-    ElectionId = Column(Integer, ForeignKey('Election.ElectionId'))
+    VoterStudentNumber = Column(String(15), ForeignKey('SGEStudent.StudentNumber'))
+    VotedCandidateId = Column(Integer, ForeignKey('SGECandidates.CandidateId'))
+    CourseId = Column(Integer)
+    ElectionId = Column(Integer, ForeignKey('SGEElection.ElectionId'))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     def to_dict(self):
         return {
             "VotingsTrackerId": self.VotingsTrackerId,
-            "StudentNumber": self.StudentNumber,
+            "VoterStudentNumber": self.VoterStudentNumber,
+            "VotedCandidateId": self.VotedCandidateId,
+            "CourseId": self.CourseId,
             "ElectionId": self.ElectionId,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }
     
 class ElectionAnalytics(Base):
-    __tablename__ = "ElectionAnalytics"
+    __tablename__ = "SGEElectionAnalytics"
 
     ElectionAnalyticsId = Column(Integer, primary_key=True)
-    ElectionId = Column(Integer, ForeignKey('Election.ElectionId'))
+    ElectionId = Column(Integer, ForeignKey('SGEElection.ElectionId'))
     AbstainCount = Column(Integer, default=0)
     VotesCount = Column(Integer, default=0)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -590,11 +582,11 @@ class ElectionAnalytics(Base):
         }
     
 class ElectionWinners(Base):
-    __tablename__ = "ElectionWinners"
+    __tablename__ = "SGEElectionWinners"
 
     ElectionWinnersId = Column(Integer, primary_key=True)
-    ElectionId = Column(Integer, ForeignKey('Election.ElectionId'))
-    StudentNumber = Column(String(15), ForeignKey('Student.StudentNumber'), unique=True)
+    ElectionId = Column(Integer, ForeignKey('SGEElection.ElectionId'))
+    StudentNumber = Column(String(15), ForeignKey('SGEStudent.StudentNumber'))
     SelectedPositionName = Column(String)
     Votes = Column(Integer, default=0)
     IsTied = Column(Boolean, default=False)
@@ -611,4 +603,22 @@ class ElectionWinners(Base):
             "IsTied": self.IsTied,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
+        }
+    
+class Eligibles(Base):
+    __tablename__ = "SGEEligibles"
+
+    EligibleId = Column(Integer, primary_key=True)
+    StudentNumber = Column(String(15), ForeignKey('SGEStudent.StudentNumber')) # Not unique since a student can be eligible for multiple elections
+    ElectionId = Column(Integer, ForeignKey('SGEElection.ElectionId'))
+    IsVotedOrAbstained = Column(Boolean, default=False)
+    VotingPassword = Column(Text)
+
+    def to_dict(self):
+        return {
+            "EligibleId": self.EligibleId,
+            "StudentNumber": self.StudentNumber,
+            "ElectionId": self.ElectionId,
+            "IsVotedOrAbstained": self.IsVotedOrAbstained,
+            "VotingPassword": self.VotingPassword
         }
