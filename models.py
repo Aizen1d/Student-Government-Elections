@@ -485,6 +485,7 @@ class OrganizationOfficer(Base):
     OrganizationOfficerId = Column(Integer, primary_key=True)
     StudentOrganizationId = Column(Integer, ForeignKey('SGEStudentOrganization.StudentOrganizationId'))
     StudentNumber = Column(String(15), ForeignKey('SPSStudent.StudentNumber'), unique=True)
+    OfficerPassword = Column(Text)
     Image = Column(String)
     Position = Column(String)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
