@@ -26,11 +26,11 @@
             const userStore = useUserStore();
             let label = ref('');
 
-            if (!userStore.organization_name) {
+            if (userStore.user_role == 'comelec') {
                 label = 'Comelec'
             }
             else {
-                label = userStore.organization_name;
+                label = 'Officer';
             }
 
             return {
