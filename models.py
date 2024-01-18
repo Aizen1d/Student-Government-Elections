@@ -204,7 +204,7 @@ class Election(Base):
     ElectionStatus = Column(String)
     SchoolYear = Column(String)
     Semester = Column(String)
-    CreatedBy = Column(String, ForeignKey('SGEStudent.StudentNumber'))
+    CreatedBy = Column(String, ForeignKey('SPSStudent.StudentNumber'))
 
     ElectionStart = Column(DateTime)
     ElectionEnd = Column(DateTime)
@@ -365,7 +365,7 @@ class Certifications(Base):
     CertificationId = Column(Integer, primary_key=True)
     Title = Column(String)
     ElectionId = Column(Integer, ForeignKey('SGEElection.ElectionId'))
-    StudentNumber = Column(String(15), ForeignKey('SGEStudent.StudentNumber'))
+    StudentNumber = Column(String(15), ForeignKey('SPSStudent.StudentNumber'))
     Date = Column(Date)
     AdminSignatoryQuantity = Column(String)
     AssetId = Column(String)
@@ -409,7 +409,7 @@ class Code(Base):
     __tablename__ = "SGECode"
 
     CodeId = Column(Integer, primary_key=True)
-    StudentNumber = Column(String(15), ForeignKey('SGEStudent.StudentNumber'), unique=True)
+    StudentNumber = Column(String(15), ForeignKey('SPSStudent.StudentNumber'), unique=True)
     CodeValue = Column(Text)
     CodeType = Column(String)
     CodeExpirationDate = Column(DateTime)
@@ -484,7 +484,7 @@ class OrganizationOfficer(Base):
 
     OrganizationOfficerId = Column(Integer, primary_key=True)
     StudentOrganizationId = Column(Integer, ForeignKey('SGEStudentOrganization.StudentOrganizationId'))
-    StudentNumber = Column(String(15), ForeignKey('SGEStudent.StudentNumber'), unique=True)
+    StudentNumber = Column(String(15), ForeignKey('SPSStudent.StudentNumber'), unique=True)
     Image = Column(String)
     Position = Column(String)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -506,7 +506,7 @@ class OrganizationMember(Base):
 
     OrganizationMemberId = Column(Integer, primary_key=True)
     StudentOrganizationId = Column(Integer, ForeignKey('SGEStudentOrganization.StudentOrganizationId'))
-    StudentNumber = Column(String(15), ForeignKey('SGEStudent.StudentNumber'), unique=True)
+    StudentNumber = Column(String(15), ForeignKey('SPSStudent.StudentNumber'), unique=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -523,7 +523,7 @@ class ElectionAppeals(Base):
     __tablename__ = "SGEElectionAppeals"
 
     ElectionAppealsId = Column(Integer, primary_key=True)
-    StudentNumber = Column(String(15), ForeignKey('SGEStudent.StudentNumber'))
+    StudentNumber = Column(String(15), ForeignKey('SPSStudent.StudentNumber'))
     AppealDetails = Column(Text)
     AppealEmailSubject = Column(String, nullable=True)
     AppealResponse = Column(Text, nullable=True)
@@ -551,8 +551,8 @@ class Comelec(Base):
     __tablename__ = "SGEComelec"
 
     ComelecId = Column(Integer, primary_key=True)
-    StudentNumber = Column(String(15), ForeignKey('SGEStudent.StudentNumber'), unique=True)
-    Password = Column(Text)
+    StudentNumber = Column(String(15), ForeignKey('SPSStudent.StudentNumber'), unique=True)
+    ComelecPassword = Column(Text)
     Position = Column(String)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
@@ -562,7 +562,7 @@ class CoC(Base):
 
     CoCId = Column(Integer, primary_key=True)
     ElectionId = Column(Integer, ForeignKey('SGEElection.ElectionId'))
-    StudentNumber = Column(String(15), ForeignKey('SGEStudent.StudentNumber'))
+    StudentNumber = Column(String(15), ForeignKey('SPSStudent.StudentNumber'))
     VerificationCode = Column(String)
     Motto = Column(String, nullable=True)
     Platform = Column(Text)
@@ -635,7 +635,7 @@ class Candidates(Base):
     __tablename__ = "SGECandidates"
 
     CandidateId = Column(Integer, primary_key=True)
-    StudentNumber = Column(String(15), ForeignKey('SGEStudent.StudentNumber'))
+    StudentNumber = Column(String(15), ForeignKey('SPSStudent.StudentNumber'))
     ElectionId = Column(Integer, ForeignKey('SGEElection.ElectionId'))
     PartyListId = Column(Integer, ForeignKey('SGEPartyList.PartyListId'), nullable=True)
     SelectedPositionName = Column(String)
@@ -677,7 +677,7 @@ class RatingsTracker(Base):
     __tablename__ = "SGERatingsTracker"
 
     RatingsTrackerId = Column(Integer, primary_key=True)
-    StudentNumber = Column(String(15), ForeignKey('SGEStudent.StudentNumber'), unique=True)
+    StudentNumber = Column(String(15), ForeignKey('SPSStudent.StudentNumber'), unique=True)
     ElectionId = Column(Integer, ForeignKey('SGEElection.ElectionId'))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
@@ -695,7 +695,7 @@ class VotingsTracker(Base):
     __tablename__ = "SGEVotingsTracker"
 
     VotingsTrackerId = Column(Integer, primary_key=True)
-    VoterStudentNumber = Column(String(15), ForeignKey('SGEStudent.StudentNumber'))
+    VoterStudentNumber = Column(String(15), ForeignKey('SPSStudent.StudentNumber'))
     VotedCandidateId = Column(Integer, ForeignKey('SGECandidates.CandidateId'))
     CourseId = Column(Integer)
     ElectionId = Column(Integer, ForeignKey('SGEElection.ElectionId'))
@@ -738,7 +738,7 @@ class ElectionWinners(Base):
 
     ElectionWinnersId = Column(Integer, primary_key=True)
     ElectionId = Column(Integer, ForeignKey('SGEElection.ElectionId'))
-    StudentNumber = Column(String(15), ForeignKey('SGEStudent.StudentNumber'))
+    StudentNumber = Column(String(15), ForeignKey('SPSStudent.StudentNumber'))
     SelectedPositionName = Column(String)
     Votes = Column(Integer, default=0)
     IsTied = Column(Boolean, default=False)
@@ -761,7 +761,7 @@ class Eligibles(Base):
     __tablename__ = "SGEEligibles"
 
     EligibleId = Column(Integer, primary_key=True)
-    StudentNumber = Column(String(15), ForeignKey('SGEStudent.StudentNumber')) # Not unique since a student can be eligible for multiple elections
+    StudentNumber = Column(String(15), ForeignKey('SPSStudent.StudentNumber')) # Not unique since a student can be eligible for multiple elections
     ElectionId = Column(Integer, ForeignKey('SGEElection.ElectionId'))
     IsVotedOrAbstained = Column(Boolean, default=False)
     VotingPassword = Column(Text)
