@@ -35,13 +35,16 @@ import requests
 import cloudinary
 import cloudinary.uploader
 import asyncio
+import aiohttp
 import requests
+import glob
 
+from urllib.parse import urlparse
 from passlib.context import CryptContext
 from cloudinary.api import resources_by_tag, delete_resources_by_tag, delete_folder
 from services import send_verification_code_email, send_pass_code_queue_email, send_pass_code_manual_email, send_coc_status_email, send_partylist_status_email, send_appeal_response_email
 
-from models import Student, Announcement, Rule, Guideline, AzureToken, Election, SavedPosition, CreatedElectionPosition, Code, StudentPassword, PartyList, CoC, InsertDataQueues, Candidates, RatingsTracker, VotingsTracker, ElectionAnalytics, ElectionWinners, Certifications, CreatedAdminSignatory, StudentOrganization, OrganizationOfficer, OrganizationMember, ElectionAppeals
+from models import Student, Announcement, Rule, Guideline, Election, SavedPosition, CreatedElectionPosition, Code, PartyList, CoC, InsertDataQueues, Candidates, RatingsTracker, VotingsTracker, ElectionAnalytics, ElectionWinners, Certifications, CreatedAdminSignatory, StudentOrganization, OrganizationOfficer, OrganizationMember, ElectionAppeals
 #################################################################
 """ Settings """
 
@@ -122,9 +125,33 @@ def get_db():
 scheduler = BackgroundScheduler()
 scheduler.add_jobstore(SQLAlchemyJobStore(url='sqlite:///jobs.sqlite'), 'default')
 
+###########################################################################
+# Cached directory variables
+CachedImagesDirectory = "cached/images"
+CachedImagesDirectoryElection = f'{CachedImagesDirectory}/election'
+
+# On server startup
 @app.on_event("startup")
 def start_up():
     scheduler.start()
+
+    # Make cached images directory
+    if not os.path.exists(CachedImagesDirectory):
+        os.makedirs(CachedImagesDirectory)
+
+    # Make for election
+    if not os.path.exists(CachedImagesDirectoryElection):
+        os.makedirs(CachedImagesDirectoryElection)
+
+async def download_image(url, filename):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as resp:
+            data = await resp.read()
+
+    with open(filename, "wb") as f:
+        f.write(data)
+
+############################################################################# 
 
 CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
@@ -134,7 +161,7 @@ EXPIRES_AT = 0
 ACCESS_TOKEN = ""
 REFRESH_TOKEN = ""
 
-def get_initial_tokens(db: Session = Depends(get_db)):
+"""def get_initial_tokens(db: Session = Depends(get_db)):
     # Redirect the user to the OAuth server to log in
     auth_url = "https://login.microsoftonline.com/consumers/oauth2/v2.0/authorize"
     params = {
@@ -216,7 +243,8 @@ def get_access_token(db: Session = Depends(get_db)):
         db.commit()
 
     return ACCESS_TOKEN, REFRESH_TOKEN
-
+"""
+    
 #################################################################
 """ All about students APIs """
 
@@ -812,7 +840,7 @@ class ElectionDelete(BaseModel):
 
 """ ** GET Methods: All about election APIs ** """
 @router.get("/election/all", tags=["Election"])
-def get_All_Election(db: Session = Depends(get_db)):
+async def get_All_Election(background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     elections = db.query(Election).order_by(Election.ElectionId).all()
     elections_with_creator = []
 
@@ -827,8 +855,30 @@ def get_All_Election(db: Session = Depends(get_db)):
         
         # Get the student organization logo from cloudinary using the student organization id in the election
         try:
-            organization_logo = resources_by_tag(student_organization.OrganizationLogo)
-            election_dict["OrganizationLogo"] = organization_logo["resources"][0]["secure_url"] if organization_logo else ""
+            # Define the base path without the extension
+            base_logo_path = f"{CachedImagesDirectoryElection}/{student_organization.OrganizationLogo}"
+
+            # Use glob to find the file with any extension
+            matching_files  = glob.glob(f"{base_logo_path}.*")
+
+            # If the file exist in the cache directory, use it
+            if matching_files: 
+                logo_path = matching_files[0]
+                
+            else: # If the file does not exist in the cache directory, fetch it from cloudinary
+                organization_logo = resources_by_tag(student_organization.OrganizationLogo)
+                
+                if organization_logo:
+                    # Get the file extension from the URL
+                    parsed_url = urlparse(organization_logo["resources"][0]["secure_url"])
+                    _, file_extension = os.path.splitext(parsed_url.path)
+
+                    logo_path = f"{base_logo_path}{file_extension}"
+
+                    # Schedule the image download as a background task
+                    background_tasks.add_task(download_image, organization_logo["resources"][0]["secure_url"], logo_path)
+
+            election_dict["OrganizationLogo"] = logo_path
         except Exception as e:
             print(f"Error fetching image from Cloudinary: {e}")
             election_dict["OrganizationLogo"] = ""
