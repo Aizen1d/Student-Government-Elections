@@ -12,13 +12,13 @@ class Organization extends Model implements JWTSubject, AuthenticatableContract
 {
     use HasFactory, Authenticatable;
 
-    protected $table = "Organization";
-    protected $primaryKey = 'OrganizationId';
-    protected $fillable = ['StudentNumber',  'Password', 'OfficerPositionId', 'OrganizationName'];
+    protected $table = "SGEOrganizationOfficer";
+    protected $primaryKey = 'OrganizationOfficerId';
+    //protected $fillable = ['StudentNumber',  'OfficerPassword', 'OfficerPositionId', 'OrganizationName'];
 
     public function getAuthPassword()
     {
-        return $this->Password;
+        return $this->OfficerPassword;
     }
 
     public function getStudentByStudentNumber()

@@ -12,7 +12,7 @@ class Student extends Model implements JWTSubject, AuthenticatableContract
 {
     use HasFactory, Authenticatable;
 
-    protected $table = "Student";
+    protected $table = "SPSStudent";
 
     public function getJWTIdentifier()
     {

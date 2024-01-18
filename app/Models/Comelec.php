@@ -12,13 +12,13 @@ class Comelec extends Model implements JWTSubject, AuthenticatableContract
 {
     use HasFactory, Authenticatable;
 
-    protected $table = "Comelec";
+    protected $table = "SGEComelec";
     protected $primaryKey = 'ComelecId';
-    protected $fillable = ['StudentNumber', 'Password', 'Position'];
+    protected $fillable = ['StudentNumber', 'ComelecPassword', 'Position'];
 
     public function getAuthPassword()
     {
-        return $this->Password;
+        return $this->ComelecPassword;
     }
 
     public function getStudentByStudentNumber()

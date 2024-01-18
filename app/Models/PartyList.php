@@ -9,5 +9,5 @@ class PartyList extends Model
 {
     use HasFactory;
 
-    protected $table = 'PartyList';
+    protected $table = 'SGEPartyList';
 }

@@ -9,5 +9,5 @@ class CoC extends Model
 {
     use HasFactory;
 
-    protected $table = 'CoC';
+    protected $table = 'SGECoC';
 }

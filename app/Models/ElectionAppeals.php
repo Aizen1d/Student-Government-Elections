@@ -9,5 +9,5 @@ class ElectionAppeals extends Model
 {
     use HasFactory;
 
-    protected $table = 'ElectionAppeals';
+    protected $table = 'SGEElectionAppeals';
 }
