@@ -613,6 +613,8 @@ class Eligibles(Base):
     ElectionId = Column(Integer, ForeignKey('SGEElection.ElectionId'))
     IsVotedOrAbstained = Column(Boolean, default=False)
     VotingPassword = Column(Text)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     def to_dict(self):
         return {
@@ -620,5 +622,7 @@ class Eligibles(Base):
             "StudentNumber": self.StudentNumber,
             "ElectionId": self.ElectionId,
             "IsVotedOrAbstained": self.IsVotedOrAbstained,
-            "VotingPassword": self.VotingPassword
+            "VotingPassword": self.VotingPassword,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }
