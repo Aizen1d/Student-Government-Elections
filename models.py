@@ -9,7 +9,159 @@ from cloudinary.api import resources_by_tag
 Session = sessionmaker(bind=engine)
 session = Session()
 
+##############################################################################
+## SPS Tables ##
+
 class Student(Base):
+    __tablename__ = 'SPSStudent'
+
+    StudentId = Column(Integer, primary_key=True, autoincrement=True)
+    StudentNumber = Column(String(30), unique=True, nullable=False)
+    FirstName = Column(String(50), nullable=False)
+    LastName = Column(String(50), nullable=False)
+    MiddleName = Column(String(50))
+    Email = Column(String(50), unique=True, nullable=False)
+    Password = Column(String(256), nullable=False)
+    Gender = Column(Integer, nullable=True)
+    DateOfBirth = Column(Date)
+    PlaceOfBirth = Column(String(50))
+    ResidentialAddress = Column(String(50))
+    MobileNumber = Column(String(11))
+    IsOfficer = Column(Boolean, default=False)
+    Token = Column(String(128))
+    TokenExpiration = Column(DateTime)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    def to_dict(self):
+        return {
+            'StudentId': self.StudentId,
+            'StudentNumber': self.StudentNumber,
+            'FirstName': self.FirstName,
+            'LastName': self.LastName,
+            'MiddleName': self.MiddleName,
+            'Email': self.Email,
+            'Password': self.Password,
+            'Gender': self.Gender,
+            'DateOfBirth': self.DateOfBirth,
+            'PlaceOfBirth': self.PlaceOfBirth,
+            'ResidentialAddress': self.ResidentialAddress,
+            'MobileNumber': self.MobileNumber,
+            'IsOfficer': self.IsOfficer,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+    
+class CourseEnrolled(Base):
+    __tablename__ = 'SPSCourseEnrolled'
+
+    CourseId = Column(Integer, ForeignKey('SPSCourse.CourseId', ondelete="CASCADE"), primary_key=True)
+    StudentId = Column(Integer, ForeignKey('SPSStudent.StudentId', ondelete="CASCADE"), primary_key=True)
+    DateEnrolled = Column(Date)
+    Status = Column(Integer, nullable=False)
+    CurriculumYear = Column(Integer, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    def to_dict(self):
+        return {
+            'CourseId': self.CourseId,
+            'StudentId': self.StudentId,
+            'DateEnrolled': self.DateEnrolled.isoformat() if self.DateEnrolled else None,
+            'Status': self.Status,
+            'CurriculumYear': self.CurriculumYear,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+    
+class Course(Base):
+    __tablename__ = 'SPSCourse'
+
+    CourseId = Column(Integer, primary_key=True, autoincrement=True)
+    CourseCode = Column(String(10), unique=True)
+    Name = Column(String(200))
+    Description = Column(String(200))
+    IsValidPUPQCCourses = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    def to_dict(self):
+        return {
+            'CourseId': self.CourseId,
+            'CourseCode': self.CourseCode,
+            'Name': self.Name,
+            'Description': self.Description,
+            'IsValidPUPQCCourses': self.IsValidPUPQCCourses,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+    
+class StudentClassGrade(Base):
+    __tablename__ = 'SPSStudentClassGrade'
+    
+    StudentId = Column(Integer, ForeignKey('SPSStudent.StudentId', ondelete="CASCADE"), primary_key=True)
+    ClassId = Column(Integer, ForeignKey('SPSClass.ClassId', ondelete="CASCADE"), primary_key=True)
+    Grade = Column(Float)
+    Lister = Column(Integer, default=0)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    def to_dict(self):
+        return {
+            'StudentId': self.StudentId,
+            'ClassId': self.ClassId,
+            'Grade': self.Grade,
+            'Lister': self.Lister,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
+class Class(Base):
+    __tablename__ = 'SPSClass'
+
+    ClassId = Column(Integer, primary_key=True, autoincrement=True)
+    MetadataId = Column(Integer, ForeignKey('SPSMetadata.MetadataId', ondelete="CASCADE"))
+    Section = Column(Integer)
+    IsGradeFinalized = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    def to_dict(self):
+        return {
+            'ClassId': self.ClassId,
+            'MetadataId': self.MetadataId,
+            'Section': self.Section,
+            'IsGradeFinalized': self.IsGradeFinalized,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
+class Metadata(Base):
+    __tablename__ = 'SPSMetadata'
+
+    MetadataId = Column(Integer, primary_key=True, autoincrement=True)
+    CourseId = Column(Integer, ForeignKey('SPSCourse.CourseId', ondelete="CASCADE"))
+    Year = Column(Integer, nullable=False)
+    Semester = Column(Integer, nullable=False)
+    Batch = Column(Integer, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    def to_dict(self):
+        return {
+            'MetadataId': self.MetadataId,
+            'CourseId': self.CourseId,
+            'Year': self.Year,
+            'Semester': self.Semester,
+            'Batch': self.Batch,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
+##############################################################################
+## SGE tables ## 
+
+"""class Student(Base):
     __tablename__ = "SGEStudent"
     
     StudentId = Column(Integer, primary_key=True)
@@ -41,7 +193,7 @@ class Student(Base):
             "IsOfficer": self.IsOfficer,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
-        }
+        }"""
     
 class Election(Base):
     __tablename__ = "SGEElection"
