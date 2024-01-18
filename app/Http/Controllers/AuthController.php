@@ -17,33 +17,49 @@ class AuthController extends Controller
         return inertia('Login');
     }
 
-    public function authLogin(Request $request)
+    public function authComelecLogin(Request $request)
     {
         $cookie_minutes_lifetime = 300; // Expiry of the cookie that contains the jwt token
-        $guards = [
-            'comelec' => '/comelec/elections',
-            'organization' => '/organization/elections'
+
+        $cookie_data = [
+            'student_number' => $request->StudentNumber,
+            'user_role' => 'comelec',
         ];
 
-        // Attempt to login whether comelec or organization user
-        foreach ($guards as $guard => $redirect) {
-            if ($token = auth($guard)->attempt(['StudentNumber' => $request->StudentNumber, 'password' => $request->Password])) {
-                // Store auth user's info to a cookie (laravel encrypt's cookies by default)
-                $cookie_data = [
-                    'student_number' => $request->StudentNumber,
-                    'user_role' => $guard,
-                ];
+        $cookie_data = json_encode($cookie_data);
 
-                $cookie_data = json_encode($cookie_data);
+        $token = 'Authorized';
+        $redirect = '/comelec/elections';
+
+        // Put student number in a session
+        //$request->session()->put('student_number', $request->StudentNumber);
                
-                $user_info_cookie = cookie('user_info', $cookie_data, $cookie_minutes_lifetime, null, null, true, true, false, 'strict');
-                $cookie = cookie('jwt_token', $token, $cookie_minutes_lifetime, null, null, true, true, false, 'strict');
+        $user_info_cookie = cookie('user_info', $cookie_data, $cookie_minutes_lifetime, null, null, true, true, false, 'strict');
+        $cookie = cookie('jwt_token', $token, $cookie_minutes_lifetime, null, null, true, true, false, 'strict');
 
-                return response()->json(['redirect' => $redirect])->withCookie($cookie)->withCookie($user_info_cookie);
-            }
-        }
+        return response()->json(['redirect' => $redirect])->withCookie($cookie)->withCookie($user_info_cookie);
+    } 
 
-        return response()->json(['invalid' => 'Invalid student number or password.']);
+    public function authOfficerLogin(Request $request)
+    {
+        $cookie_minutes_lifetime = 300; // Expiry of the cookie that contains the jwt token
+        $cookie_data = [
+            'student_number' => $request->StudentNumber,
+            'user_role' => 'organization',
+        ];
+
+        $cookie_data = json_encode($cookie_data);
+
+        $token = 'Authorized';
+        $redirect = '/organization/elections';
+
+        // Put student number in a session
+        //$request->session()->put('student_number', $request->StudentNumber);
+               
+        $user_info_cookie = cookie('user_info', $cookie_data, $cookie_minutes_lifetime, null, null, true, true, false, 'strict');
+        $cookie = cookie('jwt_token', $token, $cookie_minutes_lifetime, null, null, true, true, false, 'strict');
+
+        return response()->json(['redirect' => $redirect])->withCookie($cookie)->withCookie($user_info_cookie);
     } 
 
     public function logout(Request $request) {

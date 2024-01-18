@@ -38,8 +38,12 @@ Route::group(['middleware' => 'public.routes'], function () {
     Route::get('/login', [AuthController::class, 'viewLogin'])
         ->name('view.login');
 
-    Route::post('/login/auth', [AuthController::class, 'authLogin'])
-        ->name('auth.login')
+    Route::post('/login/auth/comelec', [AuthController::class, 'authComelecLogin'])
+        ->name('auth.login.comelec')
+        ->middleware('throttle:5,3'); // 5 attempts within 3 minutes only
+
+    Route::post('/login/auth/officer', [AuthController::class, 'authOfficerLogin'])
+        ->name('auth.login.officer')
         ->middleware('throttle:5,3'); // 5 attempts within 3 minutes only
 
     // Exclusives only / dummy data insertion purposes
