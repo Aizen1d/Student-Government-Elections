@@ -53,7 +53,7 @@
             </form>
         </BaseContainer>
         
-        <BaseContainer class="item-container" :height="'300px'" :maxHeight="'335px'">
+        <BaseContainer class="item-container" :height="'auto'" :maxHeight="'335px'">
             <BaseTable class="item-table" 
                     :columns="['ID', 'Type', 'Title']" 
                     :tableHeight="'auto'"
