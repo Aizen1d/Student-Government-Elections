@@ -62,19 +62,55 @@
 
                 this.loggingIn = true;
                 this.login_text = 'Logging in...';
-                axios.post('/login/auth', this.form)
-                    .then(response => {
-                        if (response.data.redirect) {
-                            window.location.href = response.data.redirect;
-                        }
-                        else if (response.data.invalid) {
-                            this.invalid = response.data.invalid;
 
+                    axios.post(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/student/election-management/login`, {
+                        StudentNumber: this.form.StudentNumber,
+                        Password: this.form.Password
+                    })
+                    .then(response => {
+                        if (response.data.message === true) {
+                            const user_role = response.data.user_role;
+
+                            axios.post(`/login/auth/${user_role}`, this.form)
+                                .then(response => {
+                                    if (response.data.redirect) {
+                                        window.location.href = response.data.redirect;
+                                    }
+                                    else if (response.data.invalid) {
+                                        this.invalid = response.data.invalid;
+
+                                        this.loggingIn = false;
+                                        this.login_text = 'Login';
+                                    }
+                                })
+                                .catch(error => {
+                                    // Too many requests, via throttle middleware of Laravel
+                                    if (error.response) {
+                                        if (error.response.status === 429) { 
+                                            const retryAfter = error.response.headers['retry-after'];
+                                            this.startCountdown(retryAfter);
+                                        }
+                                        else if (error.response.status === 419) {
+                                            this.invalid = 'Please refresh your page and try again.';
+                                        }
+                                        else {
+                                            // handle other errors
+                                        }
+                                    }
+
+                                    this.loggingIn = false;
+                                    this.login_text = 'Login';
+                                });
+                        }
+                        else {
+                            this.invalid = 'Invalid credentials.';
                             this.loggingIn = false;
                             this.login_text = 'Login';
                         }
                     })
                     .catch(error => {
+                        console.log(error)
+
                         // Too many requests, via throttle middleware of Laravel
                         if (error.response) {
                             if (error.response.status === 429) { 
