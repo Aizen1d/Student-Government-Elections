@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use Closure;
+use Exception;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -30,7 +31,7 @@ class CheckAuthComelec
                 $user_role = $user_info_cookie['user_role'];
 
                 if ($user_role !== 'comelec') {
-                    return back();
+                    return redirect('organization/elections');
                 }
             }
             else {
@@ -43,21 +44,9 @@ class CheckAuthComelec
                 // If token was expired, not logged out
                 return redirect()->route('view.login')->with('token_invalid', 'Your authentication token has expired. Please login again.');
             }
+        } 
+        catch(Exception $e) {
 
-            // If jwt token is existing and valid
-            if (JWTAuth::setToken($token)->check()) {
-                return $next($request);
-            }
-        } 
-        catch (TokenExpiredException $e) {
-            // Im using cookie lifetime so token expiration is nothing, for now?..
-            return redirect()->route('view.login');
-        } 
-        catch (TokenInvalidException $e) {
-            return redirect()->route('view.login')->with('token_invalid', 'Your token was invalid/expired. Please login again.');
-        } 
-        catch (JWTException $e) {
-            return redirect()->route('view.login');
         }
     
         return $next($request);

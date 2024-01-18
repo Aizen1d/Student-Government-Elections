@@ -19,18 +19,10 @@ class PublicRoutes
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Get the JWT token from the cookie
-        try {
-            $token = $request->cookie('jwt_token');
-        }
-        catch (\Exception $e) {
-            return render('view.login');
-        }
+        $token = $request->cookie('jwt_token');
 
-        // Check if the token is valid
-        if ($token && JWTAuth::setToken($token)->check()) {
-            // The user is authenticated with a JWT token, redirect them back to where they came from
-            return back();
+        if ($token && $request->path() != 'comelec/elections' && $request->path() != 'organization/elections') {
+            return redirect('comelec/elections');
         }
 
         $response = $next($request);
@@ -40,4 +32,5 @@ class PublicRoutes
 
         return $response;
     }
+
 }

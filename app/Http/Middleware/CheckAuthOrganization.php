@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Exception;
 use Symfony\Component\HttpFoundation\Response;
 
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -25,12 +26,12 @@ class CheckAuthOrganization
         try {
             // If not yet logged out
             if ($request->cookie('user_info')) { 
-                // Get user role and restrict & redirect back if not organization
+                // Get user role and restrict & redirect back if not comelec
                 $user_info_cookie = json_decode($request->cookie('user_info'), true);
                 $user_role = $user_info_cookie['user_role'];
 
                 if ($user_role !== 'organization') {
-                    return back();
+                    return redirect('comelec/elections');
                 }
             }
             else {
@@ -43,21 +44,9 @@ class CheckAuthOrganization
                 // If token was expired, not logged out
                 return redirect()->route('view.login')->with('token_invalid', 'Your authentication token has expired. Please login again.');
             }
+        } 
+        catch(Exception $e) {
 
-            // If jwt token is existing and valid
-            if (JWTAuth::setToken($token)->check()) {
-                return $next($request);
-            }
-        } 
-        catch (TokenExpiredException $e) {
-            // Im using cookie lifetime so token expiration is nothing, for now?..
-            return redirect()->route('view.login');
-        } 
-        catch (TokenInvalidException $e) {
-            return redirect()->route('view.login')->with('token_invalid', 'Your token was invalid/expired. Please login again.');
-        } 
-        catch (JWTException $e) {
-            return redirect()->route('view.login');
         }
     
         return $next($request);
