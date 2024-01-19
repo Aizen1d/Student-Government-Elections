@@ -42,9 +42,15 @@ import glob
 from urllib.parse import urlparse
 from passlib.context import CryptContext
 from cloudinary.api import resources_by_tag, delete_resources_by_tag, delete_folder
-from services import send_verification_code_email, send_pass_code_queue_email, send_pass_code_manual_email, send_coc_status_email, send_partylist_status_email, send_appeal_response_email
 
-from models import Student, Announcement, Rule, Guideline, Election, SavedPosition, CreatedElectionPosition, Code, PartyList, CoC, InsertDataQueues, Candidates, RatingsTracker, VotingsTracker, ElectionAnalytics, ElectionWinners, Certifications, CreatedAdminSignatory, StudentOrganization, OrganizationOfficer, OrganizationMember, ElectionAppeals
+from services import send_verification_code_email, send_pass_code_queue_email, send_pass_code_manual_email, \
+    send_coc_status_email, send_partylist_status_email, send_appeal_response_email, send_pass_code_student_organization_officer_email, \
+    send_eligible_students_email
+
+from models import Student, Announcement, Rule, Guideline, Election, SavedPosition, CreatedElectionPosition, Code, \
+                    PartyList, CoC, InsertDataQueues, Candidates, RatingsTracker, VotingsTracker, ElectionAnalytics, ElectionWinners, \
+                    Certifications, CreatedAdminSignatory, StudentOrganization, OrganizationOfficer, OrganizationMember, ElectionAppeals, \
+                    Comelec, Eligibles, CourseEnrolled, Course, StudentClassGrade, Class, Metadata
 #################################################################
 """ Settings """
 
@@ -151,6 +157,63 @@ async def download_image(url, filename):
     with open(filename, "wb") as f:
         f.write(data)
 
+from urllib.parse import unquote
+
+@router.get("/get/cached/elections/{image_path}", tags=["Cached"])
+async def get_image(image_path: str):
+    # Decode the image path
+    return FileResponse(f'{CachedImagesDirectoryElection}/{unquote(image_path)}')
+
+def create_student_set_as_comelec():
+    db = SessionLocal()
+    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+    desired_comelec_student_number = "2024-0001-COM-0"
+    
+    # Check if the student already exists
+    existing_student = db.query(Student).filter(Student.StudentNumber == desired_comelec_student_number).first()
+
+    if existing_student:
+        return
+
+    # Create a student
+    student = Student(
+        StudentId=98765,
+        StudentNumber=desired_comelec_student_number,
+        FirstName="John",
+        LastName="Doe",
+        MiddleName="",
+        Email="student1.sge@gmail.com",
+        Password=pwd_context.hash('123'),
+        Gender=1,
+        ResidentialAddress="Quezon City",
+        MobileNumber="09123457125",
+        IsOfficer=False,
+        created_at="2024-01-17 23:53:29.417",
+        updated_at="2024-01-17 23:53:29.417")
+    
+    db.add(student)
+    db.commit()
+
+    # check if the student is already in comelec
+    existing_comelec = db.query(Comelec).filter(Comelec.StudentNumber == desired_comelec_student_number).first()
+
+    if existing_comelec:
+        return
+
+    # Add the student to comelec 
+    comelec = Comelec(
+        StudentNumber=str(student.StudentNumber),
+        ComelecPassword=pwd_context.hash('123'),
+        Position="President",
+        created_at="2024-01-17 23:53:29.417",
+        updated_at="2024-01-17 23:53:29.417")
+    
+    db.add(comelec)
+    db.commit()
+
+create_student_set_as_comelec()        
+
 ############################################################################# 
 
 CLIENT_ID = os.getenv("CLIENT_ID")
@@ -244,8 +307,7 @@ def get_access_token(db: Session = Depends(get_db)):
 
     return ACCESS_TOKEN, REFRESH_TOKEN
 """
-    
-#################################################################
+
 """ All about students APIs """
 
 class SaveStudentData(BaseModel):
@@ -304,10 +366,18 @@ def get_All_Students(db: Session = Depends(get_db)):
 @router.get("/student/all/arranged", tags=["Student"])
 def get_All_Students_Arranged(db: Session = Depends(get_db)):
     try:
-        # Arrange by course, last name, first name, middle name
-        students = db.query(Student).order_by(Student.Course, Student.LastName, Student.FirstName, Student.MiddleName).all()
+        # Arrange by course, last name, first name, middle name???
+        
+        # Iterate over all students and get course by student number 
+        students = db.query(Student).order_by(Student.StudentId).all()
+        students_arranged = []
+        
+        for student in students:
+            student_course = get_Student_Course_by_studnumber(student.StudentNumber, db)
+            students_arranged.append([student.StudentNumber, student_course, student.LastName, student.FirstName, student.MiddleName])
 
-        return {"students": [student.to_dict() for student in students]}
+        return {"students": students_arranged}
+
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while fetching all students from the database"})
     
@@ -331,6 +401,109 @@ def get_All_Insert_Data_Queues(db: Session = Depends(get_db)):
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while fetching all queues from the database"})
 
+""" Method """ 
+def get_Student_Course_by_studnumber(student_number: str, db: Session = Depends(get_db)):
+    student = db.query(Student).filter(Student.StudentNumber == student_number).first()
+
+    if not student:
+        return {"error": f"Student with student number {student_number} not found."}
+    
+    student_id = student.StudentId
+
+    student_course = db.query(Course).\
+        join(CourseEnrolled, Course.CourseId == CourseEnrolled.CourseId).\
+        filter(CourseEnrolled.StudentId == student_id).first()
+    
+    if not student_course:
+        return False
+    
+    db.close()
+
+    return student_course.CourseCode
+
+@router.get("/student/get/course/{student_number}", tags=["Student"])  
+def get_Student_Course(student_number: str, db: Session = Depends(get_db)):
+    student_course = get_Student_Course_by_studnumber(student_number, db)
+
+    return {"course": student_course}
+
+""" Method """
+def get_Student_Metadata_by_studnumber(student_number: str):
+    db = SessionLocal()
+
+    student = db.query(Student).filter(Student.StudentNumber == student_number).first()
+
+    if not student:
+        db.close()
+        return {"error": f"Student with student number {student_number} not found."}
+    
+    student_id = student.StudentId
+
+    student_metadata = db.query(Metadata).\
+        join(Class, Metadata.MetadataId == Class.MetadataId).\
+        join(StudentClassGrade, Class.ClassId == StudentClassGrade.ClassId).\
+        filter(StudentClassGrade.StudentId == student_id).first()
+    
+    if not student_metadata:
+        db.close()
+        return {"error": f"No metadata found for student with student number {student_number}."}
+    
+    # Get the course code
+    student_course = db.query(Course).filter(Course.CourseId == student_metadata.CourseId).first()
+
+    if not student_course:
+        db.close()
+        return {"error": f"No course found for student with student number {student_number}."}
+
+    db.close()
+    
+    return {
+        "MetadataId": student_metadata.MetadataId,
+        "CourseId": student_metadata.CourseId,
+        "CourseCode": student_course.CourseCode if student_course else '',
+        "Year": student_metadata.Year,
+        "Semester": student_metadata.Semester,
+        "Batch": student_metadata.Batch,
+        "created_at": student_metadata.created_at,
+        "updated_at": student_metadata.updated_at
+    }
+
+@router.get("/student/get/metadata/{student_number}", tags=["Student"])
+def get_Student_Metadata(student_number: str, db: Session = Depends(get_db)):
+    student_metadata = get_Student_Metadata_by_studnumber(student_number)
+
+    return {"metadata": student_metadata}
+
+""" Method """
+def get_Student_Section_by_studnumber(student_number: str):
+    db = SessionLocal()
+
+    student = db.query(Student).filter(Student.StudentNumber == student_number).first()
+
+    if not student:
+        db.close()
+        return {"error": f"Student with student number {student_number} not found."}
+    
+    student_id = student.StudentId
+
+    student_section = db.query(Class).\
+        join(StudentClassGrade, Class.ClassId == StudentClassGrade.ClassId).\
+        filter(StudentClassGrade.StudentId == student_id).first()
+    
+    if not student_section:
+        db.close()
+        return False
+    
+    db.close()
+
+    return student_section.Section
+
+@router.get("/student/get/section/{student_number}", tags=["Student"])
+def get_Student_Section(student_number: str, db: Session = Depends(get_db)):
+    student_section = get_Student_Section_by_studnumber(student_number)
+
+    return {"section": student_section}
+   
     
 """ ** POST Methods: All about students APIs ** """
 # Create a queue
@@ -484,7 +657,7 @@ async def student_Insert_Data_Attachment(files: List[UploadFile] = File(...), db
                 # Generate a unique code and add it to the database
                 while True:
                     # Generate a random code
-                    pass_value = ''.join(random.choices(string.ascii_uppercase + string.digits, k=16))
+                    pass_value = ''.join(random.choices(string.ascii_uppercase + string.digits, k=12))
 
                     # Hash the password
                     hashed_password = pwd_context.hash(pass_value)
@@ -642,6 +815,51 @@ def student_Voting_Login(data: LoginData, db: Session = Depends(get_db)):
 
     return {"message": True}
 
+@router.post("/student/election-management/login", tags=["Student"])
+def student_Election_Management_Login(data: LoginData, db: Session = Depends(get_db)):
+    StudentNumber = data.StudentNumber
+    Password = data.Password
+
+    student = db.query(Student).filter(Student.StudentNumber == StudentNumber).first()
+    if not student:
+        return {"error": "Student not found."}
+    
+    # Attempt to login as comelec first before student organization officer
+    comelec = db.query(Comelec).filter(Comelec.StudentNumber == StudentNumber).first()
+
+    if comelec:
+        # Check if the password matches
+        pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+        if not pwd_context.verify(Password, comelec.ComelecPassword):
+            return {"error": "Incorrect password."}
+        
+        return {"message": True, "user_role": "comelec"}
+    
+    # Attempt to login as student organization officer
+    officer = db.query(OrganizationOfficer).filter(OrganizationOfficer.StudentNumber == StudentNumber).first()
+
+    if officer:
+        # Check if the password matches
+        pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+        if not pwd_context.verify(Password, officer.OfficerPassword):
+            return {"error": "Incorrect password."}
+        
+        return {"message": True, "user_role": "officer"}
+    
+    return {"error": "Cannot found credentials"}
+
+#################################################################
+""" Student's Metadatas APIs """
+@router.get("/courses/all", tags=["Student Metadata"])
+def get_All_Courses(db: Session = Depends(get_db)):
+    courses = db.query(Course).order_by(Course.CourseId).all()
+    return {"courses": [course.to_dict() for course in courses]}
+
+@router.get("/courses/{course_id}", tags=["Student Metadata"])
+def get_Course(course_id: int, db: Session = Depends(get_db)):
+    course = db.query(Course).filter(Course.CourseId == course_id).first()
+    return {"course": course.to_dict()}
+
 #################################################################
 """ Student Organization Table APIs """
 class Officer(BaseModel):
@@ -670,12 +888,33 @@ def get_All_Student_Organization(db: Session = Depends(get_db)):
     return {"student_organizations": [student_organization.to_dict() for student_organization in student_organizations]}
 
 """ ** POST Methods: All about Student Organizations APIs ** """
+# Create a queue
+student_officer_temp_password_queue = asyncio.Queue()
+
+# Define a worker function
+async def student_officer_temp_password_queue_worker():
+    while True:
+        db = SessionLocal()
+
+        # Get a task from the queue
+        task = await student_officer_temp_password_queue.get()
+
+        # Process the task
+        student_number, student_email, pass_code = task
+        send_pass_code_student_organization_officer_email(student_number, student_email, pass_code)
+
+        # Indicate that the task is done
+        student_officer_temp_password_queue.task_done()
+
+# Start the worker in the background
+asyncio.create_task(student_officer_temp_password_queue_worker())
+
 @router.post("/student/organization/create", tags=["Student Organization"])
-def student_Organization_Create(data: StudentOrganizationData, db: Session = Depends(get_db)):
+async def student_Organization_Create(data: StudentOrganizationData, db: Session = Depends(get_db)):
     # Check if the organization already exists
     existing_organization = db.query(StudentOrganization).filter(StudentOrganization.OrganizationName == data.organization_name).first()
     if existing_organization:
-        return JSONResponse(status_code=400, content={"detail": "Organization already exists."})
+        return JSONResponse(status_code=400, content={"detail": "Organization name already exists."})
     
     organization = StudentOrganization(
         OrganizationLogo='',
@@ -712,14 +951,30 @@ def student_Organization_Create(data: StudentOrganizationData, db: Session = Dep
             
     # Create the officers
     for officer in data.officers:
+        pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+        # Generate a random code
+        pass_value = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
+
+        # Hash the password
+        hashed_password = pwd_context.hash(pass_value)
+
+        # Get the email address of the student
+        student = db.query(Student).filter(Student.StudentNumber == officer.student_number).first()
+        student_email = student.Email
+
         new_officer = OrganizationOfficer(
             StudentOrganizationId=organization.StudentOrganizationId,
             StudentNumber=officer.student_number,
             Position=officer.position,
+            OfficerPassword=hashed_password,
             Image='',
             created_at=datetime.now(),
             updated_at=datetime.now()
         )
+
+        await student_officer_temp_password_queue.put((officer.student_number, student_email, pass_value))
+
         db.add(new_officer)
         db.commit()
 
@@ -863,8 +1118,9 @@ async def get_All_Election(background_tasks: BackgroundTasks, db: Session = Depe
 
             # If the file exist in the cache directory, use it
             if matching_files: 
-                logo_path = matching_files[0]
-                
+                # Get the base filename and extension
+                logo_path = student_organization.OrganizationLogo + os.path.splitext(matching_files[0])[1]
+
             else: # If the file does not exist in the cache directory, fetch it from cloudinary
                 organization_logo = resources_by_tag(student_organization.OrganizationLogo)
                 
@@ -927,7 +1183,7 @@ def get_All_Election_Is_Student_Voted(student_number: str, db: Session = Depends
     try:
         # Get the student's course
         student = db.query(Student).filter(Student.StudentNumber == student_number).first()
-        student_course = student.Course if student else ""
+        student_course = get_Student_Course_by_studnumber(student_number, db)
 
         # Check if the student has voted in the election
         elections = db.query(Election).order_by(Election.ElectionId).all()
@@ -1054,8 +1310,29 @@ def get_All_Approved_Candidates_CoC_By_Election_Id(id: int, db: Session = Depend
     
 
 """ ** POST Methods: All about election APIs ** """
+# Create a queue
+send_eligible_students_email_queue = asyncio.Queue()
+
+# Define a worker function
+async def send_eligible_students_email_worker():
+    while True:
+        db = SessionLocal()
+
+        # Get a task from the queue
+        task = await send_eligible_students_email_queue.get()
+
+        # Process the task
+        student_number, student_email, pass_code = task
+        send_eligible_students_email(student_number, student_email, pass_code)
+
+        # Indicate that the task is done
+        send_eligible_students_email_queue.task_done()
+
+# Start the worker in the background
+asyncio.create_task(send_eligible_students_email_worker())
+
 @router.post("/election/create", tags=["Election"])
-def save_election(election_data: CreateElectionData, db: Session = Depends(get_db)):
+async def save_election(election_data: CreateElectionData, db: Session = Depends(get_db)):
     new_election = Election(ElectionName=election_data.election_info.election_name,
                             StudentOrganizationId=election_data.election_info.election_type,
                             ElectionStatus="Active",
@@ -1094,9 +1371,89 @@ def save_election(election_data: CreateElectionData, db: Session = Depends(get_d
         db.add(new_position)
         db.commit()
 
+    # Insert students to eligibles table if matches with student organization member requirement or if the student org requirement is any course
+    student_organization = db.query(StudentOrganization).filter(StudentOrganization.StudentOrganizationId == new_election.StudentOrganizationId).first()
+    
+    if student_organization.OrganizationMemberRequirements == "Any":
+        students = db.query(Student).all()
+
+        limit = 10
+        iteration = 0
+
+        for student in students:
+            # Check if the student is not in the eligibles table yet with same election id
+            if not db.query(Eligibles).filter(Eligibles.ElectionId == new_election.ElectionId, Eligibles.StudentNumber == student.StudentNumber).first():
+                if iteration == limit:
+                    break
+
+                iteration += 1
+
+                pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+                # Generate a random code
+                pass_value = ''.join(random.choices(string.ascii_uppercase + string.digits, k=7))
+
+                # Hash the password
+                hashed_password = pwd_context.hash(pass_value)
+
+                # Get the email of the student
+                student_email = student.Email
+
+                new_eligible = Eligibles(ElectionId=new_election.ElectionId,
+                                        StudentNumber=student.StudentNumber,
+                                        HasVotedOrAbstained=False,
+                                        VotingPassword=hashed_password,
+                                        created_at=datetime.now(), 
+                                        updated_at=datetime.now())
+                db.add(new_eligible)
+                db.commit()
+
+                await send_eligible_students_email_queue.put((student.StudentNumber, student_email, pass_value))
+    
+    # If the student organization member requirement is not any course, insert students to eligibles table if matches with student organization member requirement
+    else:
+        students = db.query(Student).all()
+
+        limit = 10
+        iteration = 0
+
+        for student in students:
+            # Get the student's course
+            student_course = get_Student_Course_by_studnumber(student.StudentNumber, db)
+
+            if student_course:
+                # Check if the student's course matches the student organization course requirements and not in the eligibles table yet with same election id
+                if student_course == student_organization.OrganizationMemberRequirements and not db.query(Eligibles).filter(Eligibles.ElectionId == new_election.ElectionId, Eligibles.StudentNumber == student.StudentNumber).first():
+                    if iteration == limit:
+                        break
+
+                    iteration += 1
+
+                    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+                    # Generate a random code
+                    pass_value = ''.join(random.choices(string.ascii_uppercase + string.digits, k=7))
+
+                    # Hash the password
+                    hashed_password = pwd_context.hash(pass_value)
+
+                    # Get the email of the student
+                    student_email = student.Email
+
+                    new_eligible = Eligibles(ElectionId=new_election.ElectionId,
+                                            StudentNumber=student.StudentNumber,
+                                            HasVotedOrAbstained=False,
+                                            VotingPassword=hashed_password,
+                                            created_at=datetime.now(), 
+                                            updated_at=datetime.now())
+                    db.add(new_eligible)
+                    db.commit()
+
+                    await send_eligible_students_email_queue.put((student.StudentNumber, student_email, pass_value))
+
     # Schedule the get_winners function to run at election.VotingEnd
     trigger = DateTrigger(run_date=new_election.VotingEnd)
-    scheduler.add_job(gather_winners_by_election_id, trigger=trigger, id=f'gather_winners{new_election.ElectionId}', args=[new_election.ElectionId])
+    scheduler.add_job(gather_winners_by_election_id, trigger=trigger, id=f'gather_winners_{new_election.ElectionId}', args=[new_election.ElectionId])
 
     return {"message": "Election created successfully",
             "election_id": new_election.ElectionId,}
@@ -1139,7 +1496,7 @@ def delete_Election(data: ElectionDelete, db: Session = Depends(get_db)):
         return {"error": "Election not found"}
 
     # DELETE ALL REFERENCED ROWS with the election id
-    tables = [CreatedElectionPosition, CoC, ElectionAnalytics, Candidates, PartyList, RatingsTracker, VotingsTracker]
+    tables = [CreatedElectionPosition, CoC, ElectionAnalytics, Candidates, PartyList, RatingsTracker, VotingsTracker, Eligibles]
     for table in tables:
         delete_rows(db, table, data.id)
 
@@ -1890,6 +2247,18 @@ def get_CoC_By_Id(id: int, db: Session = Depends(get_db)):
             coc_dict["CertificationOfGrades"] = ""
 
         coc_dict["Student"] = student.to_dict() if student else None
+        student_metadata = get_Student_Metadata_by_studnumber(student.StudentNumber)
+
+        if "CourseCode" in student_metadata:
+            coc_dict["Student"]["CourseCode"] = student_metadata["CourseCode"]
+            coc_dict["Student"]["Year"] = student_metadata["Year"]
+            coc_dict["Student"]["Semester"] = student_metadata["Semester"]
+
+        student_section = get_Student_Section_by_studnumber(student.StudentNumber)
+
+        if student_section:
+            coc_dict["Student"]["Section"] = student_section
+
 
         return {"coc": coc_dict}
     except:
@@ -1898,7 +2267,7 @@ def get_CoC_By_Id(id: int, db: Session = Depends(get_db)):
 """ ** POST Methods: All about CoC Table APIs ** """
 @router.post("/coc/submit", tags=["CoC"])
 async def save_CoC(election_id: int = Form(...), student_number: str = Form(...),
-                   verification_code: str = Form(...), motto: Optional[str] = Form(None),
+                   verification_code: str = Form(...), motto: Optional[str] = Form(None), platforms: Optional[str] = Form(...),
                    political_affiliation: str = Form(...), party_list: Optional[str] = Form(None),
                    position: str = Form(...), display_photo: str = Form(...),
                    display_photo_file_name : str = Form(...), certification_of_grades_file_name: str = Form(...),
@@ -1947,6 +2316,7 @@ async def save_CoC(election_id: int = Form(...), student_number: str = Form(...)
                     StudentNumber=student_number,
                     VerificationCode=verification_code,
                     Motto=motto,
+                    Platform=platforms,
                     PoliticalAffiliation=political_affiliation,
                     PartyListId=party_list,
                     SelectedPositionName=position,
@@ -2050,7 +2420,7 @@ async def accept_CoC(id: int, db: Session = Depends(get_db)):
         # Get the election from the Election table using the election id in the CoC table
         election = db.query(Election).filter(Election.ElectionId == coc.ElectionId).first()
 
-        await queue_email_coc_status.put((student.StudentNumber, student.EmailAddress, 'Approved', coc.SelectedPositionName, election.ElectionName))
+        await queue_email_coc_status.put((student.StudentNumber, student.Email, 'Approved', coc.SelectedPositionName, election.ElectionName))
 
         return {"detail": "CoC id " + str(id) + " was successfully approved"}
     except:
@@ -2075,7 +2445,7 @@ async def reject_CoC(id: int, db: Session = Depends(get_db)):
         # Get the election from the Election table using the election id in the CoC table
         election = db.query(Election).filter(Election.ElectionId == coc.ElectionId).first()
 
-        await queue_email_coc_status.put((student.StudentNumber, student.EmailAddress, 'Rejected', coc.SelectedPositionName, election.ElectionName))
+        await queue_email_coc_status.put((student.StudentNumber, student.Email, 'Rejected', coc.SelectedPositionName, election.ElectionName))
 
         return {"detail": "CoC id " + str(id) + " was successfully rejected"}
     except:
@@ -2102,7 +2472,7 @@ def generate_Coc_Verification_Code(code_for_student:CodeForStudent, db: Session 
     existing_code_type = db.query(Code).filter(Code.StudentNumber == code_for_student.student_number, Code.CodeType == code_for_student.code_type).first()
 
     # Generate a random code
-    code_value = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
+    code_value = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
 
     if existing_code_type:
         # If a code already exists for this student, update it
@@ -2122,12 +2492,12 @@ def generate_Coc_Verification_Code(code_for_student:CodeForStudent, db: Session 
     # Commit the session to save the changes in the database
     db.commit()
 
-    send_verification_code_email(student.StudentNumber, student.EmailAddress, code_value)
+    send_verification_code_email(student.StudentNumber, student.Email, code_value)
 
     # Return the new or updated code including the email address of the student
     return {
         "student_number": student.StudentNumber,
-        "email_address": student.EmailAddress,
+        "email_address": student.Email,
         "code_value": code_value,
         "code_type": code_for_student.code_type,
     }
@@ -2171,12 +2541,12 @@ def generate_Ratings_Verification_Code(code_for_student:CodeForStudent, db: Sess
     # Commit the session to save the changes in the database
     db.commit()
 
-    send_verification_code_email(student.StudentNumber, student.EmailAddress, code_value)
+    send_verification_code_email(student.StudentNumber, student.Email, code_value)
 
     # Return the new or updated code including the email address of the student
     return {
         "student_number": student.StudentNumber,
-        "email_address": student.EmailAddress,
+        "email_address": student.Email,
         "code_value": code_value,
         "code_type": code_for_student.code_type,
     }
@@ -2817,7 +3187,9 @@ def gather_winners_by_election_id(election_id: int):
 
     # Get the organization based on the election id
     organization = db.query(StudentOrganization).filter_by(StudentOrganizationId=election.StudentOrganizationId).first()
-    num_eligible_voters = db.query(Student).filter_by(Course=organization.OrganizationMemberRequirements).count()
+
+    # Get the number of eligible voters in Eligibles by election id
+    num_eligible_voters = db.query(Eligibles).filter_by(ElectionId=election.ElectionId).count()
 
     if datetime.now() > election.VotingEnd:
         # Store the winners in the ElectionWinners table
@@ -3017,7 +3389,7 @@ def save_Election_Appeals_Respond(data: ElectionAppealsRespondData, background_t
 
     # Get the email of student
     student = db.query(Student).filter(Student.StudentNumber == appeal.StudentNumber).first()
-    student_email = student.EmailAddress
+    student_email = student.Email
 
     background_tasks.add_task(send_appeal_response_email(student_email, data.subject, data.response, data.id))
 
@@ -3072,7 +3444,7 @@ def get_Reports_By_Election_Id(id: int, db: Session = Depends(get_db)):
     election_data['NumberOfPartylists'] = num_partylists
 
     # Count all voters population for this election
-    num_voters = db.query(Student).filter(Student.Course == student_organization.OrganizationMemberRequirements).count()
+    num_voters = db.query(Eligibles).filter(Eligibles.ElectionId == id).count()
     election_data['NumberOfVoters'] = num_voters
 
     # Count all voters who voted for this election
