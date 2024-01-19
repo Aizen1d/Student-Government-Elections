@@ -2,127 +2,114 @@
         <title>File CoC - COMELEC Portal</title>
     <Navbar></Navbar>
 
-    <div class="main">
-        <div class="header row">
-            <div class="col">
-                <h1>
-                    <span class="return" @click="returnPage">{{ electionName }}</span>&nbsp;>&nbsp;File Certificate of Candidacy
-                </h1>
-            </div>
-        </div>
+    <main class="main-margin">
+        <h1 class="current-page">
+            <span class="header" @click.prevent="returnPage">ONGOING ELECTIONS</span> 
+            <span class="arrow"> ></span>
+            {{ electionName }}
+            <span class="arrow"> ></span>
+            FILE CERTIFICATE OF CANDIDACY
+        </h1>
 
-        <form action="">
-            <div class="row coc g-5">
-                <div class="col-7">
-                    <div class="info">
-                        <div class="row marg">
-                            <label for="per-info" class="col-4 col-form-label">Applicant Information</label>
-                            <div class="col-6 box">
-                                <label class="form-label">Student Number</label>
-                                <input type="text" class="form-control margin" maxlength="15" placeholder="Enter your student number" :disabled="is_submitting" v-model="student_number">
-
-                                <label class="form-label">Verification Code</label>
-                                <div style="display: flex;">
-                                    <input type="text" class="form-control margin" placeholder="Enter your verification code" :disabled="is_submitting" v-model="verification_code">
-                                    <ActionButton @click.prevent="sendCode" :disabled="isSending || isSent || is_submitting" 
-                                                        :style="{ width: isSent ? '20em' : '15em' }"
-                                                        style="font-size: 1em;
-                                                        margin-left: 5%;
-                                                        height: 2.2em; 
-                                                        padding: 0px 0px 0px 0px !important;">{{ buttonText }}</ActionButton>
-                                </div>
-
-                                <label class="form-label">Motto (Optional)</label>
-                                <input type="text" class="form-control margin" placeholder="Enter your motto" :disabled="is_submitting" v-model="motto">
-                            </div>
-                        </div>
-    
-                        <hr class="my-2">
-
-                        <div class="row">
-                            <label for="per-info" class="col-4 col-form-label">Election Information</label>
-                            <div class="col-6 box">
-                                <label class="form-label">Political Affiliation</label>
-
-                                <select class="form-select margin" aria-label="Default select example" :disabled="is_submitting" v-model="political_affiliation">
-                                    <option value="" hidden selected>Select</option>
-                                    <option value="Independent">Independent</option>
-                                    <option value="Party List">Party List</option>
-                                </select>
-
-                                <div v-if="political_affiliation !== '' && political_affiliation !== 'Independent'">
-                                    <label class="form-label">Select Party List</label>
-                                    <select class="form-select margin" aria-label="Default select example" :disabled="is_submitting" v-model="party_list">
-                                        <option value="" hidden selected>Select</option>
-                                        <option v-for="(party, index) in partyListsData" :key="index" :value="party.PartyListName">{{ party.PartyListName }}</option>
-                                    </select>
-                                </div>
-
-                                <div v-if="political_affiliation !== ''">
-                                    <label class="form-label">Select Position</label>
-                                    <select class="form-select margin" aria-label="Default select example" :disabled="is_submitting" v-model="selected_position">
-                                        <option value="" hidden selected>Select</option>
-                                        <option v-for="(position, index) in positionsData" :key="index" :value="position.PositionName">{{ position.PositionName }}</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
+        <div class="main">
+            <div class="row g-4">
+                <div class="col-6">
+                    <div class="note">
+                        <img src="../../images/Elections/CoC/information.svg" alt="" class="information-svg">
+                        <span>
+                            To file a certificate of candidacy, submit your student number. 
+                            An email with a verification code will be sent to your associated email. Use this code to verify.  
+                        </span>
                     </div>
+                    <div class="components row">
+                        <span class="header-label">Applicant Information</span>
+
+                        <label class="form-label" for="student-number">Student Number</label>
+                        <div class="col-8">
+                            <input class="form-control" maxlength="15" placeholder="Enter your student number" type="text" name="student-number" :disabled="is_submitting" v-model="student_number">
+                        </div>
+                        <div class="col-4">
+                            <button class="code-button" @click.prevent="sendCode" :disabled="isSending || isSent || is_submitting" 
+                                    style="font-size: 1em;">{{ buttonText }}
+                            </button>
+                        </div>
+
+                        <div>
+                            <label class="form-label mt-4" for="code">Verification Code</label>
+                            <input class="form-control" placeholder="Enter verification code" :disabled="is_submitting" v-model="verification_code" type="text" name="code">
+                        </div>
+                    </div>   
                     
+                    <div class="components row my-4">
+                        <span class="header-label">Election Information</span>
+                        <div class="col info">
+                            <label class="form-label" for="selected">Political Affiliation</label>
+                            <input type="hidden" name="requirements">
+                            <select class="form-select" aria-label="Default select example" :disabled="is_submitting" v-model="political_affiliation">
+                                <option value="" hidden selected>Select</option>
+                                <option selected>Independent</option>
+                                <option selected>Partylist</option>
+                            </select>
+
+                            <div v-if="political_affiliation !== '' && political_affiliation !== 'Independent'">
+                                <label class="form-label mt-4">Select Partylist</label>
+                                <input type="hidden" name="requirements">
+                                <select class="form-select" aria-label="Default select example" :disabled="is_submitting" v-model="party_list">
+                                    <option value="" hidden selected>Select</option>
+                                    <option v-for="(party, index) in partyListsData" :key="index" :value="party.PartyListName">{{ party.PartyListName }}</option>
+                                </select>
+                            </div>
+
+                            <div v-if="political_affiliation !== ''">
+                                <label class="form-label mt-4">Select Position</label>
+                                <input type="hidden" name="requirements">
+                                <select class="form-select" aria-label="Default select example" :disabled="is_submitting" v-model="selected_position">
+                                    <option value="" hidden selected>Select</option>
+                                    <option v-for="(position, index) in positionsData" :key="index" :value="position.PositionName">{{ position.PositionName }}</option>
+                                </select>
+                            </div>
+
+                            <label class="form-label mt-4" for="motto">Motto (Optional)</label>
+                            <input class="form-control margin1" placeholder="Enter your motto" type="text" name="motto" :disabled="is_submitting" v-model="motto">
+                            
+                            <label class="form-label" for="platform">Platforms</label>
+                            <textarea class="form-control padding1 platform" placeholder="Enter your platforms" type="text" name="platform" :disabled="is_submitting" v-model="platforms"></textarea>
+                        </div>
+                    </div>     
                 </div>
-                <div class="col-5">
-                    <div class="attachments">
-                        <h6>Display Photo</h6>
 
-                        <div class="image">
-                            <img v-if="display_photo_base_64" :src="display_photo_base_64" alt="" class="pic" draggable="false">
-                            <img v-else src="../../images/profile_placeholder.png" alt="" class="pic" draggable="false">
-                        </div>
+                <div class="col-6">
+                    <div class="components1 row">
+                        <span class="header-label">Display Photo</span>
 
-                        <div class="row marge">
-                            <div class="col-4">
-                                <label for="display-file-upload" class="mx-1 display-photo-file-upload">
-                                    Select File
-                                </label>
-                                <input id="display-file-upload" type="file" accept="image/*" style="display: none;" :disabled="is_submitting" @change="handleDisplayPhotoFile">
-                            </div>
-                            <div class="col-8">
-                                <label class="mx-3 text-truncate" style="max-width: 100%;">
-                                    {{ display_photo_file_name }}
-                                </label>
+                        <div class="upload">
+                            <img v-if="display_photo_base_64" :src="display_photo_base_64" alt="" class="organization-logo" draggable="false">
+                            <img v-else src="../../images/Elections/CoC/default.png" alt="" class="organization-logo" draggable="false">
+                            <div class="round">
+                                <input type="file" accept="image/*" :disabled="is_submitting" @change="handleDisplayPhotoFile">
+                                <i class="fa fa-camera" style = "color: #000000;"></i>
                             </div>
                         </div>
-
-                        <hr class="my-3">
-                        <h6>Certification of Grades</h6>
-
+                    </div>   
+                    
+                    <div class="components row my-4">
+                        <span class="header-label">Certification of Grades</span>
+                        <div>
+                            <input class="form-control mb-3" type="file" name="grades" accept="image/*" :disabled="is_submitting" @change="handleCertificationFile">
+                        </div>
                         <div v-if="certification_of_grades_base_64">
                             <img :src="certification_of_grades_base_64" alt="Certification of Grades" style="width: 90%; height: auto; margin-left: 5%; margin-top: 1%;" >
                         </div>
-                        
-                        <div class="row my-4">
-                            <div class="col-4">
-                                <label for="grades-file-upload" class="mx-3 grades-file-upload">
-                                    Select File
-                                </label>
-                                <input id="grades-file-upload" type="file" accept="image/*" style="display: none;" :disabled="is_submitting" @change="handleCertificationFile">
-                            </div>
-                            <div class="col-8">
-                                <label class="mx-3 my-2 text-truncate" style="max-width: 100%;">
-                                    {{ certification_of_grades_file_name }}
-                                </label>
-                            </div>
-                        </div>
-
-                    </div>
-                    <div class="btns">
-                        <ActionButton :disabled="is_submitting" class="mx-4" @click.prevent="returnPage">Cancel</ActionButton>
-                        <ActionButton :disabled="is_submitting" @click.prevent="submit">{{ submitStatus }}</ActionButton>
+                    </div> 
+                    
+                    <div class="buttons">
+                        <button class="cancel-button" :disabled="is_submitting" @click.prevent="returnPage">Cancel</button>
+                        <button class="submit-button" :disabled="is_submitting" @click.prevent="submit">{{ submitStatus }}</button>
                     </div>
                 </div>
             </div>
-        </form>
-    </div>
+        </div>
+    </main>
 </template>
 
 <script>
@@ -150,6 +137,7 @@
             const intervalId = useLocalStorage('interval_id', null);
 
             const motto = useLocalStorage(`coc_motto_${id.value}`, '')
+            const platforms = useLocalStorage(`coc_platforms_${id.value}`, '')
             const political_affiliation = useLocalStorage(`coc_political_affiliation_${id.value}`, '')
             const party_list = useLocalStorage(`coc_party_list_${id.value}`, '')
             const selected_position = useLocalStorage(`coc_selected_position_${id.value}`, '')
@@ -170,6 +158,7 @@
                     localStorage.setItem(`coc_student_number_${newId}`, student_number.value);
                     localStorage.setItem(`coc_verification_code_${newId}`, verification_code.value);
                     localStorage.setItem(`coc_motto_${newId}`, motto.value);
+                    localStorage.setItem(`coc_platforms_${newId}`, platforms.value);
                     localStorage.setItem(`coc_political_affiliation_${newId}`, political_affiliation.value);
                     localStorage.setItem(`coc_party_list_${newId}`, party_list.value);
                     localStorage.setItem(`coc_selected_position_${newId}`, selected_position.value);
@@ -329,6 +318,7 @@
                 countdown,
                 intervalId,
                 motto,
+                platforms,
                 political_affiliation,
                 party_list,
                 selected_position,
@@ -407,6 +397,7 @@
                 localStorage.removeItem(`coc_student_number_${this.id}`);
                 localStorage.removeItem(`coc_verification_code_${this.id}`);
                 localStorage.removeItem(`coc_motto_${this.id}`);
+                localStorage.removeItem(`coc_platforms_${this.id}`);
                 localStorage.removeItem(`coc_political_affiliation_${this.id}`);
                 localStorage.removeItem(`coc_party_list_${this.id}`);
                 localStorage.removeItem(`coc_selected_position_${this.id}`);
@@ -508,6 +499,7 @@
                     formData.append('student_number', this.student_number);
                     formData.append('verification_code', this.verification_code);
                     formData.append('motto', this.motto);
+                    formData.append('platforms', this.platforms);
                     formData.append('political_affiliation', this.political_affiliation);
                     formData.append('party_list', this.party_list);
                     formData.append('position', this.selected_position);
@@ -573,119 +565,196 @@
         font-family: 'Source Sans Pro', sans-serif;
     }
 
-    .header{
-        margin-top: -.5%;
-        margin-bottom: 2%;
-    }
-
-    .header h1{
-        font-size: 28px;
-        font-weight: 800;
-        height: 100%;
-    }
-
-    .btns{
-        text-align: end;
-        margin-top: 3%;
-    }
-
-    .draft-button{
-        text-align: end;
-    }
-
-    .display-photo-file-upload {
-        margin-top: 5%;
-        margin-bottom: 10%;
-        padding: 7px;
-        width: 100%;
-        font-size: 100%;
-        border: 1px solid #ccc;
-        border-radius: 8px;
-        display: inline-block;
-        cursor: pointer;
-        text-align: center;
-    }
-
-    .grades-file-upload {
-        padding: 7px;
-        width: 100%;
-        font-size: 100%;
-        border: 1px solid #ccc;
-        border-radius: 8px;
-        display: inline-block;
-        cursor: pointer;
-        text-align: center;
-    }
-
-    .coc{
-        font-family: 'Source Sans Pro', sans-serif;
-    }
-
-    .info, .attachments{
-        background-color: #F5F8F9;
-        padding: 2%;
-        border-radius: 10px;
-        box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.07), 0 6px 20px 0 rgba(0, 0, 0, 0.08);
-    }
-
-    .attachments{
-        background-color: #F5F8F9;
-        padding: 3%;
-        border-radius: 10px;
-    }
-
-    .attachments h6{
-        font-weight: bold;
-        font-size: 17px;
-    }
-
-    .form-label{
-        margin: 1% 0%;
-    }
-
-    .a{
+    .current-page{
         margin: 1.5% 0%;
-    }
-
-    .col-form-label{
+        font-size: 28px;
         font-weight: bold;
-        font-size: 17px;
+        color: #800000 !important;
     }
 
-    .box{
-        margin-top: 0.5%;
+    .arrow{
+        font-size: 28px;
+        font-weight: bold;
+        color: black !important;
+    }
+
+    .header{
+        margin: 1.5% 0%;
+        font-size: 28px;
+        font-weight: bold;
+        color: black !important;
+    }
+
+    .header:hover{
+        cursor: pointer;
+        text-decoration: underline;
+    }
+
+    .main-margin{
+        margin: 0% 8%;
+    }
+
+    .current-page{
+        color: #800000;
+    }
+
+    .header{
+        margin: 1.5% 0%;
+        font-size: 28px;
+        font-weight: bold;
+    }
+
+    .information-svg{
+        width: 30px;
+        height: 30px;
+        margin-right: 10px;
+    }
+
+    .note{
+        background-color: #F2F2F2;
+        padding: 2%;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+    }
+
+    .components{
+        background-color: white;
+        padding: 3%;
+        display: flex;
+        align-items: center;
+        box-shadow: 0px 3px 5px rgba(167, 165, 165, 0.5);
+        margin: 0%;
+    }
+
+    .components1{
+        background-color: white;
+        padding: 3%;
+        display: flex;
+        align-items: center;
+        box-shadow: 0px 3px 5px rgba(167, 165, 165, 0.5);
+        margin: 0%;
+        flex-direction: column;
+        justify-content: center;
     }
 
     .margin{
-        margin-bottom: 2%;
-        margin-left: 0%;
+        margin-bottom: 4%;
     }
 
-    .marg{
-        margin-top: -1%;
+    .margin1{
+        margin-bottom: 3%;
     }
 
-    .marge{
-        margin: 1% 0%;
-        margin-top: 2%;
+    .padding{
+        margin-bottom: 1%;
+    }
+
+    .padding1{
+        margin-bottom: 0.8%;
+    }
+
+    .form-label, .form-control, .form-select{
+        font-size: 18px;
+    }
+
+    .code-button{
+        width: 100%;
+        height: 100%;
+        border: transparent;
+        border-radius: 6px;
+        background-color: #730000;
+        color: white;
+        align-items: end;
+        padding: 0%;
+        font-size: 18px;
+    }
+
+    .buttons{
+        background-color: white;
+        padding: 3%;
         display: flex;
         align-items: center;
-        width: 100%;
+        box-shadow: 0px 3px 5px rgba(167, 165, 165, 0.5);
+        justify-content: space-between;
     }
 
-    .pic{
-        width: 155px;
-        height: 155px;
-        object-fit: cover;
-        border-radius: 100px;
-        outline: 1px solid #bbbb;
+    .submit-button{
+        border: transparent;
+        border-radius: 6px;
+        background-color: #730000;
+        color: white;
+        align-items: end;
+        padding: 1.5%;
+        font-size: 18px;
+        width: 150px;
     }
 
-    .image{
-        text-align: center;
+    .cancel-button{
+        padding: 1.5%;
+        border: transparent;
+        border-radius: 10px;
+        font-size: 18px;
+        background-color: transparent;
+        color: #CC3300;
     }
 
-    .s{
+    .row{
+        align-items: stretch;
+    }
+
+    .upload{
+        width: 135px;
+        position: relative;
         padding: 0%;
+        margin: auto;
+    }
+    
+    .upload img{
+        height: 135px;
+        border-radius: 50%;
+        border: 6px solid #eaeaea;
+        object-fit: cover;
+    }
+    
+    .upload .round{
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        background: #D9D9D9;
+        width: 32px;
+        height: 32px;
+        line-height: 33px;
+        text-align: center;
+        border-radius: 50%;
+        overflow: hidden;
+    }
+    
+    .upload .round input[type = "file"]{
+        position: absolute;
+        transform: scale(2);
+        opacity: 0;
+    }
+
+    input[type=file]::-webkit-file-upload-button{
+        cursor: pointer;
+    }
+
+    .organization-logo{
+        width: 100%;
+        height: 100%;
+    }
+
+    .header-label{
+        font-weight: 600;
+        font-size: 18px;
+        margin-bottom: 22px;
+        margin-right: auto;
+    }
+
+    .platform{
+        resize: none;
+        overflow-y: auto;
+        height: 200px;
     }
 </style>
