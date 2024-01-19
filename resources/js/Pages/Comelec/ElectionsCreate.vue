@@ -170,6 +170,11 @@
                         </div>
 
                         <label class="form-label" for="position-quantity">Position Quantity</label>
+                        <Tooltip class="mx-2">
+                            <slot>
+                                How many can run and win for this position.
+                            </slot>
+                        </Tooltip>
                         <input type="number" min="1" class="form-control position-quantity margin" v-model.number="position.quantity">
 
                         <div class="row button">
@@ -193,8 +198,8 @@
         </div>
         <div>
             <div class="election-btn mb-4">
-                <ActionButton class="cancel" @click.prevent="returnPage">Cancel</ActionButton>
-                <ActionButton class="create" @click.prevent="submit">Create Election</ActionButton>
+                <ActionButton class="cancel" @click.prevent="returnPage" :disabled="submitting">Cancel</ActionButton>
+                <ActionButton class="create" @click.prevent="submit" :disabled="submitting">Create Election</ActionButton>
             </div>
         </div>
     </div>
@@ -212,12 +217,14 @@
     import SearchBarAndFilter from '../../Shared/SearchBarAndFilter.vue';
     import BaseContainer from '../../Shared/BaseContainer.vue';
     import BaseTable from '../../Shared/BaseTable.vue';
+    import Tooltip from '../../Shared/Tooltip.vue';
 
     import axios from 'axios';
 
     export default{
         setup(props) {
             const userStore = useUserStore();
+            const submitting = ref(false);
             const createdByStudentNumber = userStore.student_number;
 
             const election_name_input = ref('');
@@ -380,6 +387,8 @@
 
             return { 
                     createdByStudentNumber, 
+                    submitting,
+
                     election_name_input,
                     election_type_input,
                     election_course_requirements,
@@ -406,7 +415,7 @@
                     organizationError,
                 }
         },
-        components: { Navbar, Sidebar, ActionButton, SearchBarAndFilter, BaseContainer, BaseTable, },
+        components: { Navbar, Sidebar, ActionButton, SearchBarAndFilter, BaseContainer, BaseTable, Tooltip },
         props: {
             full_name: String,
             user_role: String,
@@ -418,6 +427,8 @@
         },
         methods:{
             returnPage() {
+                if (this.submitting) return;
+
                 //const confirm = window.confirm('Are you sure you want to cancel and return? inputs will not be saved.');
                 //if (!confirm) return;
                 router.visit('/comelec/elections');
@@ -665,6 +676,8 @@
                     election_info: electionData
                 };
 
+                this.submitting = true;
+
                 axios.post(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/election/create`, data)
                     .then((response) => {
                         console.log(`Election created successfully. Duration: ${response.duration}`);
@@ -673,6 +686,9 @@
                     })
                     .catch((error) => {
                         console.log(error);
+                    })
+                    .finally(() => {
+                        this.submitting = false;
                     });
             }
         }
