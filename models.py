@@ -1,10 +1,16 @@
-from database import engine, Base
+from database import engine, Base, SessionLocal
 from sqlalchemy.orm import sessionmaker, relationship
 
 from sqlalchemy import Column, Integer, Float, String, Date, DateTime, Boolean, Text, ForeignKey
 from sqlalchemy.sql import func
 
+from dotenv import load_dotenv
+load_dotenv()
+import os
+
 from cloudinary.api import resources_by_tag
+
+from datetime import datetime, date, timedelta
 
 Session = sessionmaker(bind=engine)
 session = Session()
@@ -764,7 +770,7 @@ class Eligibles(Base):
     EligibleId = Column(Integer, primary_key=True)
     StudentNumber = Column(String(15), ForeignKey('SPSStudent.StudentNumber')) # Not unique since a student can be eligible for multiple elections
     ElectionId = Column(Integer, ForeignKey('SGEElection.ElectionId'))
-    IsVotedOrAbstained = Column(Boolean, default=False)
+    HasVotedOrAbstained = Column(Boolean, default=False)
     VotingPassword = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
@@ -774,8 +780,109 @@ class Eligibles(Base):
             "EligibleId": self.EligibleId,
             "StudentNumber": self.StudentNumber,
             "ElectionId": self.ElectionId,
-            "IsVotedOrAbstained": self.IsVotedOrAbstained,
+            "IsVotedOrAbstained": self.HasVotedOrAbstained,
             "VotingPassword": self.VotingPassword,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }
+    
+##################################################################
+# Insert datas to tables
+db = SessionLocal()
+ADD_SAMPLE_DATA = os.getenv("ADD_SAMPLE_DATA")
+
+if ADD_SAMPLE_DATA == "True" and False:
+    from data.student import student_data
+    from data.course import course_data
+    from data.courseEnrolled import course_enrolled_data
+    from data.metadata import metadata_data
+    from data.classes import class_data
+    from data.studentClassGrade import student_class_grade_data
+
+    def create_student():
+        for student in student_data:
+            existing_student = db.query(Student).filter(Student.StudentNumber == student["StudentNumber"]).first()
+
+            if existing_student:
+                continue
+
+            new_student = Student(**student)
+
+            db.add(new_student)
+            db.commit()
+            db.close()
+
+    def create_course():
+        for course in course_data:
+            existing_course = db.query(Course).filter(Course.CourseCode == course["CourseCode"]).first()
+
+            if existing_course:
+                continue
+
+            new_course = Course(**course)
+
+            db.add(new_course)
+            db.commit()
+            db.close()
+
+    def create_course_enrolled():
+        for course_enrolled in course_enrolled_data:
+            existing_course_enrolled = db.query(CourseEnrolled).filter(CourseEnrolled.StudentId == course_enrolled["StudentId"]).first()
+
+            if existing_course_enrolled:
+                continue
+
+            new_course_enrolled = CourseEnrolled(**course_enrolled)
+
+            db.add(new_course_enrolled)
+            db.commit()
+            db.close()
+
+    def create_metadata():
+        for metadata in metadata_data:
+            existing_metadata = db.query(Metadata).filter(Metadata.MetadataId == metadata["MetadataId"]).first()
+
+            if existing_metadata:
+                continue
+
+            new_metadata = Metadata(**metadata)
+
+            db.add(new_metadata)
+            db.commit()
+            db.close()
+
+    def create_class():
+        for class_ in class_data:
+            existing_class = db.query(Class).filter(Class.ClassId == class_["ClassId"]).first()
+
+            if existing_class:
+                continue
+
+            new_class = Class(**class_)
+
+            db.add(new_class)
+            db.commit()
+            db.close()
+
+    def create_student_class_grade():
+        for student_class_grade in student_class_grade_data:
+            existing_student_class_grade = db.query(StudentClassGrade).filter(StudentClassGrade.StudentId == student_class_grade["StudentId"]).first()
+
+            if existing_student_class_grade:
+                continue
+
+            new_student_class_grade = StudentClassGrade(**student_class_grade)
+
+            db.add(new_student_class_grade)
+            db.commit()
+            db.close()
+##################################################################
+# Call methods for creating data
+if ADD_SAMPLE_DATA == "True" and False:   
+    create_student()
+    
+    create_course()
+    create_course_enrolled()
+    create_metadata()
+    create_class()
+    create_student_class_grade()
