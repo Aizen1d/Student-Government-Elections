@@ -32,14 +32,11 @@
                         <input :disabled="creating" type="hidden" name="requirements">
                         <select class="form-select padding" aria-label="Default select example" v-model="organization_requirements" :disabled="creating">
                             <option selected hidden value="">Select</option>
-                            <option value="All Courses">All Courses</option>
-                            <option value="BBTLEDHE">BBTLEDHE</option>
-                            <option value="BSBAHRM">BSBAHRM</option>
-                            <option value="BSBA-MM">BSBA-MM</option>
-                            <option value="BSENTREP">BSENTREP</option>
-                            <option value="BSIT">BSIT</option>
-                            <option value="BPAPFM">BPAPFM</option>
-                            <option value="DOMTMOM">DOMTMOM</option>
+                            <option value="Any">Any Course</option>
+                            <option v-if="!isCoursesLoading" v-for="(course, courseIndex) in coursesData" :key="courseIndex" 
+                                :value="course.CourseCode">
+                                {{ course.CourseCode }}
+                            </option>
                         </select>
                     </div>
                 </div>   
@@ -341,6 +338,22 @@
                 clearTimeout(memberTimeoutId);
                 memberTimeoutId = setTimeout(() => getMemberFullName(member), 500);
             }
+            
+            const fetchAllCourses = async () => {
+                const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/courses/all`);
+                console.log(`All courses fetched. Duration: ${response.duration}`)
+
+                return response.data.courses
+            }
+
+            const { data: coursesData,
+                    isLoading: isCoursesLoading,
+                    isError: isCoursesError,
+                    error: coursesError,} = 
+                    useQuery({
+                        queryKey: [`fetchAllCourses`],
+                        queryFn: fetchAllCourses,
+                    })
 
             return {
                 organization_name,
@@ -365,6 +378,11 @@
 
                 getMemberFullName,
                 debouncedGetMemberFullName,
+                
+                coursesData,
+                isCoursesLoading,
+                isCoursesError,
+                coursesError,
             }
         },
         components: {
@@ -533,7 +551,7 @@
                     })
                     .catch(error => {
                         console.log(error);
-                        alert(error.data)
+                        alert(error.response.data.detail)
                     })
                     .finally(() => {
                         this.creating = false;
