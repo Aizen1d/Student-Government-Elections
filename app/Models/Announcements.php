@@ -9,5 +9,5 @@ class Announcements extends Model
 {
     use HasFactory;
 
-    protected $table = 'Announcement';
+    protected $table = 'SGEAnnouncement';
 }
