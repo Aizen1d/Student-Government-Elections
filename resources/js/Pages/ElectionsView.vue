@@ -159,7 +159,7 @@
 
             const fetchElectionView = async () => {
                 const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/election/view/${id.value}`)
-
+                
                 return response.data;
             }
 
@@ -360,7 +360,8 @@
     }
 
     .election-logo{
-        width: 50px;
+        width: 60px;
+        height: 60px
     }
 
     .election-title{
