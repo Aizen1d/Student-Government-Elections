@@ -2,45 +2,47 @@
     <title>Directory - COMELEC Portal</title>
     <Navbar></Navbar>
 
-    <div class="header row">
-        <div class="col">
-            <h1 class="eligible">
-                
-            </h1>
+    <main class="main-margin">
+        <h1 class="header">DIRECTORY</h1>
+
+        <div class="directory-list">
+            <div @click.prevent="viewVoters" class="select">
+                <div class="card">
+                    <img src="../../images/Directory/List/voter.png" class="card-img-top" alt="">
+                    <div class="card-body">
+                        <h1 class="card-title">Eligible Voters</h1>    
+                    </div>
+                </div>
+            </div>
+            
+            <div @click.prevent="viewCandidates" class="select">
+                <div class="card">
+                    <img src="../../images/Directory/List/candidate.png" class="card-img-top" alt="">
+                    <div class="card-body">
+                        <h1 class="card-title">Candidates</h1>
+                    </div>
+                </div>
+            </div>
+            
+            <div @click.prevent="viewPartylists" class="select">
+                <div class="card">
+                    <img src="../../images/Directory/List/party.png" class="card-img-top" alt="">
+                    <div class="card-body">
+                        <h1 class="card-title">Party Lists</h1>
+                    </div>
+                </div>
+            </div>
+
+            <div @click.prevent="" class="select">
+                <div class="card">
+                    <img src="../../images/Directory/List/orgs.png" class="card-img-top" alt="">
+                    <div class="card-body">
+                        <h1 class="card-title">Student Organizations</h1>
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
-
-    <div class="main">
-        <div class="card-deck">
-            <div class="card" @click.prevent="viewVoters">
-                <img src="../../images/Directory/List/voter.png" class="card-img-top" alt="">
-                <div class="card-body">
-                    <h1 class="card-title">Eligible Voters</h1>
-                </div>
-            </div>
-
-            <div class="card" @click.prevent="viewCandidates">
-                <img src="../../images/Directory/List/candidate.png" class="card-img-top" alt="">
-                <div class="card-body">
-                    <h1 class="card-title">Candidates</h1>
-                </div>
-            </div>
-
-            <div class="card" @click.prevent="viewPartylists">
-                <img src="../../images/Directory/List/party.png" class="card-img-top" alt="">
-                <div class="card-body">
-                    <h1 class="card-title">Party Lists</h1>
-                </div>
-            </div>
-
-            <div class="card">
-                <img src="../../images/Directory/List/orgs.png" class="card-img-top" alt="">
-                <div class="card-body">
-                    <h1 class="card-title">Student Organizations</h1>
-                </div>
-            </div>
-        </div>
-    </div>
+    </main>
 </template>
 
 <script>
@@ -74,36 +76,29 @@
 </script>
 
 <style scoped>
-    .eligible{
-        font-size: 38px;
-        font-weight: 800;
-        letter-spacing: 1px;
+    .main-margin{
+        margin: 0% 8%;
     }
 
     .header{
-        margin-top: 1.8%;
-        margin-left: 2.5%;
-        width: 78%;
-    }
-    .main{
-        display: flex;
-        justify-content: center;
-        align-items: center;
+        margin: 1.5% 0%;
+        font-size: 28px;
+        font-weight: bold;
     }
 
-    .card-deck{
+    .directory-list{
         display: flex;
+        justify-content: space-between;
     }
 
     .card {
-        width: 24rem;
-        height: 40rem;
+        width: 26.5rem;
+        height: 44rem;
         border-radius: 0px;
         overflow: hidden;
         cursor: pointer;
         position: relative;
-        margin: 3% 0.5%;
-        background-color: #880000;
+        background-color: #630303;
     }
 
     .card img {
@@ -129,9 +124,10 @@
     .card-body{
         color: white;
         opacity: 1;
+        z-index: 1;
         text-align: center;
         margin-top: 140%;
-        background-color: #4f0b0b;
+        background-color: rgba(78, 3, 3, 0.77);
     }
 
     .card-body {
@@ -146,6 +142,18 @@
     }
 
     .card-title{
-        font-size: 35px;
+        font-size: 30px;
+    }
+
+    .select{
+        text-decoration: none;
+    }
+
+    .card:hover .card-body, .card-body:hover {
+        display: none;
+    }
+
+    .card:hover {
+        background-color: white;
     }
 </style>

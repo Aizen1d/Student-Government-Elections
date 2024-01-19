@@ -2,33 +2,25 @@
     <title>Directory Candidates Selection - COMELEC Portal</title>
     <Navbar></Navbar>
     
-    <div class="header row">
-        <div class="col">
-            <h1 class="eligible">
-                <span class="return" @click="returnPage">Directory</span>&nbsp;>&nbsp;Election Selection
-            </h1>
-        </div>
-    </div>
+    <main class="main-margin">
+        <h1 class="current-page">
+            <span class="header" @click.prevent="returnPage">Directory</span> 
+            <span class="arrow"> ></span>
+            SELECT ELECTION
+        </h1>
 
-    <div v-if="isElectionsLoading" style="text-align: center;">
-        <h1 style="color: black;">Loading..</h1>
-    </div>
+        <template v-for="(election, index) in electionsData" :key="index" @click="selectItem(election)">
+            <div class="select">
+                <div class="election">
+                    <div class="election-wrapper">
+                        <img :src="election.OrganizationLogo" alt="" class="election-img">
+                        <span class="election-name">{{ election.ElectionName }}</span>
+                    </div>
+                </div>
+            </div>
+        </template>
 
-    <div class="parent" v-if="!isElectionsLoading">
-        <BaseTable class="item-table" v-if="atleastOneElection"
-                :columns="['Organization', 'Election Title']" 
-                :columnWidths="['30%', '50%', '20%']"
-                :tableHeight="'auto'"
-                :maxTableHeight="'235px'">
-            <tr v-for="(election, index) in electionsData" :key="index" @click="selectItem(election)">
-                <td style="width: 30%; text-align: left; padding-left: 14.6%;" class="my-cell">{{ election.type }}</td>
-                <td style="width: 50%; text-align: left; padding-left: 27%;" class="my-cell">{{ election.name }}</td>
-            </tr>
-        </BaseTable>
-        <div v-else>
-            <h1 class="my-4">There are no elections and candidates at the moment.</h1>
-        </div>
-    </div>
+    </main>
 </template>
 
 <script>
@@ -37,7 +29,7 @@
     import BaseContainer from '../Shared/BaseContainer.vue'
     import BaseTable from '../Shared/BaseTable.vue'
 
-    import { ref } from 'vue'
+    import { ref, watch } from 'vue'
     import axios from 'axios'
     import { useQuery } from '@tanstack/vue-query'
     import { router } from '@inertiajs/vue3'
@@ -51,21 +43,19 @@
                 });
                 console.log(`Get all elections successful. Duration: ${response.duration}ms`)
 
-                const elections = response.data.elections.map(election => ({
-                    id: election.ElectionId,
-                    name: election.ElectionName,
-                    type: election.StudentOrganizationName,
-                    status: election.ElectionStatus,
-                }));
-
                 if (response.data.elections.length > 0){
                     atleastOneElection.value = true;
                 }
                 else {
                     atleastOneElection.value = false;
-                }
+                }           
 
-                return elections;
+                return response.data.elections.map(election => {
+                    const logo_url = `${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/get/cached/elections/${election.OrganizationLogo}`
+                    election.OrganizationLogo = logo_url;
+
+                    return election;
+                });
             }
 
             const { data: electionsData,
@@ -102,56 +92,93 @@
             },
             returnPage(){
                 router.visit('/directory')
-            }
+            },
         },
     }
 </script>
 
 <style scoped>
-    .return{
-        font-size: 28px;
-        font-weight: 800;
-        color: #B90321;
+     .main{
+        margin: 3% 5%;
+        font-family: 'Source Sans Pro', sans-serif;
     }
 
-    .return:hover{
+    .current-page{
+        margin: 1.5% 0%;
+        font-size: 28px;
+        font-weight: bold;
+        color: #800000 !important;
+    }
+
+    .arrow{
+        font-size: 28px;
+        font-weight: bold;
+        color: black !important;
+    }
+
+    .header{
+        margin: 1.5% 0%;
+        font-size: 28px;
+        font-weight: bold;
+        color: black !important;
+    }
+
+    .header:hover{
         cursor: pointer;
         text-decoration: underline;
     }
 
-    .eligible{
-        font-size: 28px;
-        font-weight: 800;
+    .main-margin{
+        margin: 0% 8%;
+    }
+
+    .current-page{
+        color: #800000;
     }
 
     .header{
-        margin-top: 1%;
-        margin-bottom: 1%;
-        margin-left: 14.3%;
-        width: 78%;
+        margin: 1.5% 0%;
+        font-size: 28px;
+        font-weight: bold;
     }
 
-    .parent{
+    .election{
+        margin: 1.5% 0;
+        background-color: white;
+        box-shadow: 0px 3px 5px rgba(167, 165, 165, 0.5);
+        border-radius: 3px;
+        transition: transform 0.4s ease;
+    }
+
+    .election-wrapper{
+        padding: 1%;
         display: flex;
-        justify-content: center;
         align-items: center;
     }
-    .item-container{
-        width: 70%;
-        margin-top: 2%;
+
+    .select{
+        color: black;
+        text-decoration: none;
     }
 
-    .main{
-        height: 500px;
+    .select:hover{
+        cursor: pointer;
     }
 
-    .main-ann{
+    .election-img{
+        width: 55px;
+        height: 55px;
+    }
+
+    .election-name{
+        margin-left: 2%;
         width: 100%;
-        height: 60%;
-        object-fit: cover;
+        font-weight: 600;
+        font-size: 25px;
     }
 
-    .item-table{
-        width: 70%;
-    }
+    .election:hover{
+        color: #800000;
+        background-color: #f4f4f4;
+    }   
 </style>
