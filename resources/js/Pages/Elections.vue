@@ -148,7 +148,12 @@
                     })
                 })
 
-                return response.data.elections;
+                return response.data.elections.map(election => {
+                    const logo_url = `${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/get/cached/elections/${election.OrganizationLogo}`
+                    election.OrganizationLogo = logo_url;
+
+                    return election;
+                });
             }
 
             const { data: electionsData,
@@ -306,7 +311,9 @@
     }
 
     .election-logo{
-        width: 50px;
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
     }
 
     .election-title{
