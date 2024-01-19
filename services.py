@@ -308,3 +308,37 @@ def send_pass_code_student_organization_officer_email(student_number, student_em
     # Send the email
     server.send_message(msg)
     server.quit()
+
+#########################################################
+""" Send email to eligible students for voting on election creation """
+
+def send_eligible_students_email(student_number, student_email, pass_code):
+    db = SessionLocal()
+
+    # Set up the SMTP server
+    server = smtplib.SMTP('smtp.gmail.com', 587)
+    server.starttls()
+    server.login(EMAIL, PASSWORD)
+
+    # Create the email
+    msg = MIMEMultipart()
+    msg['From'] = EMAIL
+    msg['To'] = student_email
+    msg['Subject'] = "Temporary password for Voting"
+
+    # Design the body of the email
+    body = f"""
+        <html>
+        <body>
+            <p>Hello, Student {student_number}</p>
+            <p style="margin-top: 0.2em; margin-bottom: 0.2em;">Your temporary voting password is <strong>{pass_code}</strong>.</p>
+        </body>
+        </html>
+    """
+    
+    # Attach the body to the email
+    msg.attach(MIMEText(body, 'html'))
+
+    # Send the email
+    server.send_message(msg)
+    server.quit()
