@@ -109,7 +109,7 @@
 
                         <div class="margin">
                             <label class="form-label" for="type">Email Address</label>
-                            <input class="form-control" type="text" name="name" v-model="CoCData.Student.EmailAddress" :disabled="true">
+                            <input class="form-control" type="text" name="name" v-model="CoCData.Student.Email" :disabled="true">
                         </div>
                     </div>
 
@@ -142,6 +142,11 @@
                             <label class="form-label" for="type">Position Selected</label>
                             <input class="form-control" type="text" name="name" v-model="CoCData.SelectedPositionName" :disabled="true">
                         </div>       
+
+                        <div class="margin">
+                            <label class="form-label" for="type">Platforms</label>
+                            <textarea class="form-control text-area-input" type="text" name="name" v-model="CoCData.Platform" :disabled="true"></textarea>
+                        </div>
                     </div>
 
                     <div class="note-timeline">
@@ -153,13 +158,13 @@
                             <div class="col-6">
                                 <div class="first-info">
                                     <label class="form-label" for="type">Course</label>
-                                    <input class="form-control" type="text" name="name" v-model="CoCData.Student.Course" :disabled="true">
+                                    <input class="form-control" type="text" name="name" v-model="CoCData.Student.CourseCode" :disabled="true">
                                 </div>
                             </div>
                             <div class="col-6">
                                 <div class="first-info">
-                                    <label class="form-label" for="type">Year Level</label>
-                                    <input class="form-control" type="text" name="name" v-model="yearLevel" :disabled="true">
+                                    <label class="form-label" for="type">Current Semester Enrolled</label>
+                                    <input class="form-control" type="text" name="name" v-model="getSemester" :disabled="true">
                                 </div>
                             </div>
                         </div>
@@ -167,14 +172,14 @@
                         <div class="row my-2">
                             <div class="col-6">
                                 <div class="margin">
-                                    <label class="form-label" for="type">Year Enrolled</label>
-                                    <input class="form-control" type="text" name="name" v-model="CoCData.Student.YearEnrolled" :disabled="true">
+                                    <label class="form-label" for="type">Year Level</label>
+                                    <input class="form-control" type="text" name="name" v-model="yearLevel" :disabled="true">
                                 </div>
                             </div>
                             <div class="col-6">
                                 <div class="margin">
-                                    <label class="form-label" for="type">Current Semester Enrolled</label>
-                                    <input class="form-control" type="text" name="name" v-model="CoCData.Student.CurrentSemesterEnrolled" :disabled="true">
+                                    <label class="form-label" for="type">Section</label>
+                                    <input class="form-control" type="text" name="name" v-model="CoCData.Student.Section" :disabled="true">
                                 </div>
                             </div>
                         </div>            
@@ -276,19 +281,30 @@
                 return new Date(this.CoCData.Student.BirthDate).toLocaleDateString(undefined, options);
             },
             yearLevel() {
-                if (this.CoCData.Student.Year === '1') {
+                if (this.CoCData.Student.Year === 1) {
                     return '1st Year';
                 } 
-                else if (this.CoCData.Student.Year === '2') {
+                else if (this.CoCData.Student.Year === 2) {
                     return '2nd Year';
                 } 
-                else if (this.CoCData.Student.Year === '3') {
+                else if (this.CoCData.Student.Year === 3) {
                     return '3rd Year';
                 } 
-                else if (this.CoCData.Student.Year === '4') {
+                else if (this.CoCData.Student.Year === 4) {
                     return '4th Year';
                 } 
             },
+            getSemester(){
+                if (this.CoCData.Student.Semester === 1) {
+                    return '1st Semester';
+                } 
+                else if (this.CoCData.Student.Semester === 2) {
+                    return '2nd Semester';
+                } 
+                else if (this.CoCData.Student.Semester === 3) {
+                    return '3rd Semester';
+                } 
+            }
         },
         methods: {
             returnPage() {
