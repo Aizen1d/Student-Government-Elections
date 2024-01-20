@@ -381,6 +381,47 @@ def get_All_Students_Arranged(db: Session = Depends(get_db)):
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while fetching all students from the database"})
     
+@router.get("/student/eligible/all/{election_id}", tags=["Student"])
+def get_All_Eligible_Students(election_id: int, db: Session = Depends(get_db)):
+    # Make a dictionary for all course_code
+    course_code_dict = {}
+    
+    # Get all course code
+    courses = db.query(Course).all()
+
+    for course in courses:
+        course_code_dict[course.CourseCode] = []
+
+    # Get all students in eligible table where election id is equal to the given election id
+    eligibles = db.query(Eligibles).filter(Eligibles.ElectionId == election_id).all()
+
+    for eligible in eligibles:
+        student_course = get_Student_Course_by_studnumber(eligible.StudentNumber, db)
+        student = db.query(Student).filter(Student.StudentNumber == eligible.StudentNumber).first()
+
+        # Get the year of the student
+        student_metadata = get_Student_Metadata_by_studnumber(student.StudentNumber)
+
+        if "CourseCode" in student_metadata:
+            student_year = student_metadata["Year"]
+
+        # Get the section of the student
+        student_section = get_Student_Section_by_studnumber(student.StudentNumber)
+
+        # If the student's course is in the dictionary, append the student to the list
+        if student_course in course_code_dict:
+            student_info = {
+                "StudentNumber": eligible.StudentNumber,
+                "LastName": student.LastName,
+                "FirstName": student.FirstName,
+                "MiddleName": student.MiddleName if student.MiddleName else '',
+                "Year": student_year if "CourseCode" in student_metadata else '',
+                "Section": student_section if student_section else ''
+            }
+            course_code_dict[student_course].append(student_info)
+
+    return {"students": course_code_dict}
+    
 @router.get("/student/fullname/{student_number}", tags=["Student"])
 def get_Student_By_Student_Number(student_number: str, db: Session = Depends(get_db)):
     try:
@@ -800,17 +841,16 @@ def student_Voting_Login(data: LoginData, db: Session = Depends(get_db)):
     StudentNumber = data.StudentNumber
     Password = data.Password
 
-    student = db.query(Student).filter(Student.StudentNumber == StudentNumber).first()
+    # get the student in eligibles table
+    student = db.query(Eligibles).filter(Eligibles.StudentNumber == StudentNumber).first()
     if not student:
-        return {"error": "Student not found."}
-
-    student_password = db.query(StudentPassword).filter(StudentPassword.StudentNumber == StudentNumber).first()
-    if not student_password:
-        return {"error": "Student password not found."}
+        return {"error": "Student not found or not eligible."}
+    
+    student_password = student.VotingPassword
 
     # Check if the password matches
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-    if not pwd_context.verify(Password, student_password.Password):
+    if not pwd_context.verify(Password, student_password):
         return {"error": "Incorrect password."}
 
     return {"message": True}
@@ -1180,53 +1220,63 @@ async def get_All_Election(background_tasks: BackgroundTasks, db: Session = Depe
 
 @router.get("/election/all/is-student-voted", tags=["Election"])
 def get_All_Election_Is_Student_Voted(student_number: str, db: Session = Depends(get_db)):
-    try:
-        # Get the student's course
-        student = db.query(Student).filter(Student.StudentNumber == student_number).first()
-        student_course = get_Student_Course_by_studnumber(student_number, db)
+    # Get the student's course
+    student = db.query(Student).filter(Student.StudentNumber == student_number).first()
+    student_course = get_Student_Course_by_studnumber(student_number, db)
+
+    # Check if the student has voted in the election
+    elections = db.query(Election).order_by(Election.ElectionId).all()
+    elections_with_creator = []
+    atleast_one_available_election = False
+
+    now = datetime.now()
+
+    for i, election in enumerate(elections):
+        creator = db.query(Student).filter(Student.StudentNumber == election.CreatedBy).first()
+        election_dict = election.to_dict(i+1)
+        election_dict["CreatedByName"] = (creator.FirstName + ' ' + (creator.MiddleName + ' ' if creator.MiddleName else '') + creator.LastName) if creator else ""
+        
+        # Return the OrganizationMemberRequirement of the election from the StudentOrganization table
+        student_organization = db.query(StudentOrganization).filter(StudentOrganization.StudentOrganizationId == election.StudentOrganizationId).first()
+        election_dict["OrganizationMemberRequirement"] = student_organization.OrganizationMemberRequirements if student_organization else ""
+
+        # Get the organization logo from cloudinary using the student organization id in the election
+        try:
+            organization_logo = resources_by_tag(student_organization.OrganizationLogo)
+            election_dict["OrganizationLogo"] = organization_logo["resources"][0]["secure_url"] if organization_logo else ""
+        except Exception as e:
+            print(f"Error fetching image from Cloudinary: {e}")
+            election_dict["OrganizationLogo"] = ""
+
+        # Check if voting period is over
+        if now >= election.VotingEnd:
+            election_dict["IsVotingPeriodOver"] = True
+        else:
+            election_dict["IsVotingPeriodOver"] = False
+
+        # Get the student in eligibles table with corresponding student number and election id
+        is_eligible = db.query(Eligibles).filter(Eligibles.StudentNumber == student_number, Eligibles.ElectionId == election.ElectionId).first()
+
+        if not is_eligible:
+            election_dict["IsStudentEligible"] = False
+        else:
+            election_dict["IsStudentEligible"] = True
+
+        # Check if the student's course matches the OrganizationMemberRequirement and it's within the voting period
+        if student_course == election_dict["OrganizationMemberRequirement"] and is_eligible and now >= election.VotingStart and now < election.VotingEnd:
+            atleast_one_available_election = True
 
         # Check if the student has voted in the election
-        elections = db.query(Election).order_by(Election.ElectionId).all()
-        elections_with_creator = []
-        atleast_one_available_election = False
+        student_voted = db.query(VotingsTracker).filter(VotingsTracker.ElectionId == election.ElectionId, VotingsTracker.VoterStudentNumber == student_number).first()
+        election_dict["IsStudentVoted"] = True if student_voted else False
 
-        now = datetime.now()
+        # Get the CreatedElectionPositions of the election then append it to the election_dict
+        positions = db.query(CreatedElectionPosition).filter(CreatedElectionPosition.ElectionId == election.ElectionId).all()
+        election_dict["Positions"] = [position.to_dict(i+1) for i, position in enumerate(positions)]
 
-        for i, election in enumerate(elections):
-            creator = db.query(Student).filter(Student.StudentNumber == election.CreatedBy).first()
-            election_dict = election.to_dict(i+1)
-            election_dict["CreatedByName"] = (creator.FirstName + ' ' + (creator.MiddleName + ' ' if creator.MiddleName else '') + creator.LastName) if creator else ""
-            
-            # Return the OrganizationMemberRequirement of the election from the StudentOrganization table
-            student_organization = db.query(StudentOrganization).filter(StudentOrganization.StudentOrganizationId == election.StudentOrganizationId).first()
-            election_dict["OrganizationMemberRequirement"] = student_organization.OrganizationMemberRequirements if student_organization else ""
+        elections_with_creator.append(election_dict)
 
-            # Get the organization logo from cloudinary using the student organization id in the election
-            try:
-                organization_logo = resources_by_tag(student_organization.OrganizationLogo)
-                election_dict["OrganizationLogo"] = organization_logo["resources"][0]["secure_url"] if organization_logo else ""
-            except Exception as e:
-                print(f"Error fetching image from Cloudinary: {e}")
-                election_dict["OrganizationLogo"] = ""
-
-            # Check if the student's course matches the OrganizationMemberRequirement and it's within the voting period
-            if student_course == election_dict["OrganizationMemberRequirement"] and now >= election.VotingStart and now < election.VotingEnd:
-                atleast_one_available_election = True
-
-            # Check if the student has voted in the election
-            student_voted = db.query(VotingsTracker).filter(VotingsTracker.ElectionId == election.ElectionId, VotingsTracker.StudentNumber == student_number).first()
-            election_dict["IsStudentVoted"] = True if student_voted else False
-
-            # Get the CreatedElectionPositions of the election then append it to the election_dict
-            positions = db.query(CreatedElectionPosition).filter(CreatedElectionPosition.ElectionId == election.ElectionId).all()
-            election_dict["Positions"] = [position.to_dict(i+1) for i, position in enumerate(positions)]
-
-            elections_with_creator.append(election_dict)
-
-        return {"elections": {"AtleastOneAvailableElection": atleast_one_available_election, "data": elections_with_creator}}
-    
-    except:
-        return JSONResponse(status_code=500, content={"detail": "Error while fetching all elections from the database"})
+    return {"elections": {"AtleastOneAvailableElection": atleast_one_available_election, "data": elections_with_creator}}
     
 @router.get("/election/view/{id}", tags=["Election"])
 def get_Election_By_Id(id: int, db: Session = Depends(get_db)):
@@ -2284,6 +2334,11 @@ async def save_CoC(election_id: int = Form(...), student_number: str = Form(...)
     if not student:
         return JSONResponse(status_code=404, content={"error": "Student number does not exist."})
     
+    # Check if the student is in eligibles table with election id
+    eligible = db.query(Eligibles).filter(Eligibles.ElectionId == election_id, Eligibles.StudentNumber == student_number).first()
+    if not eligible:
+        return JSONResponse(status_code=400, content={"error": "You are not eligible to file a CoC for this election."})
+
     # Check if verification code is correct in code table and is not expired
     code = db.query(Code).filter(Code.StudentNumber == student_number, Code.CodeType == 'Verification', Code.CodeValue == verification_code, Code.CodeExpirationDate > datetime.now()).first()
     if not code:
@@ -2466,7 +2521,12 @@ def generate_Coc_Verification_Code(code_for_student:CodeForStudent, db: Session 
     # Check if the student exists in the database
     student = db.query(Student).filter(Student.StudentNumber == code_for_student.student_number).first()
     if not student:
-        return JSONResponse(status_code=404, content={"error": "Student number does not exist"})
+        return JSONResponse(status_code=404, content={"error": "Student number does not exist."})
+
+    # Check if the student is in eligibles table
+    eligible = db.query(Eligibles).filter(Eligibles.StudentNumber == code_for_student.student_number).first()
+    if not eligible:
+        return JSONResponse(status_code=400, content={"error": "You are not eligible to file a CoC for this election."})
 
     # Check if a code already exists with same code type for this student
     existing_code_type = db.query(Code).filter(Code.StudentNumber == code_for_student.student_number, Code.CodeType == code_for_student.code_type).first()
@@ -2509,6 +2569,18 @@ def generate_Ratings_Verification_Code(code_for_student:CodeForStudent, db: Sess
 
     if not student:
         return JSONResponse(status_code=404, content={"error": "Student number does not exist"})
+    
+    # Check if the student is in eligible table
+    eligible = db.query(Eligibles).filter(Eligibles.StudentNumber == code_for_student.student_number).first()
+
+    if not eligible:
+        return JSONResponse(status_code=400, content={"error": "You are not eligible to submit ratings for this election"})
+    
+    # Check if the student number is in Code table
+    code = db.query(Code).filter(Code.StudentNumber == code_for_student.student_number, Code.CodeType == code_for_student.code_type).first()
+
+    if code:
+        return JSONResponse(status_code=400, content={"error": "You have already generated a verification code"})
 
     # Check RatinsTracker table if the student has already submitted ratings
     ratings_tracker = db.query(RatingsTracker).filter(RatingsTracker.StudentNumber == code_for_student.student_number).first()
@@ -2520,7 +2592,7 @@ def generate_Ratings_Verification_Code(code_for_student:CodeForStudent, db: Sess
     existing_code_type = db.query(Code).filter(Code.StudentNumber == code_for_student.student_number, Code.CodeType == code_for_student.code_type).first()
 
     # Generate a random code
-    code_value = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
+    code_value = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
 
     if existing_code_type:
         # If a code already exists for this student, update it
@@ -2627,7 +2699,26 @@ def get_All_Candidates_By_PartyList_Id(id: int, db: Session = Depends(get_db)):
         for i, coc in enumerate(partylist_candidates):
             student = db.query(Student).filter(Student.StudentNumber == coc.StudentNumber).first()
             partylist_candidates_dict.append(coc.to_dict(i+1))
+
+            # Get candidate Rating and TimesRated via student number in Candidates table
+            candidate = db.query(Candidates).filter(Candidates.StudentNumber == coc.StudentNumber, Candidates.ElectionId == coc.ElectionId).first()
+            partylist_candidates_dict[i]["Rating"] = candidate.Rating if candidate else None
+            partylist_candidates_dict[i]["TimesRated"] = candidate.TimesRated if candidate else None
+
             partylist_candidates_dict[i]["Student"] = student.to_dict() if student else None
+
+            # Get the student metadata from the student metadata table using the student number in the CoC table
+            student_metadata = get_Student_Metadata_by_studnumber(coc.StudentNumber)
+
+            if "CourseCode" in student_metadata:
+                partylist_candidates_dict[i]["Student"]["CourseCode"] = student_metadata["CourseCode"]
+                partylist_candidates_dict[i]["Student"]["Year"] = student_metadata["Year"]
+                partylist_candidates_dict[i]["Student"]["Semester"] = student_metadata["Semester"]
+
+            student_section = get_Student_Section_by_studnumber(coc.StudentNumber)
+
+            if student_section:
+                partylist_candidates_dict[i]["Student"]["Section"] = student_section
 
         # Include the display photo URL from cloudinary in the CoC dictionary
         for coc in partylist_candidates_dict:
@@ -2661,7 +2752,15 @@ def get_PartyList_By_Id(id: int, db: Session = Depends(get_db)):
             print(f"Error fetching ImageAttachment from Cloudinary: {e}")
             partylist.ImageAttachment = ""
 
-        return {"partylist": partylist.to_dict()}
+        # Include the election name using the election id in the partylist dictionary
+        if partylist.ElectionId:
+            election_name = db.query(Election).filter(Election.ElectionId == partylist.ElectionId).first()
+            
+        partylist_dict = partylist.to_dict()
+        partylist_dict["ElectionName"] = election_name.ElectionName if election_name else None
+
+        return {"partylist": partylist_dict}
+
     except:
         return JSONResponse(status_code=500, content={"detail": "Error while fetching partylist from the database"})
     
@@ -2889,6 +2988,19 @@ def get_All_Candidates_By_Election_Id(id: int, db: Session = Depends(get_db)):
             candidate_dict = candidate.to_dict(i+1)
             candidate_dict["Student"] = student.to_dict() if student else {}
 
+            # Get the student's course
+            if student:
+                student_metadata = get_Student_Metadata_by_studnumber(student.StudentNumber)
+                student_section = get_Student_Section_by_studnumber(student.StudentNumber)
+
+                if "CourseCode" in student_metadata:
+                    candidate_dict["Student"]["CourseCode"] = student_metadata["CourseCode"]
+                    candidate_dict["Student"]["Year"] = student_metadata["Year"]
+                    candidate_dict["Student"]["Semester"] = student_metadata["Semester"]
+
+                if student_section:
+                    candidate_dict["Student"]["Section"] = student_section
+
             # Get the party list name from partylist table using the partylist id in the candidate
             if candidate.PartyListId:
                 partylist = db.query(PartyList).filter(PartyList.PartyListId == candidate.PartyListId).first()
@@ -2933,6 +3045,19 @@ def get_All_Candidates_By_Election_Id_Per_Position(id: int, db: Session = Depend
             candidate_dict = candidate.to_dict(i+1)
             candidate_dict["Student"] = student.to_dict() if student else {}
 
+            # Get the student's course
+            if student:
+                student_metadata = get_Student_Metadata_by_studnumber(student.StudentNumber)
+                student_section = get_Student_Section_by_studnumber(student.StudentNumber)
+
+                if "CourseCode" in student_metadata:
+                    candidate_dict["Student"]["CourseCode"] = student_metadata["CourseCode"]
+                    candidate_dict["Student"]["Year"] = student_metadata["Year"]
+                    candidate_dict["Student"]["Semester"] = student_metadata["Semester"]
+
+                if student_section:
+                    candidate_dict["Student"]["Section"] = student_section
+
             # Get the party list name from partylist table using the partylist id in the candidate
             if candidate.PartyListId:
                 partylist = db.query(PartyList).filter(PartyList.PartyListId == candidate.PartyListId).first()
@@ -2942,6 +3067,7 @@ def get_All_Candidates_By_Election_Id_Per_Position(id: int, db: Session = Depend
             if candidate.StudentNumber:
                 coc = db.query(CoC).filter(CoC.StudentNumber == candidate.StudentNumber, CoC.ElectionId == candidate.ElectionId).first()
                 candidate_dict["Motto"] = coc.Motto if coc else ""
+                candidate_dict["Platform"] = coc.Platform if coc else ""
 
             # Get the display photo from cloudinary using the candidate.displayphoto resources by tag in cloudinary
             try:
@@ -2949,7 +3075,9 @@ def get_All_Candidates_By_Election_Id_Per_Position(id: int, db: Session = Depend
                 candidate_dict["DisplayPhoto"] = display_photo["resources"][0]["secure_url"] if display_photo else ""
             except Exception as e:
                 print(f"Error fetching DisplayPhoto from Cloudinary: {e}")
-                candidate_dict["DisplayPhoto"] = ""
+                candidate_dict["DisplayPhoto"] = "" 
+            
+            #candidate_dict["DisplayPhoto"] = ""
 
             # Group by SelectedPositionName
             position_name = candidate.SelectedPositionName
@@ -3008,6 +3136,19 @@ def save_Candidate_Ratings(rating_list: RatingList, db: Session = Depends(get_db
         # Increment the number of ratings of the candidate by ratings received
         candidate.Rating += rating.rating
 
+        # Determine how much is star is given (One start, two, three, four, five)
+        if rating.rating == 1:
+            candidate.OneStar += 1
+        elif rating.rating == 2:
+            candidate.TwoStar += 1
+        elif rating.rating == 3:
+            candidate.ThreeStar += 1
+        elif rating.rating == 4:
+            candidate.FourStar += 1
+        elif rating.rating == 5:
+            candidate.FiveStar += 1
+
+        # Increment the number of times rated of the candidate
         if rating.rating > 0:
             candidate.TimesRated += 1
             
@@ -3090,7 +3231,7 @@ def save_Votes(votes_list: VotesList, db: Session = Depends(get_db)):
         return JSONResponse(status_code=400, content={"error": "Voting period for this election has ended."})
 
     # Check if the student has already voted this election
-    existing_vote = db.query(VotingsTracker).filter(VotingsTracker.StudentNumber == votes_list.voter_student_number, VotingsTracker.ElectionId == votes_list.election_id).first()
+    existing_vote = db.query(VotingsTracker).filter(VotingsTracker.VoterStudentNumber == votes_list.voter_student_number, VotingsTracker.ElectionId == votes_list.election_id).first()
 
     if existing_vote:
         return JSONResponse(status_code=400, content={"error": "You have already voted for this election."})
@@ -3456,9 +3597,9 @@ def get_Reports_By_Election_Id(id: int, db: Session = Depends(get_db)):
     election_data['NumberOfInactiveVoters'] = inactive_voters
 
     # Count each voters course distribution for this election
-    course_distribution = db.query(Student.Course, func.count(Student.Course)).filter(Student.Course == student_organization.OrganizationMemberRequirements).group_by(Student.Course).all()
-    course_distribution_dict = [{course: count} for course, count in course_distribution]
-    election_data['CourseDistribution'] = course_distribution_dict
+    # course_distribution = db.query(Student.Course, func.count(Student.Course)).filter(Student.Course == student_organization.OrganizationMemberRequirements).group_by(Student.Course).all()
+    # course_distribution_dict = [{course: count} for course, count in course_distribution]
+    # election_data['CourseDistribution'] = course_distribution_dict
 
     # Count approved and rejected coc
     approved_coc = db.query(CoC).filter(CoC.ElectionId == id, CoC.Status == 'Approved').count()
@@ -3526,6 +3667,7 @@ def get_Reports_By_Election_Id_And_Candidate_StudentNumber(election_id: int, stu
     coc_dict["Votes"] = candidate.Votes
 
     # (SOON) Get candidate abstains
+    coc_dict["Abstains"] = candidate.TimesAbstained
 
     # (SOON) Get votes per course (Can be specified by VotingTrackers table but course is not included in the table Student and structure will change so keep this for now)
 
