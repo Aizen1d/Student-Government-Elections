@@ -360,8 +360,8 @@
     }
 
     .election-logo{
-        width: 60px;
-        height: 60px
+        width: 50px;
+        height: 50px
     }
 
     .election-title{
