@@ -2,49 +2,52 @@
     <title>Register Party - COMELEC Portal</title>
     <Navbar></Navbar>
 
-    <div class="main">
-        <div class="header row">
-            <div class="col">
-                <h1>
-                    <span class="return" @click="returnPage">{{ electionName }}</span>&nbsp;>&nbsp;Register Partylist
-                </h1>
-            </div>
-        </div>
+    <main class="main-margin">
+        <h1 class="current-page">
+            <span class="header" @click.prevent="returnPage">ONGOING ELECTIONS</span> 
+            <span class="arrow"> ></span>
+            {{ electionName }}
+            <span class="arrow"> ></span>
+            FILE CERTIFICATE OF CANDIDACY
+        </h1>
 
-        <form action="">
-            <div class="row pl g-5">
-                <div class="col-6">
-                    <div class="info">
-                        <h6>Party List Information</h6>
+        <div class="main">
+            <div class="row g-4">
+                <div class="col-6 mb-4">
+                    <div class="components row">
+                        <span class="header-label">Party List Information</span>
 
-                        <label class="form-label" for="name">Party Name {{ party_input_status }}</label>
-                        <input class="form-control margin" type="text" name="name" placeholder="Enter your party's name" @keyup="checkPartyDebounce" :disabled="is_submitting" v-model="party_name">
-
-                        <label class="form-label" for="email">Email Address</label>
-                        <input class="form-control margin" type="email" name="email" placeholder="Enter your party's email address" :disabled="is_submitting" v-model="email">
-
-                        <label class="form-label" for="contact">Cellphone Number</label>
-                        <input class="form-control margin" type="text" @keypress="cellphone_number_filter" name="contact" placeholder="Enter your party's cellphone number" :disabled="is_submitting" v-model="cellphone_number">
-
-                        <label for="desc" class="form-label">Description</label>
-                        <textarea class="form-control margin" type="text" name="desc" placeholder="Enter your party's description" :disabled="is_submitting" v-model="description"></textarea>
-
-                        <label for="mission" class="form-label">Mission</label>
-                        <textarea class="form-control margin" type="text" name="mission" placeholder="Enter your party's mission" :disabled="is_submitting" v-model="mission"></textarea>
-
-                        <label for="vision" class="form-label">Vision</label>
-                        <textarea class="form-control margin" type="text" name="vision" placeholder="Enter your party's vision" :disabled="is_submitting" v-model="vision"></textarea>
-
-                        <label for="plat" class="form-label">Platforms</label>
-                        <textarea class="form-control margin" type="text" name="plat" placeholder="Enter your party's platform" :disabled="is_submitting" v-model="platforms"></textarea>
+                        <div>
+                            <label class="form-label" for="name">Party Name {{ party_input_status }}</label>
+                            <input class="form-control" type="text" name="name" placeholder="Enter your party's name" @keyup="checkPartyDebounce" :disabled="is_submitting" v-model="party_name">
+    
+                            <label class="form-label mt-4" for="email">Email Address</label>
+                            <input class="form-control" type="email" name="email" placeholder="Enter your party's email address" :disabled="is_submitting" v-model="email">
+    
+                            <label class="form-label mt-4" for="contact">Cellphone Number</label>
+                            <input class="form-control" type="text" @keypress="cellphone_number_filter" name="contact" placeholder="Enter your party's cellphone number" :disabled="is_submitting" v-model="cellphone_number">
+    
+                            <label for="desc" class="form-label mt-4">Description</label>
+                            <textarea class="form-control" type="text" name="desc" placeholder="Enter your party's description" :disabled="is_submitting" v-model="description"></textarea>
+    
+                            <label for="mission" class="form-label mt-4">Mission</label>
+                            <textarea class="form-control" type="text" name="mission" placeholder="Enter your party's mission" :disabled="is_submitting" v-model="mission"></textarea>
+    
+                            <label for="vision" class="form-label mt-4">Vision</label>
+                            <textarea class="form-control" type="text" name="vision" placeholder="Enter your party's vision" :disabled="is_submitting" v-model="vision"></textarea>
+    
+                            <label for="plat" class="form-label mt-4">Platforms</label>
+                            <textarea class="form-control mb-2" type="text" name="plat" placeholder="Enter your party's platform" :disabled="is_submitting" v-model="platforms"></textarea>
+                        </div>
                     </div>
                 </div>
-                <div class="col-6">
-                    <div class="members">
-                        <h6>Image Attachment <span style="font-weight: lighter; font-size: 17px;">(Optional)</span></h6>
 
+                <div class="col-6">
+                    <div class="components1 row">
+                        <span class="header-label">Image Attachment (Optional)</span>
+                        
                         <div v-if="image_base_64">
-                            <img :src="image_base_64" alt="Image attachment" style="width: 80%; height: 50%; margin-left: 10%; margin-top: 1%;" >
+                            <img :src="image_base_64" alt="Image attachment" style="width: 100%; height: 100%; margin-top: 0.5%;">
                         </div>
                         
                         <div class="row my-4">
@@ -59,46 +62,51 @@
                                     {{ image_file_name }}
                                 </label>
                                 <button class="remove-button" :disabled="is_submitting" v-if="image_base_64" @click.prevent="clearImageAttachment" 
-                                        style="background-color: red; 
+                                        style="background-color: rgb(214, 212, 212); 
                                         border: none;
                                         color: white;
-                                        border-radius: 35%;
+                                        border-radius: 50%;
                                         width: 2em;
                                         height: 2em;
-                                        margin-left: 1%;">X
+                                        display: flex;
+                                        align-items: center;
+                                        justify-content: center;
+                                        margin-left: 1%;"><img src="../../images/Elections/Partylist/close.svg" alt="" style="width: 13px; margin: 0; filter: brightness(0) saturate(100%) invert(100%) sepia(4%) saturate(4406%) hue-rotate(247deg) brightness(110%) contrast(100%);">
                                 </button>
                             </div>
                         </div>
-
-                    <hr class="my-3">
-                    <h6>Video Attachment <span style="font-weight: lighter; font-size: 17px;">(Optional)</span></h6>
+                    </div>   
                     
-                    <div class="" v-if="video !== '' && video.startsWith('https://www.youtube.com/watch?v=')">
-                        <iframe v-show="!videoLoadingState" @load="videoLoaded" style="margin-left: 10%; margin-top: 1%; margin-bottom: 1%;" width="80%" height="350px" :src="getEmbedUrl(video)" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-                    </div>
-                    <ImageSkeleton v-if="videoLoadingState && video.startsWith('https://www.youtube.com/watch?v=')" 
-                            :loading="videoLoadingState" 
-                            :itemCount="1" 
-                            :borderRadius="'0px'"
-                            :imageWidth="'32vw'" 
-                            :imageHeight="'37vh'"
-                            :containerMargin="'1% 10%'"
-                            :itemMargin="'0em'">
-                    </ImageSkeleton>
-
-                    <label class="form-label" for="youtube-link">Youtube Link (must be embeddable)</label>
-                    <input class="form-control margin" type="text" name="youtube-link" placeholder="Enter youtube video link" :disabled="is_submitting" v-model="video">
-
-                    </div>
+                    <div class="components row my-4">
+                        <span class="header-label">Certification of Grades</span>
+                        <div>
+                            <div class="" v-if="video !== '' && video.startsWith('https://www.youtube.com/watch?v=')">
+                                <iframe v-show="!videoLoadingState" @load="videoLoaded" style="margin-bottom: 1%;" width="100%" height="350px" :src="getEmbedUrl(video)" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                            </div>
+                            <ImageSkeleton v-if="videoLoadingState && video.startsWith('https://www.youtube.com/watch?v=')" 
+                                    :loading="videoLoadingState" 
+                                    :itemCount="1" 
+                                    :borderRadius="'0px'"
+                                    :imageWidth="'32vw'" 
+                                    :imageHeight="'37vh'"
+                                    :containerMargin="'1% 10%'"
+                                    :itemMargin="'0em'">
+                            </ImageSkeleton>
+        
+                            <label class="form-label" for="youtube-link">Youtube Link (must be embeddable)</label>
+                            <input class="form-control mb-2" type="text" name="youtube-link" placeholder="Enter youtube video link" :disabled="is_submitting" v-model="video">
+                        </div>
+                        
+                    </div> 
                     
-                    <div class="my-4" style="text-align: end;">
-                        <ActionButton class="mx-4" :disabled="is_submitting" @click.prevent="returnPage">Cancel</ActionButton>
-                        <ActionButton :disabled="is_submitting" @click.prevent="submit">Submit</ActionButton>
+                    <div class="buttons">
+                        <button class="cancel-button" :disabled="is_submitting" @click.prevent="returnPage">Cancel</button>
+                        <button class="submit-button" :disabled="is_submitting" @click.prevent="submit">Submit</button>
                     </div>
                 </div>
             </div>
-        </form>
-    </div>
+        </div>
+    </main>
 </template>
 
 <script>
@@ -397,6 +405,10 @@
                         return;
                     }
 
+                    if (this.is_submitting) {
+                        return;
+                    }
+
                     this.is_submitting = true;
 
                     axios.post(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/partylist/submit`, formData, {
@@ -423,89 +435,91 @@
 </script>
 
 <style scoped>
-    .text-truncate {
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-        white-space: nowrap !important;
+    .main-margin{
+        margin: 0% 8%;
     }
 
-    .return{
-        font-size: 28px;
-        font-weight: 800;
-        color: #B90321;
-    }
-
-    .return:hover{
-        cursor: pointer;
-        text-decoration: underline;
-    }
-
-    .main{
-        margin: 3% 5%;
-        font-family: 'Source Sans Pro', sans-serif;
+    .current-page{
+        color: #800000;
     }
 
     .header{
-        margin-top: -.5%;
-        margin-bottom: 2%;
-    }
-
-    .header h1{
+        margin: 1.5% 0%;
         font-size: 28px;
-        font-weight: 800;
-        height: 100%;
-        align-items: center;
-        display: flex;
-    }
-
-    .btns{
-        text-align: end;
-    }
-
-    .btns button.cancel{
-        background-color: #FDD5D5;
-    }
-
-    .btns button{
-        font-size: 18px;
-        padding-top: 20px;
-        padding-bottom: 20px;
-        padding: 15px 70px;
-        border: transparent;
-        border-radius: 8px;
-        background-color: #B90321;
-        color: #FCFDFD;
-    }
-
-    .pl{
-        font-family: 'Source Sans Pro', sans-serif;
-    }
-
-    .info, .members{
-        background-color: #F5F8F9;
-        padding: 3%;
-        border-radius: 10px;
-        box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.07), 0 6px 20px 0 rgba(0, 0, 0, 0.08);
-    }
-
-    .info h6, .members h6{
         font-weight: bold;
-        font-size: 20px;
     }
 
-    .form-label{
-        margin: 1% 0%;
+    .components{
+        background-color: white;
+        padding: 3%;
+        display: flex;
+        align-items: center;
+        box-shadow: 0px 3px 5px rgba(167, 165, 165, 0.5);
+        margin: 0%;
     }
 
-    .margin{
-        margin-bottom: 2%;
-        margin-left: 0%;
+    .components1{
+        background-color: white;
+        padding: 3%;
+        display: flex;
+        align-items: center;
+        box-shadow: 0px 3px 5px rgba(167, 165, 165, 0.5);
+        margin: 0%;
+        flex-direction: column;
+        justify-content: center;
     }
 
-    .info textarea{
-        resize: none;
-        overflow-y: auto;
-        height: 150px;
+    .form-label, .form-control{
+        font-size: 18px;
+    }
+
+    .buttons{
+        background-color: white;
+        padding: 3%;
+        display: flex;
+        align-items: center;
+        box-shadow: 0px 3px 5px rgba(167, 165, 165, 0.5);
+        justify-content: space-between;
+    }
+
+    .submit-button{
+        border: transparent;
+        border-radius: 6px;
+        background-color: #730000;
+        color: white;
+        align-items: end;
+        padding: 1.5%;
+        font-size: 18px;
+        width: 150px;
+    }
+
+    .submit-button:disabled{
+        background-color: #a2a2a2;
+        cursor: default;
+    }
+
+    .cancel-button{
+        padding: 1.5%;
+        border: transparent;
+        border-radius: 10px;
+        font-size: 18px;
+        background-color: transparent;
+        color: #CC3300;
+    }
+
+    .row{
+        align-items: stretch;
+    }
+
+    .header-label{
+        font-weight: 600;
+        font-size: 18px;
+        margin-bottom: 22px;
+        margin-right: auto;
+    }
+
+    .remove-button:hover{
+        background-color: #a2a2a2 !important;
     }
 
     .image-file-upload {
@@ -529,4 +543,34 @@
         cursor: default;
     }
 
+    .components textarea{
+        resize: none;
+        overflow-y: auto;
+        height: 150px;
+    }
+
+    .current-page{
+        margin: 1.5% 0%;
+        font-size: 28px;
+        font-weight: bold;
+        color: #800000 !important;
+    }
+
+    .arrow{
+        font-size: 28px;
+        font-weight: bold;
+        color: black !important;
+    }
+
+    .header{
+        margin: 1.5% 0%;
+        font-size: 28px;
+        font-weight: bold;
+        color: black !important;
+    }
+
+    .header:hover{
+        cursor: pointer;
+        text-decoration: underline;
+    }
 </style>
