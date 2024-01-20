@@ -10,7 +10,7 @@
         <template v-if="!isElectionsLoading">
             <template v-if="electionsData.elections.AtleastOneAvailableElection">
                 <template v-for="(election, index) in electionsData.elections.data" :key="index">
-                    <div v-if="isVotingPeriod(election) && election.OrganizationMemberRequirement === student_course" 
+                    <div v-if="isVotingPeriod(election) && election.IsStudentEligible" 
                         class="select-election" @click="electionSelected(election)">
                         <div :class="{ 'election': !election.IsStudentVoted, 'voted-already': election.IsStudentVoted  }">
                             <div class="election-content">
@@ -51,9 +51,6 @@
 
             userStore.student_number = props.student_number;
             userStore.full_name = props.full_name;
-            userStore.course = props.course;
-
-            const student_course = userStore.course;
             
             const fetchElectionsTable = async () => {
                 const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/election/all/is-student-voted`, {
@@ -82,15 +79,12 @@
                 isElectionsLoading,
                 isElectionsSuccess,
                 isElectionsError,
-
-                student_course,
             };
         },
         components: { Navbar },
         props: {
             student_number: '',
             full_name: '',
-            course: '',
         },
         methods: {
             electionSelected(election){
