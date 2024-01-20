@@ -9,5 +9,5 @@ class StudentOrganization extends Model
 {
     use HasFactory;
 
-    protected $table = 'StudentOrganization';
+    protected $table = 'SGEStudentOrganization';
 }

@@ -9,5 +9,5 @@ class VotingsTracker extends Model
 {
     use HasFactory;
 
-    protected $table = 'VotingsTracker';
+    protected $table = 'SGEVotingsTracker';
 }
