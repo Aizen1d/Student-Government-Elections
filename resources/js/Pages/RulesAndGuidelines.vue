@@ -8,7 +8,7 @@
         <div class="rule-list" v-if="isRuleSucess" v-for="(rule, index) in rulesData.rules" :key="index">
             <div class="rule">
                 <div class="rule-wrapper">
-                    <span class="rule-title">Rule .{{ rule.count }} {{ rule.RuleTitle }}</span>
+                    <span class="rule-title">Rule {{ rule.count }} {{ rule.RuleTitle }}</span>
 
                     <hr class="line">
 
@@ -24,7 +24,7 @@
         <div class="rule-list" v-if="isGuidelineSucess" v-for="(guideline, index) in guidelinesData.guidelines" :key="index">
             <div class="rule">
                 <div class="rule-wrapper">
-                    <span class="rule-title">Rule .{{ guideline.count }} {{ guideline.GuidelineTitle }}</span>
+                    <span class="rule-title">Guideline {{ guideline.count }} {{ guideline.GuidelineTitle }}</span>
 
                     <hr class="line">
 
