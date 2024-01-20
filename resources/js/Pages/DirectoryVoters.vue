@@ -1,41 +1,26 @@
 <template>
-    <title>Eligible Voters - COMELEC Portal</title>
+    <title>Directory Eligible Voters - COMELEC Portal</title>
     <Navbar></Navbar>
-
-    <div class="header row my-4">
-        <div class="col-9">
-            <h1 class="eligible">
-                <span class="return" @click="returnPage">Directory</span>&nbsp;>&nbsp;Eligible Voters
-            </h1>
-        </div>
-        <div class="col-3">
-            <input class="searchbar" type="text" v-model="searchQuery" placeholder="Search voters...">
-        </div>
-    </div>
-
-    <ImageSkeleton v-if="isVotersLoading" 
-                    :loading="isVotersLoading" 
-                    :itemCount="1" 
-                    :borderRadius="'0px'"
-                    :imageWidth="'70vw'" 
-                    :imageHeight="'70vh'"
-                    :containerMargin="'1% 15%'"
-                    :itemMargin="'0em'">
-    </ImageSkeleton>
     
-    <div class="parent" v-if="isVotersSuccess">
-        <BaseTable class="item-table" 
-                :columns="['Student Name', 'Course']" 
-                :columnWidths="['50%', '50%']"
-                :tableHeight="'auto'"
-                :maxTableHeight="'755px'">
-            <!-- Modify the v-for directive to loop over the filtered list -->
-            <tr v-for="(voter, index) in filteredVoters" :key="index">
-                <td style="width: 50%; text-align: left; padding-left: 20.3%;" class="my-cell">{{ voter.LastName + ", " + voter.FirstName + (voter.MiddleName ? " " + voter.MiddleName : "") }}</td>
-                <td style="width: 50%;" class="my-cell">{{ voter.Course }}</td>
-            </tr>
-        </BaseTable>
-    </div>
+    <main class="main-margin">
+        <h1 class="current-page">
+            <span class="header" @click.prevent="returnPage">Directory</span> 
+            <span class="arrow"> > Eligible Voters ></span>
+            SELECT ELECTION
+        </h1>
+
+        <div v-for="(election, index) in electionsData" :key="index" @click="selectItem(election)">
+            <div class="select">
+                <div class="election">
+                    <div class="election-wrapper">
+                        <img :src="election.OrganizationLogo" alt="" class="election-img">
+                        <span class="election-name">{{ election.ElectionName }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
 </template>
 
 <script>
@@ -43,118 +28,158 @@
     import Navbar from '../Shared/Navbar.vue'
     import BaseContainer from '../Shared/BaseContainer.vue'
     import BaseTable from '../Shared/BaseTable.vue'
-    import ImageSkeleton from '../Skeletons/ImageSkeleton.vue'
 
-    import { useQuery } from "@tanstack/vue-query";
-    import { router } from '@inertiajs/vue3';
-    import { ref, computed } from 'vue';
-    import axios from 'axios';
+    import { ref, watch } from 'vue'
+    import axios from 'axios'
+    import { useQuery } from '@tanstack/vue-query'
+    import { router } from '@inertiajs/vue3'
 
     export default {
-        setup() {
-            const fetchVotersData = async () => {
-                const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/student/all/arranged`, {
-                });
-                console.log(`Get all voters successful. Duration: ${response.duration}ms`)
+        setup(props){
+            const atleastOneElection = ref(false);
 
-                return response.data.students
+            const fetchElectionsTable = async () => {
+                const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/election/all`, {
+                });
+                console.log(`Get all elections successful. Duration: ${response.duration}ms`)
+
+                if (response.data.elections.length > 0){
+                    atleastOneElection.value = true;
+                }
+                else {
+                    atleastOneElection.value = false;
+                }           
+
+                return response.data.elections.map(election => {
+                    const logo_url = `${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/get/cached/elections/${election.OrganizationLogo}`
+                    election.OrganizationLogo = logo_url;
+
+                    return election;
+                });
             }
 
-            const { data: votersData,
-                    isLoading: isVotersLoading,
-                    isSuccess: isVotersSuccess,
-                    isError: isVotersError} =
+            const { data: electionsData,
+                    isLoading: isElectionsLoading,
+                    isSuccess: isElectionsSuccess,
+                    isError: isElectionsError} =
                     useQuery({
-                        queryKey: ['fetchVotersData'],
-                        queryFn: fetchVotersData,
+                        queryKey: ['fetchElectionsTable'],
+                        queryFn: fetchElectionsTable,
                     })
 
-            // Add a ref for the search query
-            const searchQuery = ref('');
+            return{
+                atleastOneElection,
 
-            // Add a computed property that returns the filtered list
-            const filteredVoters = computed(() => {
-                if (!searchQuery.value) {
-                    return votersData.value;
-                }
-                const searchQueryNormalized = searchQuery.value.replace(/,| /g, '').toLowerCase();
-                return votersData.value.filter(voter => {
-                    const fullName1 = `${voter.LastName}${voter.FirstName}${voter.MiddleName ? voter.MiddleName : ""}`.replace(/,| /g, '').toLowerCase();
-                    const fullName2 = `${voter.FirstName}${voter.MiddleName ? voter.MiddleName : ""}${voter.LastName}`.replace(/,| /g, '').toLowerCase();
-                    return fullName1.includes(searchQueryNormalized) || fullName2.includes(searchQueryNormalized);
-                });
-            });
-
-            return {
-                votersData,
-                isVotersLoading,
-                isVotersSuccess,
-                isVotersError,
-                
-                searchQuery,  // Make sure to return these
-                filteredVoters
+                electionsData,
+                isElectionsLoading,
+                isElectionsSuccess,
+                isElectionsError,
             }
-           
         },
-        components: {
+        components:{
             Standards,
             Navbar,
             BaseContainer,
             BaseTable,
-            ImageSkeleton
         },
-        methods: {
+        methods:{
+            selectItem(item){
+                console.log(item);
+                router.visit(`/directory/voters/view`, { 
+                    data: { 
+                            id: item.ElectionId
+                        }
+                });
+            },
             returnPage(){
                 router.visit('/directory')
-            }
-        }
+            },
+        },
     }
 </script>
 
 <style scoped>
-    .eligible{
+     .main{
+        margin: 3% 5%;
+        font-family: 'Source Sans Pro', sans-serif;
+    }
+
+    .current-page{
+        margin: 1.5% 0%;
         font-size: 28px;
-        font-weight: 800;
+        font-weight: bold;
+        color: #800000 !important;
+    }
+
+    .arrow{
+        font-size: 28px;
+        font-weight: bold;
+        color: black !important;
     }
 
     .header{
-        margin-left: 14.3%;
-        width: 78%;
-    }
-
-    .return{
+        margin: 1.5% 0%;
         font-size: 28px;
-        font-weight: 800;
-        color: #B90321;
+        font-weight: bold;
+        color: black !important;
     }
 
-    .return:hover{
+    .header:hover{
         cursor: pointer;
         text-decoration: underline;
     }
 
-    .searchbar  {
-        width: 60%;
-        padding: 7px;
-        border-radius: 8px;
-        outline: none;
-        border: 1px solid rgba(40, 40, 40, 0.25);
-
-        transition: border 0.15s ease-out;
+    .main-margin{
+        margin: 0% 8%;
     }
 
-    .searchbar:focus {
-        border: 1px solid rgba(13, 13, 13, 0.561)
+    .current-page{
+        color: #800000;
     }
 
-    .parent{
+    .header{
+        margin: 1.5% 0%;
+        font-size: 28px;
+        font-weight: bold;
+    }
+
+    .election{
+        margin: 1.5% 0;
+        background-color: white;
+        box-shadow: 0px 3px 5px rgba(167, 165, 165, 0.5);
+        border-radius: 3px;
+        transition: transform 0.4s ease;
+    }
+
+    .election-wrapper{
+        padding: 1%;
         display: flex;
-        justify-content: center;
         align-items: center;
     }
 
-    .item-table{
-        width: 70%;
+    .select{
+        color: black;
+        text-decoration: none;
     }
 
+    .select:hover{
+        cursor: pointer;
+    }
+
+    .election-img{
+        width: 55px;
+        height: 55px;
+    }
+
+    .election-name{
+        margin-left: 2%;
+        width: 100%;
+        font-weight: 600;
+        font-size: 25px;
+    }
+
+    .election:hover{
+        color: #800000;
+        background-color: #f4f4f4;
+    }   
 </style>
