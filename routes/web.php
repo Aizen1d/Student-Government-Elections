@@ -51,6 +51,9 @@ Route::get('/directory', [PublicController::class, 'directory'])
 Route::get('/directory/voters', [PublicController::class, 'directoryVoters'])
 ->name('directory.voters');
 
+Route::get('/directory/voters/view', [PublicController::class, 'directoryVotersView'])
+->name('directory.voters.view');
+
 Route::get('/directory/candidates', [PublicController::class, 'directoryCandidates'])
 ->name('directory.candidates');
 

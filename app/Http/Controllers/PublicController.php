@@ -192,6 +192,25 @@ class PublicController extends Controller
         return inertia('DirectoryVoters');
     }
 
+    public function directoryVotersView(Request $request) {
+        $id = $request->id;
+        $election = Elections::where('ElectionId', $id)->first();
+        $electionName = $election->ElectionName;
+
+        if (!$election) {
+            return redirect()->route('directory.voters');
+        }
+
+        if (!$id) {
+            return redirect()->route('directory.voters');
+        }
+
+        return Inertia::render('DirectoryVotersView', [
+            'id' => $id,
+            'electionName' => $electionName
+        ]);
+    }
+
     public function directoryCandidates() {
         return inertia('DirectoryCandidates');
     }
