@@ -9,7 +9,7 @@
             SELECT ELECTION
         </h1>
 
-        <template v-for="(election, index) in electionsData" :key="index" @click="selectItem(election)">
+        <div v-for="(election, index) in electionsData" :key="index" @click="selectItem(election)">
             <div class="select">
                 <div class="election">
                     <div class="election-wrapper">
@@ -18,7 +18,7 @@
                     </div>
                 </div>
             </div>
-        </template>
+        </div>
 
     </main>
 </template>
@@ -84,9 +84,10 @@
         },
         methods:{
             selectItem(item){
+                console.log(item);
                 router.visit(`/directory/candidates/view`, { 
                     data: { 
-                            id: item.id 
+                            id: item.ElectionId
                         }
                 });
             },
