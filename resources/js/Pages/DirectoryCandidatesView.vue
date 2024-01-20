@@ -101,7 +101,8 @@
             </div>
         </div>
 
-        <div class="election">
+        <h1 v-if="isElectionsLoading && isPositionsLoading && isCandidatesLoading && isCandidatesPerPositionLoading">Loading..</h1>
+        <div v-if="!isElectionsLoading && !isPositionsLoading && !isCandidatesLoading && !isCandidatesPerPositionLoading" class="election">
             <div class="election-wrapper">
                 <div class="election-header">
                     <div class="centered">

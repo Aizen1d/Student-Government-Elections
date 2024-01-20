@@ -5,7 +5,7 @@
     <main class="main-margin">
         <h1 class="current-page">
             <span class="header" @click.prevent="returnPage">Directory</span> 
-            <span class="arrow"> ></span>
+            <span class="arrow"> > Candidates ></span>
             SELECT ELECTION
         </h1>
 
