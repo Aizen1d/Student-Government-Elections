@@ -24,8 +24,6 @@ class StudentController extends Controller
         $last_name = $student->LastName;
         $middle_name = $student->MiddleName;
 
-        $course = $student->Course;
-
         // get full name and check if middle name is null
         if ($middle_name == null) {
             $full_name = $first_name . ' ' . $last_name;
@@ -36,7 +34,6 @@ class StudentController extends Controller
         return Inertia::render('Home', [
             'student_number' => $student_number,
             'full_name' => $full_name,
-            'course' => $course,
         ]);
     }
 
