@@ -441,7 +441,7 @@
                 .catch((error) => {
                     console.log(error)
 
-                    alert('Student number does not exist.') 
+                    alert(error.response.data.error) 
                     this.isSending = false;
                 })
 
