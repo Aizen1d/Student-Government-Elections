@@ -2,146 +2,141 @@
     <title>Directory View Candidates - COMELEC Portal</title>
     <Navbar></Navbar>
 
-    <div class="scroll-up">
-        <a @click="topFunction" id="mybutton">
-            <img src="../../images/Directory/Candidates/scroll-up.svg" alt="" width="60px">
-        </a>
-    </div>
-
-    <div class="sidebar">
-        <div class="choices">
-            <div class="choice">
-                <div class="election-selection active">
-                    {{ electionName }} 
-                </div>
-
-                <a :href="'#'+position.PositionName" v-if="atLeastOneCandidate === true" v-for="(position, index) in positionsData" :key="index" class="position-selection">
-                    {{ position.PositionName }}
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal" v-if="showRateModal">
-        <div class="modal-content" v-if="!isVerified">
-            <div class="row" style="margin-top: -2%;">
-                <div class="col-10">
-                    <p style="margin-top: 2%; margin-left: 35%;"><b>Rate Candidates</b> (Verify first before rating)</p>
-                </div>
-                <div class="col-2" style="text-align: end;">
-                    <span class="close" @click="closeRateCandidates">&times;</span>
-                </div>
-            </div>
-
-            <div class="row" style="margin-top: 3%;">
-                <div class="col-6" style="">
-                    <input type="text" style="width: 80%; margin-left: 23%;" class="form-control" maxlength="15" placeholder="Enter your student number" v-model="student_number">
-                </div>
-                <div class="col-6">
-                <ActionButton @click.prevent="sendCode" :disabled="isSending || isSent || student_number === ''" 
-                                    :style="{ width: isSent ? '15em' : '15em' }"
-                                    style="font-size: 1em;
-                                    margin-left: 3%;
-                                    margin-right: 3%;
-                                    height: 2.2em; 
-                                    padding: 0px 0px 0px 0px !important;">{{ buttonText }}</ActionButton>
-                </div>
-            </div>
-
-            <div class="row" style="margin-top: 3%;">
-                <div class="col-6" style="">
-                    <input type="text" style="width: 80%; margin-left: 23%;" class="form-control" placeholder="Enter your verification code" v-model="verification_code">
-                </div>
-                <div class="col-6">
-                <ActionButton class="verify-button" @click.prevent="verify" :disabled="isVerifying || verification_code === ''" 
-                                    :style="{ width: '15em' }"
-                                    style="font-size: 1em;
-                                    margin-left: 3%;
-                                    height: 2.2em; 
-                                    padding: 0px 0px 0px 0px !important;">Verify</ActionButton>
-                </div>
-            </div>
-        </div>
-
-        <div class="modal-content" v-else>
-            <div class="row" style="margin-top: -2%;">
-                <div class="col-10">
-                    <p style="margin-top: 2%; margin-left: 35%;"><b>Rate Candidates</b> (One time only)</p>
-                </div>
-                <div class="col-2" style="text-align: end;">
-                    <span class="close" @click="closeRateCandidates">&times;</span>
-                </div>
-            </div>
-
-            <div class="row" style="margin-top: -1%;" v-for="(position, positionIndex) in positionsData" :key="positionIndex">
-                <h1 class="rate-position-name">{{ position.PositionName }}</h1>
-                <div class="col-8" style="display: flex;" v-for="(candidate, candidateIndex) in candidatesData" :key="candidateIndex">
-                    <template v-if="candidate.SelectedPositionName === position.PositionName">
-                        <h1 class="rate-candidate-name">
-                            {{ candidate.Student.FirstName + " " + (candidate.Student.MiddleName ? candidate.Student.MiddleName + " " : "") + candidate.Student.LastName }}
-                        </h1>
-                        <div class="rate" style="margin-top: -2.5%; !important">
-                            <input type="radio" :id="'candidate-star5-' + positionIndex + '-' + candidateIndex" :name="'candidate-rate-' + positionIndex + '-' + candidateIndex" value="5"/>
-                            <label :for="'candidate-star5-' + positionIndex + '-' + candidateIndex" title="text">5 stars</label>
-                            
-                            <input type="radio" :id="'candidate-star4-' + positionIndex + '-' + candidateIndex" :name="'candidate-rate-' + positionIndex + '-' + candidateIndex" value="4" />
-                            <label :for="'candidate-star4-' + positionIndex + '-' + candidateIndex" title="text">4 stars</label>
-
-                            <input type="radio" :id="'candidate-star3-' + positionIndex + '-' + candidateIndex" :name="'candidate-rate-' + positionIndex + '-' + candidateIndex" value="3" />
-                            <label :for="'candidate-star3-' + positionIndex + '-' + candidateIndex" title="text">3 stars</label>
-
-                            <input type="radio" :id="'candidate-star2-' + positionIndex + '-' + candidateIndex" :name="'candidate-rate-' + positionIndex + '-' + candidateIndex" value="2" />
-                            <label :for="'candidate-star2-' + positionIndex + '-' + candidateIndex" title="text">2 stars</label>
-
-                            <input type="radio" :id="'candidate-star1-' + positionIndex + '-' + candidateIndex" :name="'candidate-rate-' + positionIndex + '-' + candidateIndex" value="1" />
-                            <label :for="'candidate-star1-' + positionIndex + '-' + candidateIndex" title="text">1 star</label>
+    <main class="main-margin">
+        <h1 class="current-page">
+            <span class="header" @click.prevent="returnDirectory">Directory</span> 
+            <span class="arrow"> ></span>
+            <span class="arrow return-selection" @click.prevent="returnSelection"> Select Election</span>
+            
+            <span class="arrow"> ></span>
+            View Candidates
+        </h1>
+         
+        <div class="modal" v-if="showRateModal">
+            <div class="candidate-rating modal-content">
+                <div class="candidate-rating-wrapper" v-if="!isVerified">
+                    <div class="verification">
+                        <div class="verification-header">
+                            <h1 class="header-label">Candidate Rating Verification</h1>
+                            <Tooltip class="mx-3">
+                                <slot>
+                                    To rate candidates, submit your student number. An email with a verification code will be sent to your associated email. Use this code to verify.
+                                </slot>
+                            </Tooltip>
+                            <button class="close-button" @click="closeRateCandidates"><img src="../../images/Directory/Candidates/View/close.svg" alt="" class="close-svg"></button>
                         </div>
-                    </template>
-                </div>
+                        <span class="warning"><strong>Note</strong>: You can rate only once.</span>
 
-                <div class="col-4">
+                        <hr class="line">
+
+                        <div class="inputs row">
+                            <label class="form-label" for="student-number">Student Number</label>
+                            <div class="col-8">
+                                <input class="form-control" type="text" name="student-number" maxlength="15" placeholder="Enter your student number" v-model="student_number">
+                            </div>
+                            <div class="col-4">
+                                <button class="code-button disabled-button" @click.prevent="sendCode" :disabled="isSending || isSent || student_number === ''" >{{ buttonText }}</button>
+                            </div>
+
+                            <div>
+                                <label class="form-label margin mt-4" for="code">Verification Code</label>
+                                <input class="form-control" type="text" name="code" placeholder="Enter your verification code" v-model="verification_code">
+                            </div>
+
+                            <div class="verify">
+                                <button class="verify-button disabled-button" @click.prevent="verify" :disabled="isVerifying || verification_code === ''">Verify</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+        
+                <div class="candidate-rating-wrapper" v-else>
+                    <div class="verification" v-for="(position, positionIndex) in positionsData" :key="positionIndex">
+                        <div class="verification-header">
+                            <h1 class="header-label">Candidate Rating Verification</h1>
+                            <button class="close-button" @click="closeRateCandidates"><img src="../../images/Directory/Candidates/View/close.svg" alt="" class="close-svg"></button>
+                        </div>
+
+                        <template v-for="(candidate, candidateIndex) in candidatesData" :key="candidateIndex">
+                            <template v-if="candidate.SelectedPositionName === position.PositionName">
+                                <hr class="line">
+
+                                <div class="inputs row">
+                                    <span class="position-title" style="color: #800000;">{{ position.PositionName }}</span>
+                                    <div class="rating">
+                                        <div class="rate-candidate">
+                                            <input type="radio" :id="'candidate-star5-' + positionIndex + '-' + candidateIndex" :name="'candidate-rate-' + positionIndex + '-' + candidateIndex" value="5"/>
+                                            <label :for="'candidate-star5-' + positionIndex + '-' + candidateIndex" title="text">5 stars</label>
+                                            
+                                            <input type="radio" :id="'candidate-star4-' + positionIndex + '-' + candidateIndex" :name="'candidate-rate-' + positionIndex + '-' + candidateIndex" value="4" />
+                                            <label :for="'candidate-star4-' + positionIndex + '-' + candidateIndex" title="text">4 stars</label>
+
+                                            <input type="radio" :id="'candidate-star3-' + positionIndex + '-' + candidateIndex" :name="'candidate-rate-' + positionIndex + '-' + candidateIndex" value="3" />
+                                            <label :for="'candidate-star3-' + positionIndex + '-' + candidateIndex" title="text">3 stars</label>
+
+                                            <input type="radio" :id="'candidate-star2-' + positionIndex + '-' + candidateIndex" :name="'candidate-rate-' + positionIndex + '-' + candidateIndex" value="2" />
+                                            <label :for="'candidate-star2-' + positionIndex + '-' + candidateIndex" title="text">2 stars</label>
+
+                                            <input type="radio" :id="'candidate-star1-' + positionIndex + '-' + candidateIndex" :name="'candidate-rate-' + positionIndex + '-' + candidateIndex" value="1" />
+                                            <label :for="'candidate-star1-' + positionIndex + '-' + candidateIndex" title="text">1 star</label>
+                                        </div>
+                                        <span class="candidate-name">{{ candidate.Student.FirstName + " " + (candidate.Student.MiddleName ? candidate.Student.MiddleName + " " : "") + candidate.Student.LastName }}</span>
+                                        <span class="candidate-info" v-if="candidate.PartyListName">{{ candidate.PartyListName }}</span>
+                                        <span class="candidate-info" v-else>Independent</span>
+                                        <span class="candidate-info">{{ candidate.Student.CourseCode }} {{ candidate.Student.Year }}-{{ candidate.Student.Section }}</span>
+                                    </div>
+                                </div>
+
+                            </template>
+                        </template>
+
+                    </div>
+
+                    <hr class="line">
                     
+                    <div class="verify">
+                        <button class="verify-button" @click="submitRating">Submit</button>
+                    </div>
                 </div>
-                <hr>
-            </div>
-
-            <ActionButton @click="submitRating">Submit</ActionButton>
-        </div>
-    </div>
-
-    <div class="main">
-        <div class="row" style="margin-left: 1.8%; margin-top: 5%; margin-right: 2%; margin-bottom: -3%;">
-            <div class="col-10">
-                <h1 class="eligible">
-                    <span class="return" @click="returnDirectory">Directory</span>&nbsp;>&nbsp;<span class="return" @click="returnSelection">Election Selection</span>&nbsp;>&nbsp;{{ activeElectionName }}
-                </h1>
-            </div>
-            <div class="col-2" style="text-align: end;">
-                <ActionButton class="col-2 rate-button" @click="openRateCandidates" :disabled="isCandidatesPerPositionLoading || !isCampaignPeriod || atLeastOneCandidate === false">Rate Candidates</ActionButton>
             </div>
         </div>
 
-        <h2 style="margin-top: 4%; margin-left: 2.6%;" v-if="isCandidatesPerPositionLoading">Loading..</h2>
+        <div class="election">
+            <div class="election-wrapper">
+                <div class="election-header">
+                    <div class="centered">
+                        <img src="" alt="" class="election-logo">
+                        <span class="election-title">{{ electionName }}</span>
+                        <div class="end">
+                            <button class="header-button" @click="fileCoc"><img src="../../images/Directory/Candidates/View/file-coc.svg" alt="" class="header-svg"></button>
+                            <button class="header-button space" @click="openRateCandidates" :disabled="isCandidatesPerPositionLoading || !isCampaignPeriod || !atLeastOneCandidate"><img src="../../images/Directory/Candidates/View/rate.svg" alt="" class="header-svg result"></button>
+                        </div>
+                    </div>
+                </div>
 
-        <div style="margin-top: 5%;" v-if="!isCandidatesPerPositionLoading" v-for="(candidatePosition, candidatePositionName, candidatePositionIndex) in candidatesPerPositionData" :key="candidatePositionIndex">
-            <div class="position row">
-                <h1 :id="candidatePositionName" class="col-10" style="text-transform: uppercase; margin-bottom: 1%;">{{ candidatePositionName }} Candidates</h1>
+                <hr class="line">
 
-                <div class="candidate" v-if="candidatePosition.length > 0" v-for="(candidate, candidateIndex) in candidatePosition">
-                    <table>
-                        <tbody>
-                            <tr>
-                                <td>
-                                    <img :src="candidate.DisplayPhoto" class="cpic" alt="">
-                                </td>
-                                <td class="info">
-                                    <div class="data">
-                                        <div class="align">
-                                            <div class="name">
-                                                <strong>
-                                                    {{ candidate.Student.FirstName + " " + (candidate.Student.MiddleName ? candidate.Student.MiddleName + " " : "") + candidate.Student.LastName }}
-                                                </strong>
-                                            </div>
+                <div class="candidate-list">
+                    <aside class="position-sidebar">
+                        <h1 class="position-label">POSITIONS</h1>
+
+                        <a :href="'#'+position.PositionName" v-if="atLeastOneCandidate === true" v-for="(position, index) in positionsData" :key="index" 
+                            class="select-position">
+                            <span class="position">{{ position.PositionName }}</span>
+                        </a>
+                    </aside>
+
+                    <div class="candidate-content" v-if="!isCandidatesPerPositionLoading" v-for="(candidatePosition, candidatePositionName, candidatePositionIndex) in candidatesPerPositionData" :key="candidatePositionIndex">
+                        <div class="mt-1 mb-3" style="text-align: center;">
+                            <span :id="candidatePositionName" class="position-title" style="color: #800000; text-transform: uppercase;">{{ candidatePositionName }} Candidates</span>
+                        </div>
+                        <div class="candidate" v-if="candidatePosition.length > 0" v-for="(candidate, candidateIndex) in candidatePosition">
+                            <div class="candidate-wrapper">
+                                <div class="candidate-information">
+                                    <img :src="candidate.DisplayPhoto" alt="" class="candidate-img">
+                                    <div class="candidate-description">
+                                        <div class="spacing">
+                                            <span class="candidate-name">{{ candidate.Student.FirstName + " " + (candidate.Student.MiddleName ? candidate.Student.MiddleName + " " : "") + candidate.Student.LastName }}</span>
                                             <div class="rate-candidate">
                                                 <input type="radio" :id="'star5-' + candidatePositionIndex + '-' + candidateIndex" :name="'rate-' + candidatePositionIndex + '-' + candidateIndex" value="5"
                                                         :checked="candidate.Rating / candidate.TimesRated >= 5" disabled/>
@@ -163,44 +158,36 @@
                                                         :checked="candidate.Rating / candidate.TimesRated >= 1 && candidate.Rating / candidate.TimesRated <= 1.99" disabled/>
                                                 <label :for="'star1-' + candidatePositionIndex + '-' + candidateIndex" title="1 star">1 stars</label>
                                             </div>
-                                            <h4 v-if="candidate.TimesRated !== 0" style="margin-top: 1.3%; font-size: 1.1rem; color: #535353;">
-                                                {{ candidate.Rating / candidate.TimesRated }} star rating
-                                            </h4>
-                                            <h4 v-else style="margin-top: 1.3%; font-size: 1.1rem; color: #535353;">
-                                                Not yet rated
-                                            </h4>
                                         </div>
-                                        <div class="affiliation" v-if="candidate.PartyListName">{{ candidate.PartyListName }}</div>
-                                        <div class="affiliation" v-else>Independent</div>
-                                    </div>
+                                        <span class="etc" v-if="candidate.PartyListName">{{ candidate.PartyListName }}</span>
+                                        <span class="etc" v-else>Independent</span>
+                                        <span class="etc">{{ candidate.Student.CourseCode }} {{ candidate.Student.Year }}-{{ candidate.Student.Section }}</span>
+                                        <span class="motto" v-if="candidate.Motto && candidate.Motto !== ''">“{{ candidate.Motto }}”</span>
+                                        <span class="motto" v-else>No motto for this candidate.</span>
 
-                                    <div class="quote" v-if="candidate.Motto && candidate.Motto !== ''">
-                                        <em>"{{ candidate.Motto }}"</em>
+                                        <span class="platform-label">Platform:</span>
+                                        <p class="platform">
+                                            {{ candidate.Platform }}
+                                        </p>
                                     </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <hr class="my-4">
-                </div>
-                <div v-else style="text-align: center;">
-                    <h1 style="color: black;">No candidate in this position.</h1>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
-            <div v-if="candidatePosition.length < 1" style="text-align: center;">
-                <h1 style="color: black;">No candidate in this position.</h1>
-            </div>
         </div>
-        <div v-if="atLeastOneCandidate === false && !isCandidatesPerPositionLoading" style="text-align: center; margin-top: 7%;">
-            <h1 style="color: black; font-size: 28px;">No candidates registered in this election yet.</h1>
-        </div>
-    </div>
+
+        <br>
+    </main>
 </template>
 
 <script>
     import Standards from '../Shared/Standards.vue'
     import Navbar from '../Shared/Navbar.vue'
     import ActionButton from '../Shared/ActionButton.vue'
+    import Tooltip from '../Shared/Tooltip.vue';
 
     import { useQuery } from "@tanstack/vue-query";
     import { router } from '@inertiajs/vue3';
@@ -359,7 +346,8 @@
         components: {
             Standards,
             Navbar,
-            ActionButton
+            ActionButton,
+            Tooltip,
         },
         props: {
             id: '',
@@ -371,7 +359,7 @@
                     return 'Sending..';
                 }
                 else if (this.isSent) {
-                    return `Resend in ${this.countdown} seconds`;
+                    return `Resend in ${this.countdown}`;
                 }
                 else {
                     return 'Send Code';
@@ -408,6 +396,13 @@
             },
             returnSelection() {
                 router.visit('/directory/candidates')
+            },
+            fileCoc(){
+                router.visit('/elections/view/file-coc', {
+                    data: {
+                        id: this.activeElectionIndex,
+                    }
+                })
             },
             toggleElection(index) {
                 this.activeElectionIndex = this.activeElectionIndex === index ? null : index;
@@ -561,203 +556,6 @@
         overflow: auto;
     }
 
-        /* The Close Button */
-    .close {
-        color: #000;
-        font-size: 29px;
-        font-weight: bold;
-        margin-top: -2%;
-        width: fit-content;
-    }
-
-    .close:hover {
-        text-decoration: none;
-        cursor: pointer;
-    }
-
-    .rate-position-name{
-        font-size: 28px;
-        font-weight: 800;
-        color: #B90321;
-        margin-bottom: 2%;
-    }
-
-    .rate-candidate-name{
-        font-size: 22px;
-        font-weight: normal;
-        margin-bottom: 2%;
-        margin-right: 2%;
-        margin-left: 7%;
-    }
-
-    .rate-input{
-        width: 10%;
-        height: 80%;
-        text-align: center;
-        font-size: 20px;
-        font-weight: 800;
-    }
-
-    .eligible{
-        font-size: 28px;
-        font-weight: 800;
-    }
-
-    .return{
-        font-size: 28px;
-        font-weight: 800;
-        color: #B90321;
-    }
-
-    .return:hover{
-        cursor: pointer;
-        text-decoration: underline;
-    }
-
-    .election-selection{
-        background-color: transparent;
-        border: none;
-        color: black;
-        font-size: 22px;
-        font-weight: 900;
-        margin-bottom: 2%;
-        font-family: 'Source Sans Pro Black', sans-serif !important;
-    }
-
-    .election-selection:hover{
-        color: #CA2B00;
-        cursor: pointer;
-    }
-
-    .position-selection {
-        background-color: transparent;
-        border: none;
-        color: black;
-        margin-left: 12%;
-        font-size: 18px;
-        padding-bottom: 3%;
-        font-family: 'Source Sans Pro Black', sans-serif !important;
-        display: flex;
-        text-decoration: none;
-        transition: padding-left .3s ease;
-    }
-
-    .position-selection:hover {
-        cursor: pointer;
-        color: #CA2B00;
-        padding-left: 15px;
-    }
-
-    .active {
-        color: #CA2B00;
-    }
-
-    .slide-fade-enter-active {
-        transition: all .3s ease;
-    }
-    .slide-fade-leave-active {
-        transition: all .2s cubic-bezier(1.0, 0.5, 0.8, 1.0);
-    }
-    .slide-fade-enter, .slide-fade-leave-to {
-        transform: translateX(10px);
-        opacity: 0;
-    }
-
-    .sidebar {
-        height: 100%;
-        /* Full-height: remove this if you want "auto" height */
-        width: 300px;
-        /* Set the width of the sidebar */
-        position: fixed;
-        /* Fixed Sidebar (stay in place on scroll) */
-        top: 1;
-        left: 0;
-        overflow-x: hidden;
-        /* Disable horizontal scroll */
-        padding-top: 1.5%;
-        font-family: 'Source Sans Pro', sans-serif;
-        box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.07), 0 6px 20px 0 rgba(0, 0, 0, 0.08);
-    }
-
-    .choices {
-        text-align: start;
-        margin: 0% 10%;
-    }
-
-    .choices h1 {
-        color: #9A000A;
-        font-size: 30px;
-        font-weight: 900;
-    }
-
-    .options {
-        margin: 0%;
-        margin-top: 10%;
-        display: grid;
-    }
-
-    .options a {
-        margin: 3% 0%;
-        text-decoration: none;
-        color: black;
-        font-size: 18px;
-    }
-
-    .main {
-        margin-left: 300px;
-        font-family: 'Source Sans Pro', sans-serif;
-        margin-top: -2.7%;
-    }
-
-    .position {
-        margin-left: 2%;
-        margin-top: -2.5%;
-        width: 90%;
-    }
-
-    .position h1 {
-        color: #9A000A;
-        font-size: 29px;
-        font-weight: 700;
-        margin-top: 0%;
-    }
-
-    .rate-button {
-        padding: 4%;
-        width: 85%;
-    }
-
-    .candidate {
-        width: 100%;
-    }
-
-    .cpic {
-        width: 320px;
-        height: 440px;
-        object-fit: cover;
-    }
-
-    .info {
-        font-family: 'Source Sans Pro', sans-serif;
-        font-size: 22px;
-        width: 100%;
-        padding: 0% 2%;
-    }
-
-    .align {
-        display: flex;
-        align-items: center;
-    }
-
-    .quote {
-        text-align: center;
-        margin-top: 50px;
-    }
-
-    .candidate td {
-        vertical-align: top;
-    }
-
     .scroll-up {
         display: block;
         position: fixed;
@@ -846,5 +644,425 @@
     .rate-candidate :not(:checked)>label:hover,
     .rate-candidate :not(:checked)>label:hover~label {
         color: #dfa804;
+    }
+
+
+    .main-margin{
+    margin: 0% 8%;
+}
+
+.current-page{
+    color: #800000;
+}
+
+.header{
+    margin: 1.5% 0%;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.centered{
+    display: flex;
+    align-items: center;
+}
+
+.end{
+    margin-left: auto;
+}
+
+.election{
+    border-radius: 6px;
+    margin: 1.5% 0%;
+}
+
+.election-wrapper{
+    padding: 2%;
+}
+
+.election-header{
+    align-items: center;
+}
+
+.election-logo{
+    width: 50px;
+}
+
+.election-title{
+    font-size: 30px;
+    font-weight: bold;
+    color: #800000;
+    margin: 0% 1.5%;
+}
+
+.election-label{
+    margin: 0% 1%;
+}
+
+.header-svg{
+    width: 35px;
+}
+
+.result{
+    filter: invert(74%) sepia(72%) saturate(2485%) hue-rotate(349deg) brightness(104%) contrast(88%);
+}
+
+.header-button{
+    border: transparent;
+    background-color: transparent;
+    align-items: center;
+}
+
+.space{
+    margin-left: 10px;
+}
+
+.line{
+    border: 0;
+    height: 2px;
+    background: rgb(249,249,249);
+    background: linear-gradient(90deg, rgba(249,249,249,1) 0%, rgb(176, 176, 176) 50%, rgba(249,249,249,1) 100%);
+    margin: 2% 0%;
+}
+
+.candidate-list{
+    display: flex;
+}
+
+.position-sidebar{
+    display: flex;
+    flex-direction: column;
+    width: 20%;
+    position: relative;
+}
+
+.position-sidebar::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: 2px;
+    background: linear-gradient(180deg, rgba(249,249,249,1) 0%, rgba(217,217,217,1) 50%, rgba(249,249,249,1) 100%);
+}
+
+.position-label{
+    font-size: 25px;
+    font-weight: bold;
+}
+
+.select-position{
+    text-decoration: none;
+    color: black;
+    margin: 2% 0%;
+}
+
+.select-position:hover{
+    color: black;
+    font-weight: bold;
+}
+
+.active{
+    font-weight: bold;
+}
+
+.position{
+    margin-left: 15%;
+    font-size: 20px;
+}
+
+.candidate-content{
+    margin-left: 2%;
+    width: 80%;
+}
+
+.candidate{
+    background-color: #ffffff;
+    box-shadow: 0px 3px 5px rgba(167, 165, 165, 0.5);
+    border-radius: 6px;
+    margin-bottom: 2%;
+}
+
+.candidate-wrapper{
+    padding: 2%;
+    
+}
+
+.candidate-information{
+    display: flex;
+}
+
+.candidate-description{
+    margin-left: 2%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.candidate-img{
+    width: 320px;
+    height: 440px;
+    object-fit: cover;
+}
+
+.spacing{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.candidate-name{
+    font-weight: bold;
+    font-size: 20px;
+}
+
+.etc{
+    font-size: 20px;
+    margin-bottom: 6px;
+}
+
+.motto{
+    margin-top: 5%;
+    font-size: 20px;
+    font-weight: bold;
+    text-align: center;
+}
+
+.platform-label{
+    font-size: 20px;
+    font-weight: bold;
+    margin-top: 5%;
+}
+
+.platform{
+    font-size: 18px;
+}
+
+.rate {
+    height: 42px;
+}
+.rate:not(:checked) > input {
+    position:absolute;
+    top:-9999px;
+}
+.rate:not(:checked) > label {
+    float:right;
+    width:1em;
+    overflow:hidden;
+    white-space:nowrap;
+    cursor:pointer;
+    font-size:28px;
+    color:#ccc;
+}
+.rate:not(:checked) > label:before {
+    content: '★ ';
+}
+.rate > input:checked ~ label {
+    color: #FFC000;    
+}
+.rate:not(:checked) > label:hover,
+.rate:not(:checked) > label:hover ~ label {
+    color: #dfa804;  
+}
+.rate > input:checked + label:hover,
+.rate > input:checked + label:hover ~ label,
+.rate > input:checked ~ label:hover,
+.rate > input:checked ~ label:hover ~ label,
+.rate > label:hover ~ input:checked ~ label {
+    color: #F6BB00;
+}
+
+.rate-candidate {
+    height: 42px;
+}
+.rate-candidate:not(:checked) > input {
+    position:absolute;
+    top:-9999px;
+}
+.rate-candidate:not(:checked) > label {
+    width:1em;
+    overflow:hidden;
+    white-space:nowrap;
+    cursor:pointer;
+    font-size:28px;
+    color:#ccc;
+}
+.rate-candidate:not(:checked) > label:before {
+    content: '★ ';
+}
+.rate-candidate > input:checked ~ label {
+    color: #FFC000;    
+}
+.rate-candidate:not(:checked) > label:hover,
+.rate-candidate:not(:checked) > label:hover ~ label {
+    color: #dfa804;  
+}
+.rate-candidate > input:checked + label:hover,
+.rate-candidate > input:checked + label:hover ~ label,
+.rate-candidate > input:checked ~ label:hover,
+.rate-candidate > input:checked ~ label:hover ~ label,
+.rate-candidate > label:hover ~ input:checked ~ label {
+    color: #F6BB00;
+}
+
+.candidate-rating{
+    background-color: #ffffff;
+    box-shadow: 0px 3px 5px rgba(167, 165, 165, 0.5);
+    border-radius: 6px;
+    width: 35%;
+}
+
+.candidate-rating-wrapper{
+    padding: 3%;
+}
+
+.verification-header{
+    display: flex;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+.header-label{
+    font-size: 25px;
+    font-weight: bold;
+    margin: 0;
+}
+
+.close-button{
+    border: transparent;
+    background-color: transparent;
+    padding: 0;
+    margin-left: auto;
+}
+
+.close-svg{
+    width: 23px;
+    filter: brightness(0) saturate(100%) invert(80%) sepia(0%) saturate(0%) hue-rotate(178deg) brightness(101%) contrast(98%);
+}
+
+.question-svg{
+    width: 30px;
+    margin-left: 10px;
+}
+
+.warning{
+    font-size: 18px;
+
+}
+
+.code-button{
+    width: 100%;
+    height: 100%;
+    border: transparent;
+    border-radius: 6px;
+    background-color: #730000;
+    color: white;
+    align-items: end;
+    padding: 0%;
+    font-size: 18px;
+}
+
+.form-label{
+    font-size: 18px;
+}
+
+.form-control{
+    font-size: 18px;
+}
+
+.margin{
+    margin-top: 10px;
+}
+
+.verify{
+    margin-top: 3%;
+}
+
+.verify-button{
+    width: 100%;
+    height: 100%;
+    border: transparent;
+    border-radius: 6px;
+    background-color: #730000;
+    color: white;
+    align-items: end;
+    padding: 1.5%;
+    font-size: 18px;
+}
+
+.disabled-button:disabled{
+    cursor: default;
+    background-color: #730000;
+    opacity: 0.5;
+}
+
+.position-title{
+    font-size: 22px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.rating{
+    display: flex;
+    flex-direction: column;
+}
+
+.candidate-info{
+    font-size: 20px;
+}
+
+.top{
+    margin-top: 15px;
+}
+
+    .current-page{
+        margin: 1.5% 0%;
+        font-size: 28px;
+        font-weight: bold;
+        color: #800000 !important;
+    }
+
+    .arrow{
+        font-size: 28px;
+        font-weight: bold;
+        color: black !important;
+    }
+
+    .header{
+        margin: 1.5% 0%;
+        font-size: 28px;
+        font-weight: bold;
+        color: black !important;
+    }
+
+    .header:hover{
+        cursor: pointer;
+        text-decoration: underline;
+    }
+
+    .return-selection:hover{
+        cursor: pointer;
+        text-decoration: underline;
+    }
+
+    .rate-button{
+        height: 100%;
+        width: 50%;
+        border: transparent;
+        border-radius: 6px;
+        background-color: #730000;
+        color: white;
+        align-items: end;
+        padding: 2%;
+        font-size: 18px;
+    }
+
+    .rate-button:hover{
+        cursor: pointer;
+    }
+
+    .rate-button:disabled{
+        cursor: default;
+        background-color: #730000;
+        opacity: 0.5;
     }
 </style>
