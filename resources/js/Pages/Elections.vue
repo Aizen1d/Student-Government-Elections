@@ -198,6 +198,10 @@
                 })
             },
             fileCoc(election){
+                if (!this.isFilingPeriod(election)) {
+                    return alert('CoC filing for this election is currently closed.')
+                }
+
                 router.visit('/elections/view/file-coc', {
                     data: {
                         id: election.ElectionId,
@@ -205,6 +209,10 @@
                 })
             },
             registerParty(election){
+                if (!this.isFilingPeriod(election)) {
+                    return alert('Partylist filing for this election is currently closed.')
+                }
+
                 router.visit('/elections/view/register-party', {
                     data: {
                         id: election.ElectionId,
@@ -219,7 +227,7 @@
                 })
             },
             viewPartylists(election){
-                router.visit('/directory/partylists/view', {
+                router.visit('/directory/partylists/selection', {
                     data: {
                         id: election.ElectionId,
                     }
@@ -240,6 +248,16 @@
                 let formattedDate = getDate.toLocaleDateString('en-US', options);         
                 
                 return formattedDate;
+            },
+            isFilingPeriod(election) {
+                // Check if current datetime is within filing period
+                const now = new Date();
+                const start = new Date(election.CoCFilingStart);
+                const end = new Date(election.CoCFilingEnd);
+
+                console.log(now => start && now < end)
+
+                return now >= start && now < end;
             },
             hasStarted(date) {
                 let now = new Date();

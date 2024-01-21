@@ -192,34 +192,17 @@
             id: '',
         },
         computed: {
-            isFilingPeriod() {
-                // Check if current datetime is within filing period
-                const now = new Date();
-                const start = new Date(this.electionData.election.CoCFilingStart);
-                const end = new Date(this.electionData.election.CoCFilingEnd);
-
-                return now >= start && now < end;
-            },
-            isAboveVotingStartPeriod() {
-                // Check if current datetime is above voting period
-                const now = new Date();
-                const start = new Date(this.electionData.election.VotingStart);
-
-                return start < now;
-            },
-            isVotingPeriodEnded() {
-                // Check if current datetime is above voting period
-                const now = new Date();
-                const end = new Date(this.electionData.election.VotingEnd);
-
-                return now > end;
-            },
+    
         },
         methods:{
             returnPage(){
                 router.visit('/elections')
             },
             fileCoc(election){
+                if (!this.isFilingPeriod()) {
+                    return alert('CoC filing for this election is currently closed.')
+                }
+
                 router.visit('/elections/view/file-coc', {
                     data: {
                         id: this.id,
@@ -227,23 +210,27 @@
                 })
             },
             registerParty(election){
+                if (!this.isFilingPeriod()) {
+                    return alert('Partylist filing for this election is currently closed.')
+                }
+
                 router.visit('/elections/view/register-party', {
                     data: {
                         id: this.id,
                     }
                 })
             },
-            viewCandidates(election){
+            viewCandidates(){
                 router.visit('/directory/candidates/view', {
                     data: {
                         id: this.id,
                     }
                 })
             },
-            viewPartylists(election){
-                router.visit('/directory/partylists/view', {
+            viewPartylists(){
+                router.visit('/directory/partylists/selection', {
                     data: {
-                        id: this.id,
+                        id: this.id
                     }
                 })
             },
@@ -263,6 +250,30 @@
                 
                 return formattedDate;
             },
+            isFilingPeriod() {
+                // Check if current datetime is within filing period
+                const now = new Date();
+                const start = new Date(this.electionData.election.CoCFilingStart);
+                const end = new Date(this.electionData.election.CoCFilingEnd);
+
+                console.log(now => start && now < end)
+
+                return now >= start && now < end;
+            },
+            isAboveVotingStartPeriod() {
+                // Check if current datetime is above voting period
+                const now = new Date();
+                const start = new Date(this.electionData.election.VotingStart);
+
+                return start < now;
+            },
+            isVotingPeriodEnded() {
+                // Check if current datetime is above voting period
+                const now = new Date();
+                const end = new Date(this.electionData.election.VotingEnd);
+
+                return now > end;
+            },
             hasStarted(date) {
                 let now = new Date();
                 let start = new Date(date);
@@ -277,6 +288,10 @@
                 })
             },  
             seeRankings(){
+                if (!this.isAboveVotingStartPeriod()) {
+                    return alert('Rankings page for this election is currently closed.')
+                }
+
                 router.visit('/elections/view/rankings', {
                     data: {
                         id: this.id,
@@ -284,6 +299,10 @@
                 })
             },
             seeWinners(){
+                if (!this.isVotingPeriodEnded()) {
+                    return alert('Winners page for this election is currently closed.')
+                }
+
                 router.visit('/elections/view/winners', {
                     data: {
                         id: this.id,
