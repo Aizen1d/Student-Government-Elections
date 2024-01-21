@@ -138,6 +138,7 @@
                                     <div class="candidate-description">
                                         <div class="spacing">
                                             <span class="candidate-name">{{ candidate.Student.FirstName + " " + (candidate.Student.MiddleName ? candidate.Student.MiddleName + " " : "") + candidate.Student.LastName }}</span>
+                                            <span>Ratings: {{ candidate.Rating / candidate.TimesRated }}</span>
                                             <div class="rate-candidate">
                                                 <input type="radio" :id="'star5-' + candidatePositionIndex + '-' + candidateIndex" :name="'rate-' + candidatePositionIndex + '-' + candidateIndex" value="5"
                                                         :checked="candidate.Rating / candidate.TimesRated >= 5" disabled/>
@@ -895,7 +896,6 @@
 }
 .rate-candidate:not(:checked) > label:hover,
 .rate-candidate:not(:checked) > label:hover ~ label {
-    color: #dfa804;  
 }
 .rate-candidate > input:checked + label:hover,
 .rate-candidate > input:checked + label:hover ~ label,
