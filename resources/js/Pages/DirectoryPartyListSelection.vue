@@ -1,20 +1,20 @@
 <template>
-    <title>Directory Partylist Selection - COMELEC Portal</title>
+    <title>Directory Partylists Selection - COMELEC Portal</title>
     <Navbar></Navbar>
     
     <main class="main-margin">
         <h1 class="current-page">
             <span class="header" @click.prevent="returnPage">Directory</span> 
-            <span class="arrow"> > Partylists ></span>
-            Select Election
+            <span class="arrow"> > Partylists > </span>
+            <span class="arrow"> {{ activeElectionName }} ></span>
+            Select Partylist
         </h1>
 
-        <div v-for="(election, index) in electionsData" :key="index" @click="selectItem(election)">
+        <div v-for="(party, index) in partylistData" :key="index" @click="selectItem(party)">
             <div class="select">
                 <div class="election">
                     <div class="election-wrapper">
-                        <img :src="election.OrganizationLogo" alt="" class="election-img">
-                        <span class="election-name">{{ election.ElectionName }}</span>
+                        <span class="election-name">{{ party.PartyListName }}</span>
                     </div>
                 </div>
             </div>
@@ -36,44 +36,44 @@
 
     export default {
         setup(props){
-            const atleastOneElection = ref(false);
+            const activeElectionIndex = ref(Number(props.id));
+            const activeElectionName = ref(props.electionName);
+            const atleastOnePartylist = ref(false);
 
             const fetchElectionsTable = async () => {
-                const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/election/all`, {
+                const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/partylist/election/${activeElectionIndex.value}/approved/all`, {
                 });
-                console.log(`Get all elections successful. Duration: ${response.duration}ms`)
+                console.log(`Get all partylists with election id ${activeElectionIndex.value} successful. Duration: ${response.duration}ms`)
 
-                if (response.data.elections.length > 0){
-                    atleastOneElection.value = true;
+                if (response.data.partylists.length > 0){
+                    atleastOnePartylist.value = true;
                 }
                 else {
-                    atleastOneElection.value = false;
+                    atleastOnePartylist.value = false;
                 }           
 
-                return response.data.elections.map(election => {
-                    const logo_url = `${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/get/cached/elections/${election.OrganizationLogo}`
-                    election.OrganizationLogo = logo_url;
-
-                    return election;
-                });
+                return response.data.partylists
             }
 
-            const { data: electionsData,
-                    isLoading: isElectionsLoading,
-                    isSuccess: isElectionsSuccess,
-                    isError: isElectionsError} =
+            const { data: partylistData,
+                    isLoading: isPartylistLoading,
+                    isSuccess: isPartylistSuccess,
+                    isError: isPartylistError} =
                     useQuery({
                         queryKey: ['fetchElectionsTable'],
                         queryFn: fetchElectionsTable,
                     })
 
             return{
-                atleastOneElection,
+                activeElectionIndex,
+                activeElectionName,
 
-                electionsData,
-                isElectionsLoading,
-                isElectionsSuccess,
-                isElectionsError,
+                atleastOnePartylist,
+
+                partylistData,
+                isPartylistLoading,
+                isPartylistSuccess,
+                isPartylistError,
             }
         },
         components:{
@@ -82,12 +82,16 @@
             BaseContainer,
             BaseTable,
         },
+        props: {
+            id: '',
+            electionName: ''
+        },
         methods:{
             selectItem(item){
                 console.log(item);
-                router.visit(`/directory/partylists/selection`, { 
+                router.visit(`/directory/partylists/view`, { 
                     data: { 
-                            id: item.ElectionId
+                            id: item.PartyListId
                         }
                 });
             },

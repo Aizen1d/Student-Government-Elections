@@ -63,6 +63,9 @@ Route::get('/directory/candidates/view', [PublicController::class, 'directoryCan
 Route::get('/directory/partylists', [PublicController::class, 'directoryPartylists'])
 ->name('directory.partylists');
 
+Route::get('/directory/partylists/selection', [PublicController::class, 'directoryPartylistsSelection'])
+->name('directory.partylists.selection');
+
 Route::get('/directory/partylists/view', [PublicController::class, 'directoryPartylistsView'])
 ->name('directory.partylists.view');
 
