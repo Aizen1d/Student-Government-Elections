@@ -5,7 +5,7 @@
     <main class="main-margin">
         <h1 class="current-page">
             <span class="header" @click.prevent="returnDirectory">Directory</span> 
-            <span class="arrow"> ></span>
+            <span class="arrow"> > Candidates ></span>
             <span class="arrow return-selection" @click.prevent="returnSelection"> Select Election</span>
             
             <span class="arrow"> ></span>
@@ -894,9 +894,7 @@
 .rate-candidate > input:checked ~ label {
     color: #FFC000;    
 }
-.rate-candidate:not(:checked) > label:hover,
-.rate-candidate:not(:checked) > label:hover ~ label {
-}
+
 .rate-candidate > input:checked + label:hover,
 .rate-candidate > input:checked + label:hover ~ label,
 .rate-candidate > input:checked ~ label:hover,

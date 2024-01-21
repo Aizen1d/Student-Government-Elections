@@ -6,7 +6,7 @@
         <h1 class="current-page">
             <span class="header" @click.prevent="returnPage">Directory</span> 
             <span class="arrow"> > Eligible Voters ></span>
-            SELECT ELECTION
+            Select Election
         </h1>
 
         <div v-for="(election, index) in electionsData" :key="index" @click="selectItem(election)">

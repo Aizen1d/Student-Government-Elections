@@ -5,7 +5,7 @@
     <main class="main-margin">
         <h1 class="current-page">
             <span class="header" @click.prevent="returnDirectory">Directory</span> 
-            <span class="arrow"> ></span>
+            <span class="arrow"> > Eligible Voters ></span>
             <span class="arrow return-selection" @click.prevent="returnSelection"> Select Election</span>
             
             <span class="arrow"> ></span>
