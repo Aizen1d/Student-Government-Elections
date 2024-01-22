@@ -33,7 +33,7 @@
                 </div>
             </div>
 
-            <div @click.prevent="" class="select">
+            <div @click.prevent="viewStudentOrganizations" class="select">
                 <div class="card">
                     <img src="../../images/Directory/List/orgs.png" class="card-img-top" alt="">
                     <div class="card-body">
@@ -71,6 +71,9 @@
             viewPartylists(){
                 router.visit('/directory/partylists')
             },
+            viewStudentOrganizations(){
+                router.visit('/directory/student-organization')
+            }
         }
     }
 </script>
