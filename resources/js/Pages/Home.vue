@@ -9,7 +9,7 @@
 
         <div class="features">
             <div class="features-wrapper">
-                <a href="" class="select-feature">
+                <a href="/elections" class="select-feature">
                     <div class="feature-information">
                         <img src="../../images/Home/student.png" alt="" class="feature-img">
                         <span class="feature-title">FILE FOR CANDIDACY</span>
@@ -17,7 +17,7 @@
                     </div>
                 </a>
                 
-                <a href="" class="select-feature">
+                <a href="/elections" class="select-feature">
                     <div class="feature-information">
                         <img src="../../images/Home/team.png" alt="" class="feature-img">
                         <span class="feature-title">REGISTER YOUR PARTY</span>
@@ -25,13 +25,13 @@
                     </div>
                 </a>
     
-                <a href="" class="select-feature">
+                <div class="select-feature">
                     <div class="feature-information">
                         <img src="../../images/Home/talk.png" alt="" class="feature-img">
                         <span class="feature-title">FILE AN APPEAL</span>
                         <span class="feature-description">Stand tall, question the status quo for what’s right.</span>
                     </div>
-                </a>
+                </div>
             </div>
         </div>
 
@@ -77,6 +77,7 @@
     import Navbar from '../Shared/Navbar.vue'
     import Carousel from '../Shared/Carousel.vue'
     import ImageSkeleton from '../Skeletons/ImageSkeleton.vue'
+    import Appeal from '../Shared/Appeal.vue'
     import { Link, router } from '@inertiajs/vue3'
 
     import { ref } from 'vue'
@@ -139,7 +140,8 @@
             Navbar,
             Carousel,
             Link,
-            ImageSkeleton
+            ImageSkeleton,
+            Appeal,
         },
         methods: {
             redirectToAllAnnouncements() {
@@ -154,6 +156,9 @@
             formatDate(date) {
                 return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
             },
+            appeal() {
+                this.$modal.show(Appeal)
+            }
         }
     }
 
