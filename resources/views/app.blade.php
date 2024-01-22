@@ -6,6 +6,8 @@
     @vite('resources/js/app.js')
     @inertiaHead
 
+    <link rel="icon" type="image/x-icon" href="https://www.pup.edu.ph/about/images/PUPLogo.png">
+
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/nprogress/0.2.0/nprogress.min.css" />
     <!-- Bootstrap CSS -->
