@@ -7,6 +7,7 @@ use Inertia\Inertia;
 use App\Models\Announcements;
 use App\Models\Elections;
 use App\Models\PartyList;
+use App\Models\StudentOrganization;
 
 class PublicController extends Controller
 {
@@ -238,11 +239,12 @@ class PublicController extends Controller
         return inertia('DirectoryPartyList');
     }
 
-    public function directoryPartylistsView(Request $request) {
+    public function directoryPartylistsSelection(Request $request){
         $id = $request->id;
-        $partylist = PartyList::where('PartyListId', $id)->first();
+        $election = Elections::where('ElectionId', $id)->first();
+        $electionName = $election->ElectionName;
 
-        if (!$partylist) {
+        if (!$election) {
             return redirect()->route('directory.partylists');
         }
 
@@ -250,7 +252,46 @@ class PublicController extends Controller
             return redirect()->route('directory.partylists');
         }
 
+        return Inertia::render('DirectoryPartyListSelection', [
+            'id' => $id,
+            'electionName' => $electionName
+        ]);
+    }
+
+    public function directoryPartylistsView(Request $request) {
+        $id = $request->id;
+        $partylist = PartyList::where('PartyListId', $id)->first();
+
+        if (!$partylist) {
+            return redirect()->route('directory.partylists.selection');
+        }
+
+        if (!$id) {
+            return redirect()->route('directory.partylists.selection');
+        }
+
         return Inertia::render('DirectoryPartyListView', [
+            'id' => $id,
+        ]);
+    }
+
+    public function directoryStudentOrganization() {
+        return inertia('DirectoryStudentOrganization');
+    }
+
+    public function directoryStudentOrganizationView(Request $request) {
+        $id = $request->id;
+        $studentOrganization = StudentOrganization::where('StudentOrganizationId', $id)->first();
+        
+        if (!$studentOrganization) {
+            return redirect()->route('directory.student.organization');
+        }
+
+        if (!$id) {
+            return redirect()->route('directory.student.organization');
+        }
+
+        return Inertia::render('DirectoryStudentOrganizationView', [
             'id' => $id,
         ]);
     }

@@ -69,5 +69,11 @@ Route::get('/directory/partylists/selection', [PublicController::class, 'directo
 Route::get('/directory/partylists/view', [PublicController::class, 'directoryPartylistsView'])
 ->name('directory.partylists.view');
 
+Route::get('/directory/student-organization', [PublicController::class, 'directoryStudentOrganization'])
+->name('directory.student.organization');
+
+Route::get('/directory/student-organization/view', [PublicController::class, 'directoryStudentOrganizationView'])
+->name('directory.student.organization.view');
+
 Route::get('/rules-and-guidelines', [PublicController::class, 'rulesAndGuidelines'])
 ->name('rules.and.guidelines');
