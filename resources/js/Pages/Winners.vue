@@ -6,7 +6,7 @@
         <h1 class="current-page">
             <span class="header" @click.prevent="returnElections">ONGOING ELECTIONS</span> 
             <span class="arrow"> > </span>
-            <span class="header" @click.prevent="returnCurrentElection">{{ electionsData.election.ElectionName }}</span> 
+            <span class="header" @click.prevent="returnCurrentElection" v-if="!isElectionsLoading && isElectionsSuccess">{{ electionsData.election.ElectionName }}</span> 
             <span class="arrow"> > </span>
             Results
         </h1>
@@ -38,7 +38,7 @@
                             <div class="card-information">
                                 <img src="../../images/Winners/voters.svg" alt="" class="card-svg">
                                 <div class="count">
-                                    <span class="quantity">100</span>
+                                    <span class="quantity" v-if="!isWinnersLoading">{{ this.winnersData.num_eligible_voters }}</span>
                                     <span class="quantity-label">Eligible Voters</span>
                                 </div>
                             </div>
@@ -49,7 +49,7 @@
                             <div class="card-information">
                                 <img src="../../images/Winners/vote.svg" alt="" class="card-svg vote-svg">
                                 <div class="count">
-                                    <span class="quantity">70</span>
+                                    <span class="quantity" v-if="!isWinnersLoading">{{ this.winnersData.total_votes }}</span>
                                     <span class="quantity-label">Votes</span>
                                 </div>
                             </div>
@@ -60,7 +60,7 @@
                             <div class="card-information">
                                 <img src="../../images/Winners/abstain.svg" alt="" class="card-svg abstain-svg">
                                 <div class="count">
-                                    <span class="quantity">20</span>
+                                    <span class="quantity" v-if="!isWinnersLoading">{{ this.winnersData.total_abstain }}</span>
                                     <span class="quantity-label">Abstained</span>
                                 </div>
                             </div>
@@ -69,7 +69,7 @@
                 </div>
 
                 <template v-if="!isElectionsLoading && !isWinnersLoading">
-                    <div v-for="(winnerData, position) in winnersData" :key="position">
+                    <div v-for="(winnerData, position) in winnersData.winners" :key="position">
                         <div class="position-wrapper">
                             <div class="position">
                                 <h1 class="position-label" v-if="!winnerData.is_tied">{{ position }}</h1>
@@ -85,7 +85,7 @@
                             </h1>
                         </div>
 
-                        <div class="top-ranks" v-for="(candidate, candidateIndex) in winnerData.candidates" :key="candidateIndex">
+                        <div class="top-ranks mb-4" v-for="(candidate, candidateIndex) in winnerData.candidates" :key="candidateIndex">
                             <div class="top">
                                 <div class="top-wrapper">
                                     <div class="top-information">
@@ -94,7 +94,7 @@
                                         </div>
                                         <span class="top-name">{{ candidate.full_name }}</span>
                                         <span class="top-affiliation">{{ candidate.partylist }}</span>
-                                        <span class="section">BSIT 3-1 (NOT YET CHANGED)</span>
+                                        <span class="section">{{ candidate.course_code }} {{ candidate.year }}-{{ candidate.section }}</span>
                                     </div>
                                 </div>
                                 <div class="stats row">
@@ -103,11 +103,11 @@
                                         <img src="../../images/Winners/vote.svg" alt="" class="count-svg vote-svg">
                                     </div>
                                     <div class="stats-count col-4">                                
-                                        <span class="count-quantity">11</span>
+                                        <span class="count-quantity">{{ candidate.times_abstained }}</span>
                                         <img src="../../images/Winners/abstain.svg" alt="" class="count-svg abstain-svg abstain">
                                     </div>
                                     <div class="stats-count col-4">                                
-                                        <span class="count-quantity">25</span>
+                                        <span class="count-quantity">{{ candidate.percentage.toFixed(2) }}</span>
                                         <img src="../../images/Winners/percent.svg" alt="" class="count-svg percent">
                                     </div>
                                 </div>
@@ -160,7 +160,7 @@
                 const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/votings/get-winners/${electionId.value}`);
                 console.log(`Get winners on election with id ${electionId.value} successful. Duration: ${response.duration}ms`)
 
-                return response.data.winners;
+                return response.data;
             }
 
             const { data: winnersData,
