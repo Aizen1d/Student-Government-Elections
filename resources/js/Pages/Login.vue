@@ -36,6 +36,7 @@
 <script>
     import axios from 'axios';
     import Body from '../Shared/Body.vue';
+    import { router } from '@inertiajs/vue3';
 
     export default {
         components: { Body },
@@ -43,6 +44,7 @@
             return {
                 form: { StudentNumber: '',
                         Password: '',
+                        student_id: 0
                         },
                 loggingIn: false,
                 invalid: '',
@@ -94,10 +96,18 @@
                     })
                     .then(response => {
                         if (response.data.message === true) {
+                            this.student_id = response.data.student_id;
+
                             axios.post('/login/auth', this.form)
                             .then(response => {
                                 if (response.data.redirect) {
-                                    window.location.href = response.data.redirect;
+                                    router.visit('/home', {
+                                        data: {
+                                            student_number: this.form.StudentNumber,
+                                            student_id: this.student_id,
+                                        }
+                                    })
+                                    //window.location.href = response.data.redirect;
                                 }
                             })
                             .catch(error => {

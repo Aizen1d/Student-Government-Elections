@@ -78,6 +78,7 @@
             },
             confirm(){
                 this.confirm_clicked = true;
+
                 const votesList = {
                     election_id: this.activeElectionIndex,
                     voter_student_number: this.student_number,

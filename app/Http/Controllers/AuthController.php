@@ -23,6 +23,7 @@ class AuthController extends Controller
       
         $cookie_data = [
             'student_number' => $request->StudentNumber,
+            'student_id' => $request->student_id,
             'user_role' => 'student',
         ];
 

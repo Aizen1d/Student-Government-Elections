@@ -50,7 +50,6 @@
             const activeElectionQuantity = ref(0);
 
             userStore.student_number = props.student_number;
-            userStore.full_name = props.full_name;
             
             const fetchElectionsTable = async () => {
                 const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/election/all/is-student-voted`, {
@@ -72,6 +71,22 @@
                         queryFn: fetchElectionsTable,
                     })
 
+            const getFullName = async () => {
+                const response = await axios.get(`${import.meta.env.VITE_FASTAPI_BASE_URL}/api/v1/student/fullname/${props.student_number}`)
+                
+                userStore.full_name = response.data.full_name
+                
+                return response.data;
+            }
+
+            const { data: studentData,
+                    isLoading: isStudentLoading,} =
+                    useQuery({
+                        queryKey: ['getFullName'],
+                        queryFn: getFullName,
+                    })
+
+
             return {
                 atleastOneElection,
                 activeElectionQuantity,
@@ -84,7 +99,6 @@
         components: { Navbar },
         props: {
             student_number: '',
-            full_name: '',
         },
         methods: {
             electionSelected(election){
